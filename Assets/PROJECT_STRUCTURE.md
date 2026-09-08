@@ -13,6 +13,7 @@ Assets
 │  └─ Test
 ├─ 02_Scripts
 │  ├─ Core
+│  │  ├─ Bootstrap
 │  │  └─ Manager
 │  ├─ Gameplay
 │  ├─ UI
@@ -20,6 +21,7 @@ Assets
 │  └─ Tests
 ├─ 03_Prefabs
 ├─ 04_Data
+│  └─ Config
 ├─ 05_Art
 │  └─ Textures
 ├─ 06_Animations
@@ -70,7 +72,7 @@ Assets
 - `Scripts`에는 데이터 타입 정의를, `04_Data`에는 실제 ScriptableObject 인스턴스를 둡니다.
 - 외부 에셋은 `90_ThirdParty`에 원본 상태로 보관하고 직접 수정하지 않습니다.
 - Addressables를 도입하더라도 에셋을 별도 보관소로 옮기지 않고 기존 위치에서 Group과 Label로 관리합니다.
-- Assembly Definition(`asmdef`)은 초기에는 사용하지 않으며 컴파일 시간이나 의존성 관리 필요가 생겼을 때 도입합니다.
+- 실제 자동 테스트와 의존성 분리를 위해 Core / UI / Editor / PlayModeTests / EditModeTests에 최소 Assembly Definition(`asmdef`)을 사용합니다. Core는 UI·Editor 패키지에 의존하지 않습니다.
 - `Core/Manager`는 현재 존재하는 폴더입니다. 모든 기능을 Manager로 만들거나 전역 Singleton으로 두어야 한다는 의미는 아닙니다.
 - `Sprites` 등의 하위 폴더는 실제 에셋이 생길 때 추가합니다.
 - 초기화와 데이터 관리의 제안 기준은 [초기 세팅 설계](../Docs/INITIAL_SETTING.md)를 참고합니다.
