@@ -1,0 +1,5 @@
+{
+  "name": "StarterProject.PlayModeTests",
+  "references": ["StarterProject.Core", "StarterProject.UI", "UnityEngine.UI"],
+  "optionalUnityReferences": ["TestAssemblies"]
+}

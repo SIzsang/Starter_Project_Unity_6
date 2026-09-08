@@ -1,0 +1,6 @@
+{
+  "name": "StarterProject.Editor",
+  "rootNamespace": "StarterProject.Editor",
+  "references": ["StarterProject.Core", "StarterProject.UI", "UnityEngine.UI", "Unity.InputSystem", "Unity.RenderPipelines.Universal.Runtime"],
+  "includePlatforms": ["Editor"]
+}

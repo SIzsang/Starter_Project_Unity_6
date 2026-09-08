@@ -1,0 +1,106 @@
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace StarterProject.UI
+{
+    /// <summary><see cref="StarterScreen"/>이 연결된 씬의 역할을 구분합니다.</summary>
+    public enum StarterScreenKind
+    {
+        /// <summary>초기화 상태만 표시하는 Boot 화면입니다.</summary>
+        Boot,
+
+        /// <summary>Main 씬으로 이동하는 시작 버튼을 제공하는 Title 화면입니다.</summary>
+        Title,
+
+        /// <summary>Title 씬으로 돌아가는 버튼을 제공하는 Main 예제 화면입니다.</summary>
+        Main
+    }
+
+    /// <summary>
+    /// 씬별 상태 문구와 버튼을 <see cref="AppRoot"/>의 공개 상태에 맞춰 갱신하는 표시 계층입니다.
+    /// 초기화나 전환 규칙을 직접 결정하지 않고 사용자 요청만 앱 루트에 전달합니다.
+    /// </summary>
+    public sealed class StarterScreen : MonoBehaviour
+    {
+        [SerializeField] private StarterScreenKind screen;
+        [SerializeField] private Text status;
+        [SerializeField] private Button actionButton;
+
+        private bool hasSnapshot;
+        private AppRoot displayedRoot;
+        private AppState displayedState;
+        private bool displayedTransition;
+        private string displayedStep;
+        private string displayedFailure;
+
+        /// <summary>버튼 리스너를 등록하고 현재 앱 상태를 즉시 반영합니다.</summary>
+        private void OnEnable()
+        {
+            hasSnapshot = false;
+            if (actionButton != null)
+                actionButton.onClick.AddListener(OnAction);
+            Refresh();
+        }
+
+        /// <summary>앱 상태를 확인하되 변경이 있을 때만 문자열과 UI를 갱신합니다.</summary>
+        private void Update() => Refresh();
+
+        /// <summary>
+        /// 앱 루트의 준비·실패·전환 상태로 버튼 활성 여부와 사용자 메시지를 계산합니다.
+        /// Boot를 거치지 않은 직접 실행에서는 버튼을 잠그고 시작 씬을 안내합니다.
+        /// </summary>
+        private void Refresh()
+        {
+            var root = AppRoot.Instance;
+            var state = root != null ? root.State : AppState.NotStarted;
+            var transitioning = root != null && root.IsTransitioning;
+            var step = root != null ? root.CurrentStep : null;
+            var failure = root != null ? root.Failure : null;
+            if (hasSnapshot && ReferenceEquals(displayedRoot, root) && displayedState == state
+                && displayedTransition == transitioning && displayedStep == step && displayedFailure == failure)
+                return;
+
+            hasSnapshot = true;
+            displayedRoot = root;
+            displayedState = state;
+            displayedTransition = transitioning;
+            displayedStep = step;
+            displayedFailure = failure;
+            var ready = root != null && root.State == AppState.Ready && !root.IsTransitioning;
+            if (actionButton != null)
+                actionButton.interactable = ready && screen != StarterScreenKind.Boot;
+
+            string message;
+            if (root == null)
+                message = screen == StarterScreenKind.Boot ? "Preparing..." : "Open 00_StartScene to begin.";
+            else if (root.State == AppState.Failed)
+                message = Debug.isDebugBuild ? $"Could not start.\n{root.Failure}" : "Could not start. Please restart the application.";
+            else if (!ready)
+                message = root.CurrentStep + "...";
+            else
+                message = screen == StarterScreenKind.Main ? "Your game starts here." : "Ready when you are.";
+
+            if (status != null && status.text != message)
+                status.text = message;
+        }
+
+        /// <summary>Title에서는 Main 진입을, Main에서는 Title 복귀를 앱 루트에 요청합니다.</summary>
+        private void OnAction()
+        {
+            var root = AppRoot.Instance;
+            if (root == null)
+                return;
+            if (screen == StarterScreenKind.Title)
+                root.TryEnterMain();
+            else if (screen == StarterScreenKind.Main)
+                root.TryReturnToTitle();
+        }
+
+        /// <summary>화면 비활성화 시 버튼 리스너를 해제해 재활성화에 따른 중복 구독을 막습니다.</summary>
+        private void OnDisable()
+        {
+            if (actionButton != null)
+                actionButton.onClick.RemoveListener(OnAction);
+        }
+    }
+}

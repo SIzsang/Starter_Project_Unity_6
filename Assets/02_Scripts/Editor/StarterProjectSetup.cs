@@ -1,0 +1,303 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using StarterProject.UI;
+using UnityEditor;
+using UnityEditor.Build.Reporting;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+
+[assembly: InternalsVisibleTo("StarterProject.EditModeTests")]
+
+namespace StarterProject.Editor
+{
+    /// <summary>
+    /// Starter Project 예제 설정을 에디터에서 생성·보정하고 Windows 미리보기 빌드를 만드는 도구입니다.
+    /// 런타임 어셈블리와 분리되어 있으며 <see cref="AppConfig"/>, 세 씬의
+    /// <see cref="StarterScreen"/>, Input System UI 연결을 편집 시점에 구성합니다.
+    /// </summary>
+    public static class StarterProjectSetup
+    {
+        /// <summary>프로젝트가 사용하는 기본 <see cref="AppConfig"/> 에셋 경로입니다.</summary>
+        public const string ConfigPath = "Assets/04_Data/Config/SO_AppConfig.asset";
+        private static readonly Color Background = new Color32(17, 23, 35, 255);
+        private static readonly Color Muted = new Color32(154, 169, 190, 255);
+        private static readonly Color Accent = new Color32(103, 226, 190, 255);
+
+        /// <summary>
+        /// AppConfig를 생성하고 Boot, Title, Main을 빌드 씬 목록 앞에 배치한 뒤
+        /// 각 씬의 예제 UI·입력·Bootstrap 연결을 구성하는 일회성 프로비저닝 진입점입니다.
+        /// 기존 <see cref="StarterScreen"/>이 있는 씬의 UI 구조는 보존합니다.
+        /// </summary>
+        public static void CreateExampleAssets()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                throw new InvalidOperationException("Stop Play Mode before creating example assets.");
+            for (var i = 0; i < SceneManager.sceneCount; i++)
+                if (SceneManager.GetSceneAt(i).isDirty)
+                    throw new InvalidOperationException("Save all modified scenes before creating example assets.");
+            GetInputReferences(); // 변경 전에 필수 입력 에셋과 액션을 검사합니다.
+            var config = AssetDatabase.LoadAssetAtPath<AppConfig>(ConfigPath);
+            if (config == null)
+            {
+                if (!AssetDatabase.IsValidFolder("Assets/04_Data/Config"))
+                    AssetDatabase.CreateFolder("Assets/04_Data", "Config");
+                config = ScriptableObject.CreateInstance<AppConfig>();
+                AssetDatabase.CreateAsset(config, ConfigPath);
+            }
+            var paths = new[] { config.BootScene, config.TitleScene, config.MainScene };
+            if (paths.Distinct().Count() != paths.Length
+                || paths.Any(p => AssetDatabase.LoadAssetAtPath<SceneAsset>(p) == null))
+                throw new InvalidOperationException("AppConfig must reference three different existing scene assets.");
+            EditorBuildSettings.scenes = paths.Select(p => new EditorBuildSettingsScene(p, true))
+                .Concat(EditorBuildSettings.scenes.Where(s => !paths.Contains(s.path))).ToArray();
+
+            CreateScreen(paths[0], StarterScreenKind.Boot);
+            CreateScreen(paths[1], StarterScreenKind.Title);
+            CreateScreen(paths[2], StarterScreenKind.Main);
+            AssetDatabase.SaveAssets();
+            EditorSceneManager.OpenScene(paths[0]);
+            Debug.Log("[Starter Project] Example scenes and AppConfig are ready.");
+        }
+
+        /// <summary>
+        /// 한 씬을 열어 역할에 맞는 예제 화면을 생성하고, 입력과 Boot 전용 설정을 연결합니다.
+        /// 이미 StarterScreen이 있으면 화면을 재생성하지 않고 공통 연결만 보정합니다.
+        /// </summary>
+        /// <param name="path">편집할 씬의 프로젝트 상대 경로입니다.</param>
+        /// <param name="kind">생성할 화면의 Boot, Title, Main 역할입니다.</param>
+        private static void CreateScreen(string path, StarterScreenKind kind)
+        {
+            var scene = EditorSceneManager.OpenScene(path);
+            // Opening a scene may unload unused assets. Reacquire the asset after it.
+            var config = AssetDatabase.LoadAssetAtPath<AppConfig>(ConfigPath);
+            if (config == null)
+                throw new InvalidOperationException("AppConfig could not be loaded after opening the scene.");
+            if (scene.GetRootGameObjects().Any(go => go.GetComponentInChildren<StarterScreen>(true) != null))
+            {
+                ConfigureInput();
+                if (kind == StarterScreenKind.Boot)
+                    ConfigureBootstrap(config);
+                EditorSceneManager.SaveScene(scene);
+                return;
+            }
+
+            foreach (var camera in UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsSortMode.None))
+            {
+                camera.backgroundColor = Background;
+                camera.clearFlags = CameraClearFlags.SolidColor;
+                if (camera.GetComponent<UniversalAdditionalCameraData>() == null)
+                    camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+            }
+
+            var canvasObject = new GameObject("Starter UI", typeof(RectTransform), typeof(Canvas),
+                typeof(CanvasScaler), typeof(GraphicRaycaster));
+            canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+            var scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1280, 720);
+            scaler.matchWidthOrHeight = 0.5f;
+            var background = Panel(canvasObject.transform, "Background", Background);
+            Stretch(background.rectTransform);
+            background.raycastTarget = false;
+
+            Label(canvasObject.transform, "Brand", "STARTER PROJECT   /   UNITY 6", 17, Muted, new Vector2(0, 240), new Vector2(900, 40));
+            var heading = kind == StarterScreenKind.Boot ? "Getting ready" : kind == StarterScreenKind.Title ? "A clean beginning." : "Main Scene";
+            Label(canvasObject.transform, "Heading", heading, 54, Color.white, new Vector2(0, 100), new Vector2(1050, 90));
+            var line = Panel(canvasObject.transform, "Accent", Accent);
+            Position(line.rectTransform, new Vector2(0, 35), new Vector2(64, 4));
+            line.raycastTarget = false;
+            var status = Label(canvasObject.transform, "Status", "Preparing...", 21, Muted, new Vector2(0, -30), new Vector2(1080, 100));
+
+            Button button = null;
+            if (kind != StarterScreenKind.Boot)
+            {
+                var panel = Panel(canvasObject.transform, kind == StarterScreenKind.Title ? "Start Game" : "Back to Title", Accent);
+                Position(panel.rectTransform, new Vector2(0, -145), new Vector2(300, 64));
+                button = panel.gameObject.AddComponent<Button>();
+                button.targetGraphic = panel;
+                var colors = button.colors;
+                colors.highlightedColor = new Color(0.86f, 1, 0.96f);
+                colors.pressedColor = new Color(0.65f, 0.85f, 0.78f);
+                colors.disabledColor = new Color(0.4f, 0.45f, 0.45f);
+                button.colors = colors;
+                var text = Label(panel.transform, "Label", panel.name, 22, Background, Vector2.zero, new Vector2(300, 64));
+                Stretch(text.rectTransform);
+            }
+            Label(canvasObject.transform, "Footer", "BOOTSTRAP   /   TITLE   /   MAIN", 14, Muted, new Vector2(0, -285), new Vector2(900, 30));
+            var view = canvasObject.AddComponent<StarterScreen>();
+            var serialized = new SerializedObject(view);
+            serialized.FindProperty("screen").enumValueIndex = (int)kind;
+            serialized.FindProperty("status").objectReferenceValue = status;
+            serialized.FindProperty("actionButton").objectReferenceValue = button;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            ConfigureInput();
+            UnityEngine.Object.FindFirstObjectByType<EventSystem>().firstSelectedGameObject = button != null ? button.gameObject : null;
+            if (kind == StarterScreenKind.Boot)
+                ConfigureBootstrap(config);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>Boot 씬의 <see cref="AppBootstrap"/>을 찾거나 만들고 AppConfig 참조를 연결합니다.</summary>
+        /// <param name="config">Bootstrap에 직렬화할 앱 설정 에셋입니다.</param>
+        private static void ConfigureBootstrap(AppConfig config)
+        {
+            var bootstrap = UnityEngine.Object.FindFirstObjectByType<AppBootstrap>();
+            if (bootstrap == null)
+                bootstrap = new GameObject("Bootstrap").AddComponent<AppBootstrap>();
+            var bootData = new SerializedObject(bootstrap);
+            bootData.FindProperty("config").objectReferenceValue = config;
+            bootData.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>
+        /// 현재 씬의 EventSystem에 Input System UI 모듈과 기존 UI 액션 참조를 연결합니다.
+        /// EventSystem이 없으면 새로 생성합니다.
+        /// </summary>
+        internal static void ConfigureInput()
+        {
+            const string path = "Assets/13_Input/InputSystem_Actions.inputactions";
+            var references = GetInputReferences();
+            var asset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(path);
+            var events = UnityEngine.Object.FindFirstObjectByType<EventSystem>(FindObjectsInactive.Include);
+            if (events == null)
+            {
+                var go = new GameObject("EventSystem");
+                go.SetActive(false);
+                events = go.AddComponent<EventSystem>();
+                go.AddComponent<InputSystemUIInputModule>();
+            }
+            var module = events.GetComponent<InputSystemUIInputModule>();
+            if (module == null)
+                module = events.gameObject.AddComponent<InputSystemUIInputModule>();
+            foreach (var other in events.GetComponents<BaseInputModule>())
+                if (other != module)
+                    other.enabled = false;
+            module.enabled = true;
+            events.enabled = true;
+            var data = new SerializedObject(module);
+            data.FindProperty("m_ActionsAsset").objectReferenceValue = asset;
+            SetAction("m_PointAction", "Point");
+            SetAction("m_MoveAction", "Navigate");
+            SetAction("m_SubmitAction", "Submit");
+            SetAction("m_CancelAction", "Cancel");
+            SetAction("m_LeftClickAction", "Click");
+            SetAction("m_RightClickAction", "RightClick");
+            SetAction("m_MiddleClickAction", "MiddleClick");
+            SetAction("m_ScrollWheelAction", "ScrollWheel");
+            SetAction("m_TrackedDevicePositionAction", "TrackedDevicePosition");
+            SetAction("m_TrackedDeviceOrientationAction", "TrackedDeviceOrientation");
+            data.ApplyModifiedPropertiesWithoutUndo();
+            events.gameObject.SetActive(true);
+
+            void SetAction(string field, string name)
+            {
+                data.FindProperty(field).objectReferenceValue = references.First(r => r.action != null
+                    && r.action.actionMap.name == "UI" && r.action.name == name);
+            }
+        }
+
+        /// <summary>필수 UI 액션 누락을 씬 수정 전에 명확한 오류로 보고합니다.</summary>
+        private static InputActionReference[] GetInputReferences()
+        {
+            const string path = "Assets/13_Input/InputSystem_Actions.inputactions";
+            var references = AssetDatabase.LoadAllAssetsAtPath(path).OfType<InputActionReference>().ToArray();
+            var names = new[] { "Point", "Navigate", "Submit", "Cancel", "Click", "RightClick",
+                "MiddleClick", "ScrollWheel", "TrackedDevicePosition", "TrackedDeviceOrientation" };
+            foreach (var name in names)
+                if (!references.Any(r => r.action != null && r.action.actionMap.name == "UI" && r.action.name == name))
+                    throw new InvalidOperationException($"Required UI action is missing: {path} / UI / {name}");
+            return references;
+        }
+
+        /// <summary>UI 계층 아래에 단색 Image 패널을 생성합니다.</summary>
+        /// <param name="parent">새 패널의 부모 Transform입니다.</param>
+        /// <param name="name">GameObject 이름입니다.</param>
+        /// <param name="color">Image에 적용할 색상입니다.</param>
+        /// <returns>생성된 패널의 Image 컴포넌트입니다.</returns>
+        private static Image Panel(Transform parent, string name, Color color)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            go.transform.SetParent(parent, false);
+            var image = go.GetComponent<Image>();
+            image.color = color;
+            return image;
+        }
+
+        /// <summary>LegacyRuntime 글꼴을 사용하는 중앙 정렬 uGUI Text를 생성하고 배치합니다.</summary>
+        /// <param name="parent">새 레이블의 부모 Transform입니다.</param>
+        /// <param name="name">GameObject 이름입니다.</param>
+        /// <param name="value">표시할 문자열입니다.</param>
+        /// <param name="size">글꼴 크기입니다.</param>
+        /// <param name="color">글자 색상입니다.</param>
+        /// <param name="position">부모 중앙을 기준으로 한 위치입니다.</param>
+        /// <param name="dimensions">RectTransform 크기입니다.</param>
+        /// <returns>생성된 Text 컴포넌트입니다.</returns>
+        private static Text Label(Transform parent, string name, string value, int size, Color color, Vector2 position, Vector2 dimensions)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            go.transform.SetParent(parent, false);
+            var label = go.GetComponent<Text>();
+            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            label.text = value;
+            label.fontSize = size;
+            label.color = color;
+            label.alignment = TextAnchor.MiddleCenter;
+            label.raycastTarget = false;
+            Position(label.rectTransform, position, dimensions);
+            return label;
+        }
+
+        /// <summary>RectTransform을 부모 중앙 기준의 고정 위치와 크기로 설정합니다.</summary>
+        /// <param name="rect">배치할 RectTransform입니다.</param>
+        /// <param name="position">중앙 기준 위치입니다.</param>
+        /// <param name="dimensions">고정 크기입니다.</param>
+        private static void Position(RectTransform rect, Vector2 position, Vector2 dimensions)
+        {
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = dimensions;
+            rect.anchoredPosition = position;
+        }
+
+        /// <summary>RectTransform이 부모 영역 전체를 여백 없이 채우도록 설정합니다.</summary>
+        /// <param name="rect">늘릴 RectTransform입니다.</param>
+        private static void Stretch(RectTransform rect)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+        }
+
+        /// <summary>
+        /// 현재 활성 빌드 씬으로 Windows x64 Development 빌드를 생성합니다.
+        /// 빌드 전 AppConfig를 검증하며 결과는 Builds/Windows/StarterProject.exe에 저장합니다.
+        /// </summary>
+        [MenuItem("Tools/Starter Project/Build Windows Preview")]
+        public static void BuildWindowsPreview()
+        {
+            var config = AssetDatabase.LoadAssetAtPath<AppConfig>(ConfigPath);
+            if (config == null)
+                throw new InvalidOperationException("AppConfig asset is missing.");
+            config.Validate();
+            Directory.CreateDirectory("Builds/Windows");
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(),
+                locationPathName = "Builds/Windows/StarterProject.exe",
+                target = BuildTarget.StandaloneWindows64,
+                options = BuildOptions.Development
+            });
+            if (report.summary.result != BuildResult.Succeeded)
+                throw new InvalidOperationException($"Build failed: {report.summary.result}");
+            Debug.Log($"[Starter Project] Windows build succeeded ({report.summary.totalSize} bytes).");
+        }
+    }
+}

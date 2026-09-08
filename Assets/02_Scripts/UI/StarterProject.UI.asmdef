@@ -1,0 +1,5 @@
+{
+  "name": "StarterProject.UI",
+  "rootNamespace": "StarterProject.UI",
+  "references": ["StarterProject.Core", "UnityEngine.UI"]
+}
