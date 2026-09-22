@@ -23,6 +23,12 @@ namespace StarterProject
         /// <summary>씬 비동기 로드가 진행 중이어서 추가 전환을 받을 수 없는지 나타냅니다.</summary>
         public bool IsTransitioning { get; private set; }
 
+        /// <summary>씬 로드의 실제 진행률입니다. 씬 활성화까지 끝나야 1이 됩니다.</summary>
+        public float LoadingProgress { get; private set; }
+
+        /// <summary>화면과 입력이 상태 변경을 같은 프레임에 반영하도록 알립니다.</summary>
+        public event Action StateChanged;
+
         /// <summary>화면에 표시할 현재 초기화 또는 전환 단계입니다.</summary>
         public string CurrentStep { get; private set; } = "Waiting to start";
 
@@ -36,6 +42,15 @@ namespace StarterProject
         public GameSessionService Game { get; private set; }
         public string StorageMessage { get; private set; } = "";
         private ITextFileStore fileStore;
+        private IRuntimeSettings runtimeSettings;
+
+        /// <summary>Begin 전에 시스템 설정 적용 경계를 주입합니다. 루트가 수명을 소유합니다.</summary>
+        public void ConfigureRuntimeSettings(IRuntimeSettings runtimeSettings)
+        {
+            if (State != AppState.NotStarted) throw new InvalidOperationException("Configure runtime settings before Begin.");
+            if (this.runtimeSettings != null) throw new InvalidOperationException("Runtime settings are already configured.");
+            this.runtimeSettings = runtimeSettings ?? throw new ArgumentNullException(nameof(runtimeSettings));
+        }
 
         /// <summary>초기화 전에 저장소를 주입합니다. 테스트는 실제 사용자 파일과 분리된 경로를 사용합니다.</summary>
         public void ConfigureStorage(ITextFileStore fileStore)
@@ -96,6 +111,7 @@ namespace StarterProject
             try
             {
                 CurrentStep = "Checking startup configuration";
+                StateChanged?.Invoke();
                 await Awaitable.NextFrameAsync(lifetimeToken);
                 if (config == null)
                     throw new InvalidOperationException("AppBootstrap requires an AppConfig asset.");
@@ -111,12 +127,18 @@ namespace StarterProject
                 Game = new GameSessionService(fileStore);
                 StorageMessage = string.Join("\n", new[] { Settings.Message, Game.Message }).Trim();
 
+                CurrentStep = "Applying audio and display settings";
+                runtimeSettings = runtimeSettings ?? new UnityRuntimeSettings();
+                runtimeSettings.Apply(Settings.Current);
+                Settings.Changed += OnSettingsChanged;
+
                 CurrentStep = "Preparing scene navigation";
+                StateChanged?.Invoke();
                 await Awaitable.NextFrameAsync(lifetimeToken);
 
                 State = AppState.Ready;
                 CurrentStep = "Ready";
-                TryReturnToTitle();
+                if (!TryReturnToTitle()) StateChanged?.Invoke();
             }
             catch (OperationCanceledException) when (lifetimeToken.IsCancellationRequested) { }
             catch (Exception exception) { Fail(exception); }
@@ -159,7 +181,8 @@ namespace StarterProject
             if (Instance != this || State != AppState.Ready || IsTransitioning) return false;
             var isSaved = Settings.TryApplyAndSave(settings);
             StorageMessage = Settings.Message;
-            return isSaved;
+            StateChanged?.Invoke();
+            return isSaved && State == AppState.Ready;
         }
 
         public bool TryRecoverBackup(bool recoverSettings)
@@ -167,7 +190,16 @@ namespace StarterProject
             if (Instance != this || State != AppState.Ready || IsTransitioning) return false;
             var isRecovered = recoverSettings ? Settings.TryRecoverBackup() : Game.TryRecoverBackup();
             StorageMessage = recoverSettings ? Settings.Message : Game.Message;
-            return isRecovered;
+            StateChanged?.Invoke();
+            return isRecovered && State == AppState.Ready;
+        }
+
+        private void OnSettingsChanged()
+        {
+            StorageMessage = Settings.Message;
+            try { runtimeSettings.Apply(Settings.Current); }
+            catch (Exception exception) { Fail(exception); }
+            StateChanged?.Invoke();
         }
 
         /// <summary>Ready 상태일 때 Title 씬 전환을 요청합니다.</summary>
@@ -195,6 +227,9 @@ namespace StarterProject
 
             // Acquire before starting async work so repeated button presses cannot overlap.
             IsTransitioning = true;
+            LoadingProgress = 0;
+            CurrentStep = "Loading";
+            StateChanged?.Invoke();
             Navigate(scenePath);
             return true;
         }
@@ -216,13 +251,23 @@ namespace StarterProject
                     throw new InvalidOperationException($"Scene loading could not start: {scenePath}");
 
                 // Unity scene loads cannot be cancelled. Hold the gate until the load completes.
-                await loadOperation;
+                while (!loadOperation.isDone)
+                {
+                    LoadingProgress = Mathf.Clamp01(loadOperation.progress);
+                    if (!lifetimeToken.IsCancellationRequested) StateChanged?.Invoke();
+                    await Awaitable.NextFrameAsync();
+                }
                 lifetimeToken.ThrowIfCancellationRequested();
+                LoadingProgress = 1;
                 CurrentStep = "Ready";
             }
             catch (OperationCanceledException) when (lifetimeToken.IsCancellationRequested) { }
             catch (Exception exception) { Fail(exception); }
-            finally { IsTransitioning = false; }
+            finally
+            {
+                IsTransitioning = false;
+                if (!lifetimeToken.IsCancellationRequested) StateChanged?.Invoke();
+            }
         }
 
         /// <summary>예외 정보를 공개 상태와 로그에 기록하고 추가 앱 진입을 차단합니다.</summary>
@@ -232,7 +277,21 @@ namespace StarterProject
             State = AppState.Failed;
             Failure = exception.Message;
             CurrentStep = "Startup failed";
+            ReleaseRuntimeSettings();
+            StateChanged?.Invoke();
             Debug.LogError($"[Starter Project] {Failure}", this);
+        }
+
+        private void ReleaseRuntimeSettings()
+        {
+            if (Settings != null) Settings.Changed -= OnSettingsChanged;
+            var ownedSettings = runtimeSettings;
+            runtimeSettings = null;
+            try { ownedSettings?.Dispose(); }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[Starter Project] Could not restore runtime settings: {exception.Message}", this);
+            }
         }
 
         /// <summary>
@@ -241,8 +300,10 @@ namespace StarterProject
         /// </summary>
         private void OnDestroy()
         {
+            ReleaseRuntimeSettings();
             if (Instance != this)
                 return;
+            StateChanged = null;
             Instance = null;
             Game = null;
             Settings = null;

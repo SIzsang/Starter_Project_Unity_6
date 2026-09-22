@@ -170,7 +170,7 @@ namespace StarterProject.Editor
             if (footerTransform != null)
             {
                 Position(footerTransform.GetComponent<RectTransform>(), new Vector2(0, -335), new Vector2(1100, 28));
-                footerTransform.GetComponent<Text>().text = "SETTINGS SAVE DEMO  /  AUDIO, DISPLAY AND LOCALIZATION CONNECT IN STEP 5";
+                footerTransform.GetComponent<Text>().text = "ARROWS / WASD / GAMEPAD TO NAVIGATE  /  ENTER / A TO SELECT";
             }
             ConfigureButton("secondaryButton", "Secondary Action", kind == StarterScreenKind.Title ? "Continue" : "Save Game", 175, -145, 320);
             ConfigureButton("cancelButton", "Cancel Replace", "Cancel", 0, -90, 180);

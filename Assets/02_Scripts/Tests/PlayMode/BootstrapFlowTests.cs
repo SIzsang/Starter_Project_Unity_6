@@ -314,7 +314,14 @@ namespace StarterProject.Tests
         {
             var root = new GameObject(name).AddComponent<AppRoot>();
             root.ConfigureStorage(new JsonFileStore(testDirectory));
+            root.ConfigureRuntimeSettings(new NoOpRuntimeSettings());
             return root;
+        }
+
+        private sealed class NoOpRuntimeSettings : IRuntimeSettings
+        {
+            public void Apply(UserSettings settings) { }
+            public void Dispose() { }
         }
 
         private IEnumerator LoadBoot()

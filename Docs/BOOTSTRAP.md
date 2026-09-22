@@ -60,7 +60,7 @@ Windows 개발 빌드는 `Tools > Starter Project > Build Windows Preview`에서
 
 ## 현재 범위
 
-JSON 설정·게임 저장 기반은 3·4단계에서 추가했다. 상세 검증·사용법은 [설정·게임 저장 가이드](SETTINGS_AND_SAVE.md)를 따른다. 실제 게임 콘텐츠와 오디오·화면 적용 서비스는 이후 단계다.
+JSON 설정·게임 저장 기반은 3·4단계에서 추가했다. 상세 검증·사용법은 [설정·게임 저장 가이드](SETTINGS_AND_SAVE.md)를 따른다. 5단계 음량·화면 적용과 입력·로딩 연결은 [공통 기능 가이드](COMMON_SERVICES.md)에 기록한다. 실제 게임 콘텐츠는 개별 게임에서 추가한다.
 Title/Main을 직접 열고 Play하면 버튼을 비활성화하고 Boot 실행을 안내한다. 자동 Boot 경유는 6단계다.
 폴더·씬 이름과 GUID는 유지하며, 기존 제품명·Cloud 연결 정리는 8단계에 남긴다.
 

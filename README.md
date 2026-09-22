@@ -1,8 +1,8 @@
 # Starter Project — Unity 6
 
 새 게임을 시작할 때 복제해서 사용하는 Unity 공통 기반 프로젝트입니다.
-현재 작업 범위는 **로드맵 1~4단계: Bootstrap·사용자 설정·게임 저장 기반**입니다.
-템플릿 전체는 아직 완성되지 않았으며, 실제 오디오·화면·입력 연결은 5단계입니다.
+현재 작업 범위는 **로드맵 1~5단계: Bootstrap·설정·저장·최소 공통 기능**입니다.
+템플릿 전체는 아직 완성되지 않았으며, 다음은 6단계 개발 편의·설정 검증입니다.
 
 ## 방향
 
@@ -25,7 +25,9 @@
 `Assets/01_Scenes/Boot/00_StartScene.unity`를 열고 Play합니다.
 초기화가 완료되면 Title이 열리며, `New Game`으로 Main에 진입합니다.
 Main에서 `Save Game`으로 저장하고 `Back to Title` → `Continue`로 복원합니다.
-설정 버튼은 값을 변경·저장하며 실제 시스템 적용은 5단계에서 연결합니다.
+설정 버튼으로 저장한 음량·전체화면 값은 즉시 시스템에 적용합니다.
+방향키/WASD 또는 게임패드로 버튼을 선택하고 Enter/A로 실행합니다. 씬 전환 중에는 로딩 화면을 표시하고 입력을 막습니다.
+언어 코드는 저장하며 번역 콘텐츠 연결은 개별 게임에서 추가합니다.
 설정 에셋은 `Assets/04_Data/Config/SO_AppConfig.asset`입니다.
 
 설정·저장 정책과 최신 검증 결과는 [3·4단계 사용 가이드](Docs/SETTINGS_AND_SAVE.md)에 기록합니다.
@@ -39,6 +41,7 @@ Title/Main의 직접 Play 자동 지원은 6단계입니다. 현재는 Boot 실�
 
 - [Bootstrap 사용 가이드](Docs/BOOTSTRAP.md): 실행·확장 위치와 검증 결과
 - [설정·게임 저장 사용 가이드](Docs/SETTINGS_AND_SAVE.md): 3·4단계 사용법·버전·복구·게임별 확장
+- [공통 기능 사용 가이드](Docs/COMMON_SERVICES.md): 5단계 음량·화면 적용, 입력·로딩과 검증 범위
 - [개발 로드맵](Docs/ROADMAP.md): 8단계 작업 순서와 완료 기준
 - [초기화·데이터 관리 설계](Docs/INITIAL_SETTING.md): 구현 기준, 데이터 분담과 오류 처리
 - [템플릿 완성·복제 체크리스트](Docs/TEMPLATE_CHECKLIST.md): 완료 조건과 새 프로젝트에서 바꿀 항목

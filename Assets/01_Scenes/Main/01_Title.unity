@@ -827,8 +827,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: SETTINGS SAVE DEMO  /  AUDIO, DISPLAY AND LOCALIZATION CONNECT IN STEP
-    5
+  m_Text: ARROWS / WASD / GAMEPAD TO NAVIGATE  /  ENTER / A TO SELECT
 --- !u!222 &610572538
 CanvasRenderer:
   m_ObjectHideFlags: 0

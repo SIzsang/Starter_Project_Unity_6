@@ -47,8 +47,9 @@ Assets
 
 - `01_Scenes`: 실행 씬과 테스트 씬
 - `02_Scripts/Core`: 게임 콘텐츠에 종속되지 않는 초기화, 저장, 이벤트 등의 기반 코드
+- `02_Scripts/Core/Settings`: 사용자 설정 파일 정책과 실제 음량·화면 적용 경계
 - `02_Scripts/Gameplay`: 캐릭터, 전투, 퍼즐, 스테이지 등 개별 게임의 실제 규칙
-- `02_Scripts/UI`: UI 동작을 담당하는 C# 코드
+- `02_Scripts/UI`: 화면·입력 동작과 AppRoot 수명에 연결된 로딩 화면 코드
 - `02_Scripts/Editor`: Unity Editor 전용 코드
 - `02_Scripts/Tests`: 자동화 테스트 코드
 - `03_Prefabs`: 재사용하는 GameObject 프리팹

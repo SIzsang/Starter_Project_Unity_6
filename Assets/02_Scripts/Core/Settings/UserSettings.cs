@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace StarterProject
 {
-    /// <summary>SO에서 복사해 사용하는 사용자 설정. Unity 시스템 적용은 5단계에서 연결합니다.</summary>
+    /// <summary>SO에서 복사해 사용하는 사용자 설정입니다. 실행 시스템 적용은 AppRoot가 연결합니다.</summary>
     [Serializable]
     public sealed class UserSettings
     {
@@ -31,6 +31,8 @@ namespace StarterProject
         public UserSettings Current => currentSettings.Copy();
         public StorageStatus Status { get; private set; }
         public string Message { get; private set; } = "";
+        /// <summary>읽기·저장·복구로 현재 설정이 확정된 뒤 알립니다. 저장 실패에는 발생하지 않습니다.</summary>
+        public event Action Changed;
         public bool CanSave => Status != StorageStatus.UnsupportedVersion && Status != StorageStatus.IoError && Status != StorageStatus.Recovered;
 
         public SettingsService(UserSettings defaultSettings, ITextFileStore fileStore)
@@ -48,6 +50,7 @@ namespace StarterProject
             currentSettings = loadResult.Value ?? defaultSettings.Copy();
             Status = loadResult.Status;
             if (!string.IsNullOrEmpty(loadResult.Message)) Message = loadResult.Message;
+            Changed?.Invoke();
         }
 
         private UserSettings Deserialize(string jsonText)
@@ -99,6 +102,7 @@ namespace StarterProject
             currentSettings = settingsSnapshot;
             Status = StorageStatus.Loaded;
             Message = "Settings saved.";
+            Changed?.Invoke();
             return true;
         }
 
