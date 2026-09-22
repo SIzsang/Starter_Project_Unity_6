@@ -25,20 +25,36 @@ namespace StarterProject.UI
         [SerializeField] private StarterScreenKind screen;
         [SerializeField] private Text status;
         [SerializeField] private Button actionButton;
+        [SerializeField] private Button secondaryButton;
+        [SerializeField] private Button cancelButton;
+        [SerializeField] private Button volumeButton;
+        [SerializeField] private Button fullscreenButton;
+        [SerializeField] private Button languageButton;
+        [SerializeField] private Button recoverGameButton;
+        [SerializeField] private Button recoverSettingsButton;
+        private bool isAwaitingOverwriteConfirmation;
 
-        private bool hasSnapshot;
+        private bool hasDisplayedState;
         private AppRoot displayedRoot;
         private AppState displayedState;
-        private bool displayedTransition;
+        private bool displayedIsTransitioning;
         private string displayedStep;
         private string displayedFailure;
+        private string displayedStorageMessage;
 
         /// <summary>버튼 리스너를 등록하고 현재 앱 상태를 즉시 반영합니다.</summary>
         private void OnEnable()
         {
-            hasSnapshot = false;
+            hasDisplayedState = false;
             if (actionButton != null)
-                actionButton.onClick.AddListener(OnAction);
+                actionButton.onClick.AddListener(OnActionButtonClicked);
+            if (secondaryButton != null) secondaryButton.onClick.AddListener(OnSecondaryButtonClicked);
+            if (cancelButton != null) cancelButton.onClick.AddListener(OnCancelButtonClicked);
+            if (volumeButton != null) volumeButton.onClick.AddListener(OnVolumeButtonClicked);
+            if (fullscreenButton != null) fullscreenButton.onClick.AddListener(OnFullscreenButtonClicked);
+            if (languageButton != null) languageButton.onClick.AddListener(OnLanguageButtonClicked);
+            if (recoverGameButton != null) recoverGameButton.onClick.AddListener(OnRecoverGameButtonClicked);
+            if (recoverSettingsButton != null) recoverSettingsButton.onClick.AddListener(OnRecoverSettingsButtonClicked);
             Refresh();
         }
 
@@ -51,56 +67,130 @@ namespace StarterProject.UI
         /// </summary>
         private void Refresh()
         {
-            var root = AppRoot.Instance;
-            var state = root != null ? root.State : AppState.NotStarted;
-            var transitioning = root != null && root.IsTransitioning;
-            var step = root != null ? root.CurrentStep : null;
-            var failure = root != null ? root.Failure : null;
-            if (hasSnapshot && ReferenceEquals(displayedRoot, root) && displayedState == state
-                && displayedTransition == transitioning && displayedStep == step && displayedFailure == failure)
+            var appRoot = AppRoot.Instance;
+            var state = appRoot != null ? appRoot.State : AppState.NotStarted;
+            var isTransitioning = appRoot != null && appRoot.IsTransitioning;
+            var step = appRoot != null ? appRoot.CurrentStep : null;
+            var failure = appRoot != null ? appRoot.Failure : null;
+            var storageMessage = appRoot != null ? appRoot.StorageMessage : null;
+            if (hasDisplayedState && ReferenceEquals(displayedRoot, appRoot) && displayedState == state
+                && displayedIsTransitioning == isTransitioning && displayedStep == step && displayedFailure == failure
+                && displayedStorageMessage == storageMessage)
                 return;
 
-            hasSnapshot = true;
-            displayedRoot = root;
+            hasDisplayedState = true;
+            displayedRoot = appRoot;
             displayedState = state;
-            displayedTransition = transitioning;
+            displayedIsTransitioning = isTransitioning;
             displayedStep = step;
             displayedFailure = failure;
-            var ready = root != null && root.State == AppState.Ready && !root.IsTransitioning;
+            displayedStorageMessage = storageMessage;
+            var isReady = appRoot != null && appRoot.State == AppState.Ready && !appRoot.IsTransitioning;
             if (actionButton != null)
-                actionButton.interactable = ready && screen != StarterScreenKind.Boot;
+                actionButton.interactable = isReady && screen != StarterScreenKind.Boot;
+            if (secondaryButton != null)
+            {
+                secondaryButton.interactable = isReady && (screen == StarterScreenKind.Main
+                    ? appRoot.Game.Current != null : appRoot.Game.CanContinue);
+                SetLabel(secondaryButton, screen == StarterScreenKind.Title ? "Continue"
+                    : isAwaitingOverwriteConfirmation ? "Confirm Replace Save" : "Save Game");
+            }
+            if (cancelButton != null) cancelButton.gameObject.SetActive(isAwaitingOverwriteConfirmation && isReady);
+            if (recoverGameButton != null) recoverGameButton.gameObject.SetActive(isReady && appRoot.Game.Status == StorageStatus.Recovered);
+            if (recoverSettingsButton != null) recoverSettingsButton.gameObject.SetActive(isReady && appRoot.Settings.Status == StorageStatus.Recovered);
+            foreach (var button in new[] { volumeButton, fullscreenButton, languageButton })
+                if (button != null) button.interactable = isReady && appRoot.Settings.CanSave;
+            if (isReady && screen != StarterScreenKind.Boot)
+            {
+                var settings = appRoot.Settings.Current;
+                SetLabel(volumeButton, $"Volume: {settings.masterVolume:P0}");
+                SetLabel(fullscreenButton, "Fullscreen: " + (settings.fullscreen ? "On" : "Off"));
+                SetLabel(languageButton, "Language: " + settings.language);
+            }
 
             string message;
-            if (root == null)
+            if (appRoot == null)
                 message = screen == StarterScreenKind.Boot ? "Preparing..." : "Open 00_StartScene to begin.";
-            else if (root.State == AppState.Failed)
-                message = Debug.isDebugBuild ? $"Could not start.\n{root.Failure}" : "Could not start. Please restart the application.";
-            else if (!ready)
-                message = root.CurrentStep + "...";
+            else if (appRoot.State == AppState.Failed)
+                message = Debug.isDebugBuild ? $"Could not start.\n{appRoot.Failure}" : "Could not start. Please restart the application.";
+            else if (!isReady)
+                message = appRoot.CurrentStep + "...";
             else
-                message = screen == StarterScreenKind.Main ? "Your game starts here." : "Ready when you are.";
+            {
+                message = screen == StarterScreenKind.Main && appRoot.Game.Current != null
+                    ? "Session: " + appRoot.Game.Current.SessionId.Substring(0, 8) : "Ready when you are.";
+                if (!string.IsNullOrEmpty(appRoot.StorageMessage)) message += "\n" + appRoot.StorageMessage;
+            }
 
             if (status != null && status.text != message)
                 status.text = message;
         }
 
-        /// <summary>Title에서는 Main 진입을, Main에서는 Title 복귀를 앱 루트에 요청합니다.</summary>
-        private void OnAction()
+        private static void SetLabel(Button button, string labelText)
         {
-            var root = AppRoot.Instance;
-            if (root == null)
+            if (button == null) return;
+            var label = button.GetComponentInChildren<Text>();
+            if (label != null && label.text != labelText) label.text = labelText;
+        }
+
+        private void OnSecondaryButtonClicked()
+        {
+            var appRoot = AppRoot.Instance;
+            if (appRoot == null) return;
+            if (screen == StarterScreenKind.Title) appRoot.TryContinueGame();
+            else
+            {
+                var isSaved = appRoot.TrySaveGame(isAwaitingOverwriteConfirmation);
+                isAwaitingOverwriteConfirmation = !isSaved && !isAwaitingOverwriteConfirmation && appRoot.Game.RequiresReplacement;
+            }
+            hasDisplayedState = false;
+            Refresh();
+        }
+
+        private void OnCancelButtonClicked() { isAwaitingOverwriteConfirmation = false; hasDisplayedState = false; Refresh(); }
+        private void OnVolumeButtonClicked() => ChangeSettings(0);
+        private void OnFullscreenButtonClicked() => ChangeSettings(1);
+        private void OnLanguageButtonClicked() => ChangeSettings(2);
+        private void ChangeSettings(int settingIndex)
+        {
+            var appRoot = AppRoot.Instance;
+            if (appRoot == null || appRoot.Settings == null) return;
+            var settings = appRoot.Settings.Current;
+            if (settingIndex == 0) settings.masterVolume = settings.masterVolume >= 1 ? 0 : Mathf.Min(1, settings.masterVolume + 0.25f);
+            if (settingIndex == 1) settings.fullscreen = !settings.fullscreen;
+            if (settingIndex == 2) settings.language = settings.language == "en" ? "ko" : "en";
+            appRoot.TrySaveSettings(settings);
+            hasDisplayedState = false;
+            Refresh();
+        }
+        private void OnRecoverGameButtonClicked() { AppRoot.Instance?.TryRecoverBackup(false); hasDisplayedState = false; Refresh(); }
+        private void OnRecoverSettingsButtonClicked() { AppRoot.Instance?.TryRecoverBackup(true); hasDisplayedState = false; Refresh(); }
+
+        /// <summary>Title에서는 Main 진입을, Main에서는 Title 복귀를 앱 루트에 요청합니다.</summary>
+        private void OnActionButtonClicked()
+        {
+            var appRoot = AppRoot.Instance;
+            if (appRoot == null)
                 return;
             if (screen == StarterScreenKind.Title)
-                root.TryEnterMain();
+                appRoot.TryEnterMain();
             else if (screen == StarterScreenKind.Main)
-                root.TryReturnToTitle();
+                appRoot.TryReturnToTitle();
         }
 
         /// <summary>화면 비활성화 시 버튼 리스너를 해제해 재활성화에 따른 중복 구독을 막습니다.</summary>
         private void OnDisable()
         {
             if (actionButton != null)
-                actionButton.onClick.RemoveListener(OnAction);
+                actionButton.onClick.RemoveListener(OnActionButtonClicked);
+            if (secondaryButton != null) secondaryButton.onClick.RemoveListener(OnSecondaryButtonClicked);
+            if (cancelButton != null) cancelButton.onClick.RemoveListener(OnCancelButtonClicked);
+            if (volumeButton != null) volumeButton.onClick.RemoveListener(OnVolumeButtonClicked);
+            if (fullscreenButton != null) fullscreenButton.onClick.RemoveListener(OnFullscreenButtonClicked);
+            if (languageButton != null) languageButton.onClick.RemoveListener(OnLanguageButtonClicked);
+            if (recoverGameButton != null) recoverGameButton.onClick.RemoveListener(OnRecoverGameButtonClicked);
+            if (recoverSettingsButton != null) recoverSettingsButton.onClick.RemoveListener(OnRecoverSettingsButtonClicked);
+            isAwaitingOverwriteConfirmation = false;
         }
     }
 }

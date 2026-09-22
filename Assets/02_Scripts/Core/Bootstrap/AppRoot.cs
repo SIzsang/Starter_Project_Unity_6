@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -28,9 +29,20 @@ namespace StarterProject
         /// <summary>실패 시 사용자 또는 개발자 화면에 전달할 오류 메시지입니다.</summary>
         public string Failure { get; private set; } = string.Empty;
 
-        private CancellationToken lifetime;
-        private string titleScene;
-        private string mainScene;
+        private CancellationToken lifetimeToken;
+        private string titleScenePath;
+        private string mainScenePath;
+        public SettingsService Settings { get; private set; }
+        public GameSessionService Game { get; private set; }
+        public string StorageMessage { get; private set; } = "";
+        private ITextFileStore fileStore;
+
+        /// <summary>초기화 전에 저장소를 주입합니다. 테스트는 실제 사용자 파일과 분리된 경로를 사용합니다.</summary>
+        public void ConfigureStorage(ITextFileStore fileStore)
+        {
+            if (State != AppState.NotStarted) throw new InvalidOperationException("Configure storage before Begin.");
+            this.fileStore = fileStore ?? throw new ArgumentNullException(nameof(fileStore));
+        }
 
         /// <summary>
         /// Enter Play Mode에서 도메인 재로드가 꺼져 있어도 이전 세션의 정적 참조가 남지 않게 초기화합니다.
@@ -50,7 +62,7 @@ namespace StarterProject
                 return;
             }
             Instance = this;
-            lifetime = destroyCancellationToken;
+            lifetimeToken = destroyCancellationToken;
             DontDestroyOnLoad(gameObject);
         }
 
@@ -62,7 +74,7 @@ namespace StarterProject
         /// <returns>초기화 또는 Title 복귀 요청을 접수했으면 <see langword="true"/>입니다.</returns>
         public bool Begin(AppConfig config)
         {
-            if (Instance != this || lifetime.IsCancellationRequested)
+            if (Instance != this || lifetimeToken.IsCancellationRequested)
                 return false;
             if (State == AppState.Ready)
                 return TryReturnToTitle();
@@ -84,50 +96,106 @@ namespace StarterProject
             try
             {
                 CurrentStep = "Checking startup configuration";
-                await Awaitable.NextFrameAsync(lifetime);
+                await Awaitable.NextFrameAsync(lifetimeToken);
                 if (config == null)
                     throw new InvalidOperationException("AppBootstrap requires an AppConfig asset.");
                 config.Validate();
                 // 검증과 복사 사이에 프레임을 넘기지 않아, 검증한 값만 실행에 사용합니다.
-                titleScene = config.TitleScene;
-                mainScene = config.MainScene;
+                titleScenePath = config.TitleScene;
+                mainScenePath = config.MainScene;
+                var defaultSettings = config.CreateDefaultSettings();
+
+                CurrentStep = "Loading user settings and save information";
+                fileStore = fileStore ?? new JsonFileStore(Path.Combine(Application.persistentDataPath, "StarterData"));
+                Settings = new SettingsService(defaultSettings, fileStore);
+                Game = new GameSessionService(fileStore);
+                StorageMessage = string.Join("\n", new[] { Settings.Message, Game.Message }).Trim();
 
                 CurrentStep = "Preparing scene navigation";
-                await Awaitable.NextFrameAsync(lifetime);
+                await Awaitable.NextFrameAsync(lifetimeToken);
 
-                // Future required services must finish here before publishing Ready.
                 State = AppState.Ready;
                 CurrentStep = "Ready";
                 TryReturnToTitle();
             }
-            catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
+            catch (OperationCanceledException) when (lifetimeToken.IsCancellationRequested) { }
             catch (Exception exception) { Fail(exception); }
         }
 
         /// <summary>Ready 상태일 때 Main 씬 전환을 요청합니다.</summary>
         /// <returns>전환을 시작했으면 <see langword="true"/>입니다.</returns>
-        public bool TryEnterMain() => TryNavigate(mainScene);
+        public bool TryEnterMain() => TryStartNewGame();
+
+        public bool TryStartNewGame()
+        {
+            if (!CanStartGame()) return false;
+            Game.StartNew();
+            StorageMessage = Game.Message;
+            return TryNavigate(mainScenePath);
+        }
+
+        public bool TryContinueGame()
+        {
+            if (!CanStartGame()) return false;
+            var isLoaded = Game.TryContinue();
+            StorageMessage = Game.Message;
+            return isLoaded && TryNavigate(mainScenePath);
+        }
+
+        private bool CanStartGame() => Instance == this && State == AppState.Ready && !IsTransitioning
+            && !lifetimeToken.IsCancellationRequested && SceneManager.GetActiveScene().path == titleScenePath;
+
+        public bool TrySaveGame(bool replaceExisting = false)
+        {
+            if (Instance != this || State != AppState.Ready || IsTransitioning
+                || SceneManager.GetActiveScene().path != mainScenePath) return false;
+            var isSaved = Game.TrySave(replaceExisting: replaceExisting);
+            StorageMessage = Game.Message;
+            return isSaved;
+        }
+
+        public bool TrySaveSettings(UserSettings settings)
+        {
+            if (Instance != this || State != AppState.Ready || IsTransitioning) return false;
+            var isSaved = Settings.TryApplyAndSave(settings);
+            StorageMessage = Settings.Message;
+            return isSaved;
+        }
+
+        public bool TryRecoverBackup(bool recoverSettings)
+        {
+            if (Instance != this || State != AppState.Ready || IsTransitioning) return false;
+            var isRecovered = recoverSettings ? Settings.TryRecoverBackup() : Game.TryRecoverBackup();
+            StorageMessage = recoverSettings ? Settings.Message : Game.Message;
+            return isRecovered;
+        }
 
         /// <summary>Ready 상태일 때 Title 씬 전환을 요청합니다.</summary>
         /// <returns>전환을 시작했으면 <see langword="true"/>입니다.</returns>
-        public bool TryReturnToTitle() => TryNavigate(titleScene);
+        public bool TryReturnToTitle()
+        {
+            if (!TryNavigate(titleScenePath)) return false;
+            Game?.EndSession();
+            Game?.RefreshSave();
+            return true;
+        }
 
         /// <summary>
         /// 앱 상태, 중복 요청, 수명과 현재 씬을 확인하고 비동기 로드 전에 전환 잠금을 획득합니다.
         /// </summary>
-        /// <param name="path">이동할 씬의 프로젝트 상대 경로입니다.</param>
+        /// <param name="scenePath">이동할 씬의 프로젝트 상대 경로입니다.</param>
         /// <returns>씬 로드 요청을 새로 시작했으면 <see langword="true"/>입니다.</returns>
-        private bool TryNavigate(string path)
+        private bool TryNavigate(string scenePath)
         {
             if (Instance != this || State != AppState.Ready || IsTransitioning
-                || lifetime.IsCancellationRequested)
+                || lifetimeToken.IsCancellationRequested)
                 return false;
-            if (SceneManager.GetActiveScene().path == path)
+            if (SceneManager.GetActiveScene().path == scenePath)
                 return false;
 
             // Acquire before starting async work so repeated button presses cannot overlap.
             IsTransitioning = true;
-            Navigate(path);
+            Navigate(scenePath);
             return true;
         }
 
@@ -135,24 +203,24 @@ namespace StarterProject
         /// 단일 모드로 씬을 비동기 로드합니다. Unity 씬 로드는 시작 후 취소할 수 없으므로
         /// 완료될 때까지 전환 잠금을 유지하고 오류는 실패 상태로 변환합니다.
         /// </summary>
-        /// <param name="path">빌드 씬 목록에 포함된 대상 씬 경로입니다.</param>
-        private async void Navigate(string path)
+        /// <param name="scenePath">빌드 씬 목록에 포함된 대상 씬 경로입니다.</param>
+        private async void Navigate(string scenePath)
         {
             try
             {
                 CurrentStep = "Loading";
-                if (string.IsNullOrEmpty(path) || SceneUtility.GetBuildIndexByScenePath(path) < 0)
-                    throw new InvalidOperationException($"Cannot load a scene outside the build scene list: {path}");
-                var operation = SceneManager.LoadSceneAsync(path, LoadSceneMode.Single);
-                if (operation == null)
-                    throw new InvalidOperationException($"Scene loading could not start: {path}");
+                if (string.IsNullOrEmpty(scenePath) || SceneUtility.GetBuildIndexByScenePath(scenePath) < 0)
+                    throw new InvalidOperationException($"Cannot load a scene outside the build scene list: {scenePath}");
+                var loadOperation = SceneManager.LoadSceneAsync(scenePath, LoadSceneMode.Single);
+                if (loadOperation == null)
+                    throw new InvalidOperationException($"Scene loading could not start: {scenePath}");
 
                 // Unity scene loads cannot be cancelled. Hold the gate until the load completes.
-                await operation;
-                lifetime.ThrowIfCancellationRequested();
+                await loadOperation;
+                lifetimeToken.ThrowIfCancellationRequested();
                 CurrentStep = "Ready";
             }
-            catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
+            catch (OperationCanceledException) when (lifetimeToken.IsCancellationRequested) { }
             catch (Exception exception) { Fail(exception); }
             finally { IsTransitioning = false; }
         }
@@ -176,7 +244,9 @@ namespace StarterProject
             if (Instance != this)
                 return;
             Instance = null;
-            // Services added later must release their resources here in reverse startup order.
+            Game = null;
+            Settings = null;
+            fileStore = null;
         }
     }
 }

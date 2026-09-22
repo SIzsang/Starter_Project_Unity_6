@@ -1,8 +1,8 @@
 # Starter Project — Unity 6
 
 새 게임을 시작할 때 복제해서 사용하는 Unity 공통 기반 프로젝트입니다.
-현재 작업 범위는 **로드맵 1·2단계: 설계 기준과 Bootstrap → Title → Main**입니다.
-템플릿 전체는 아직 완성되지 않았으며, 사용자 설정·게임 저장은 다음 단계입니다.
+현재 작업 범위는 **로드맵 1~4단계: Bootstrap·사용자 설정·게임 저장 기반**입니다.
+템플릿 전체는 아직 완성되지 않았으며, 실제 오디오·화면·입력 연결은 5단계입니다.
 
 ## 방향
 
@@ -23,11 +23,12 @@
 ## 실행
 
 `Assets/01_Scenes/Boot/00_StartScene.unity`를 열고 Play합니다.
-초기화가 완료되면 Title이 열리며, `Start Game`으로 Main에 진입합니다.
-Main의 `Back to Title`로 돌아올 수 있습니다.
+초기화가 완료되면 Title이 열리며, `New Game`으로 Main에 진입합니다.
+Main에서 `Save Game`으로 저장하고 `Back to Title` → `Continue`로 복원합니다.
+설정 버튼은 값을 변경·저장하며 실제 시스템 적용은 5단계에서 연결합니다.
 설정 에셋은 `Assets/04_Data/Config/SO_AppConfig.asset`입니다.
 
-2026-09-09 코드 검토 후 PlayMode 10개·EditMode 3개 테스트가 통과했습니다. 검토 내용과 재현 방법은 [Bootstrap 사용 가이드](Docs/BOOTSTRAP.md)에 기록합니다.
+설정·저장 정책과 최신 검증 결과는 [3·4단계 사용 가이드](Docs/SETTINGS_AND_SAVE.md)에 기록합니다.
 
 Title/Main의 직접 Play 자동 지원은 6단계입니다. 현재는 Boot 실행을 안내하고 시작 버튼을 막습니다.
 
@@ -37,6 +38,7 @@ Title/Main의 직접 Play 자동 지원은 6단계입니다. 현재는 Boot 실�
 ## 문서
 
 - [Bootstrap 사용 가이드](Docs/BOOTSTRAP.md): 실행·확장 위치와 검증 결과
+- [설정·게임 저장 사용 가이드](Docs/SETTINGS_AND_SAVE.md): 3·4단계 사용법·버전·복구·게임별 확장
 - [개발 로드맵](Docs/ROADMAP.md): 8단계 작업 순서와 완료 기준
 - [초기화·데이터 관리 설계](Docs/INITIAL_SETTING.md): 구현 기준, 데이터 분담과 오류 처리
 - [템플릿 완성·복제 체크리스트](Docs/TEMPLATE_CHECKLIST.md): 완료 조건과 새 프로젝트에서 바꿀 항목

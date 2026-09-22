@@ -82,6 +82,7 @@ namespace StarterProject.Editor
                 throw new InvalidOperationException("AppConfig could not be loaded after opening the scene.");
             if (scene.GetRootGameObjects().Any(go => go.GetComponentInChildren<StarterScreen>(true) != null))
             {
+                ConfigurePersistenceScreen(UnityEngine.Object.FindFirstObjectByType<StarterScreen>(), kind);
                 ConfigureInput();
                 if (kind == StarterScreenKind.Boot)
                     ConfigureBootstrap(config);
@@ -139,11 +140,61 @@ namespace StarterProject.Editor
             serialized.FindProperty("actionButton").objectReferenceValue = button;
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
+            ConfigurePersistenceScreen(view, kind);
+
             ConfigureInput();
             UnityEngine.Object.FindFirstObjectByType<EventSystem>().firstSelectedGameObject = button != null ? button.gameObject : null;
             if (kind == StarterScreenKind.Boot)
                 ConfigureBootstrap(config);
             EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>기존 예제 화면에 설정·저장 버튼을 중복 없이 연결합니다.</summary>
+        private static void ConfigurePersistenceScreen(StarterScreen screenView, StarterScreenKind kind)
+        {
+            if (kind == StarterScreenKind.Boot) return;
+            var serializedScreen = new SerializedObject(screenView);
+            var actionButton = serializedScreen.FindProperty("actionButton").objectReferenceValue as Button;
+            if (actionButton != null)
+            {
+                Position(actionButton.GetComponent<RectTransform>(), new Vector2(-175, -145), new Vector2(320, 54));
+                actionButton.GetComponentInChildren<Text>().text = kind == StarterScreenKind.Title ? "New Game" : "Back to Title";
+            }
+            var statusText = serializedScreen.FindProperty("status").objectReferenceValue as Text;
+            if (statusText != null)
+            {
+                Position(statusText.rectTransform, new Vector2(0, -20), new Vector2(1080, 130));
+                statusText.fontSize = 19;
+            }
+            var footerTransform = screenView.transform.Find("Footer");
+            if (footerTransform != null)
+            {
+                Position(footerTransform.GetComponent<RectTransform>(), new Vector2(0, -335), new Vector2(1100, 28));
+                footerTransform.GetComponent<Text>().text = "SETTINGS SAVE DEMO  /  AUDIO, DISPLAY AND LOCALIZATION CONNECT IN STEP 5";
+            }
+            ConfigureButton("secondaryButton", "Secondary Action", kind == StarterScreenKind.Title ? "Continue" : "Save Game", 175, -145, 320);
+            ConfigureButton("cancelButton", "Cancel Replace", "Cancel", 0, -90, 180);
+            ConfigureButton("volumeButton", "Volume", "Volume: 100%", -350, -220, 320);
+            ConfigureButton("fullscreenButton", "Fullscreen", "Fullscreen: On", 0, -220, 320);
+            ConfigureButton("languageButton", "Language", "Language: en", 350, -220, 320);
+            ConfigureButton("recoverGameButton", "Recover Game", "Recover Game Backup", -260, -290, 460);
+            ConfigureButton("recoverSettingsButton", "Recover Settings", "Recover Settings Backup", 260, -290, 460);
+            serializedScreen.ApplyModifiedPropertiesWithoutUndo();
+
+            void ConfigureButton(string propertyName, string objectName, string buttonText, float x, float y, float width)
+            {
+                var button = serializedScreen.FindProperty(propertyName).objectReferenceValue as Button;
+                if (button == null)
+                {
+                    var buttonImage = Panel(screenView.transform, objectName, Accent);
+                    button = buttonImage.gameObject.AddComponent<Button>();
+                    button.targetGraphic = buttonImage;
+                    var buttonLabel = Label(buttonImage.transform, "Label", buttonText, 20, Background, Vector2.zero, new Vector2(width, 48));
+                    Stretch(buttonLabel.rectTransform);
+                    serializedScreen.FindProperty(propertyName).objectReferenceValue = button;
+                }
+                Position(button.GetComponent<RectTransform>(), new Vector2(x, y), new Vector2(width, 48));
+            }
         }
 
         /// <summary>Boot 씬의 <see cref="AppBootstrap"/>을 찾거나 만들고 AppConfig 참조를 연결합니다.</summary>

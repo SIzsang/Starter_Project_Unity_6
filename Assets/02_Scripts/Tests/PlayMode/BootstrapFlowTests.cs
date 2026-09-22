@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using StarterProject.UI;
@@ -18,6 +19,7 @@ namespace StarterProject.Tests
     /// </summary>
     public sealed class BootstrapFlowTests
     {
+        private string testDirectory;
         private const string Boot = "Assets/01_Scenes/Boot/00_StartScene.unity";
         private const string Title = "Assets/01_Scenes/Main/01_Title.unity";
         private const string Main = "Assets/01_Scenes/Main/02_MainScene.unity";
@@ -26,6 +28,7 @@ namespace StarterProject.Tests
         [UnitySetUp]
         public IEnumerator SetUp()
         {
+            testDirectory = Path.Combine(Application.temporaryCachePath, "StarterTests-" + Guid.NewGuid().ToString("N"));
             if (AppRoot.Instance != null)
                 Object.Destroy(AppRoot.Instance.gameObject);
             yield return null;
@@ -42,18 +45,19 @@ namespace StarterProject.Tests
             if (AppRoot.Instance != null)
                 Object.Destroy(AppRoot.Instance.gameObject);
             yield return null;
+            if (Directory.Exists(testDirectory)) Directory.Delete(testDirectory, true);
         }
 
         /// <summary>전체 왕복 흐름과 연타 차단, 공통 루트·씬 UI의 단일 인스턴스를 검증합니다.</summary>
         [UnityTest]
         public IEnumerator Boot_Title_Main_Return_PreservesRootAndRejectsRepeatedClicks()
         {
-            yield return SceneManager.LoadSceneAsync(Boot);
+            yield return LoadBoot();
             yield return WaitForScene(Title);
             var root = AppRoot.Instance;
             Assert.That(root.State, Is.EqualTo(AppState.Ready));
             Assert.That(Object.FindObjectsByType<AppRoot>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
-            var button = Object.FindFirstObjectByType<Button>();
+            var button = FindActionButton();
             Assert.That(button.interactable, Is.True);
             Assert.That(EventSystem.current, Is.Not.Null);
             Assert.That(EventSystem.current.currentInputModule, Is.Not.Null);
@@ -65,7 +69,7 @@ namespace StarterProject.Tests
             Assert.That(AppRoot.Instance, Is.SameAs(root));
             Assert.That(Object.FindObjectsByType<StarterScreen>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
             Assert.That(Object.FindObjectsByType<EventSystem>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
-            Object.FindFirstObjectByType<Button>().onClick.Invoke();
+            FindActionButton().onClick.Invoke();
             yield return WaitForScene(Title);
             Assert.That(AppRoot.Instance, Is.SameAs(root));
         }
@@ -74,10 +78,10 @@ namespace StarterProject.Tests
         [UnityTest]
         public IEnumerator ReturningToBootReusesReadyRoot()
         {
-            yield return SceneManager.LoadSceneAsync(Boot);
+            yield return LoadBoot();
             yield return WaitForScene(Title);
             var root = AppRoot.Instance;
-            yield return SceneManager.LoadSceneAsync(Boot);
+            yield return LoadBoot();
             yield return WaitForScene(Title);
             Assert.That(AppRoot.Instance, Is.SameAs(root));
             Assert.That(Object.FindObjectsByType<AppRoot>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
@@ -88,7 +92,7 @@ namespace StarterProject.Tests
         public IEnumerator MissingConfigFailsAndDoesNotEnterAnotherScene()
         {
             var originalScene = SceneManager.GetActiveScene();
-            var root = new GameObject("MissingConfigRoot").AddComponent<AppRoot>();
+            var root = CreateRoot("MissingConfigRoot");
             LogAssert.Expect(LogType.Error, "[Starter Project] AppBootstrap requires an AppConfig asset.");
             Assert.That(root.Begin(null), Is.True);
             Assert.That(root.State, Is.EqualTo(AppState.Initializing));
@@ -108,7 +112,7 @@ namespace StarterProject.Tests
             var originalScene = SceneManager.GetActiveScene();
             var config = ScriptableObject.CreateInstance<AppConfig>();
             JsonUtility.FromJsonOverwrite("{\"mainScene\":\"Assets/Missing.unity\"}", config);
-            var root = new GameObject("InvalidConfigRoot").AddComponent<AppRoot>();
+            var root = CreateRoot("InvalidConfigRoot");
             LogAssert.Expect(LogType.Error, "[Starter Project] Main scene is missing or disabled in the build scene list: Assets/Missing.unity");
             root.Begin(config);
             yield return WaitFor(() => root.State == AppState.Failed);
@@ -122,8 +126,8 @@ namespace StarterProject.Tests
         public IEnumerator DuplicateRootCannotStartAndDestroyingRootCancelsInitialization()
         {
             var config = ScriptableObject.CreateInstance<AppConfig>();
-            var root = new GameObject("Root").AddComponent<AppRoot>();
-            var duplicate = new GameObject("Duplicate").AddComponent<AppRoot>();
+            var root = CreateRoot("Root");
+            var duplicate = CreateRoot("Duplicate");
             Assert.That(duplicate.Begin(config), Is.False);
             root.Begin(config);
             Object.Destroy(root.gameObject);
@@ -141,7 +145,7 @@ namespace StarterProject.Tests
             yield return SceneManager.LoadSceneAsync(Main);
             yield return null;
             Assert.That(AppRoot.Instance, Is.Null);
-            Assert.That(Object.FindFirstObjectByType<Button>().interactable, Is.False);
+            Assert.That(FindActionButton().interactable, Is.False);
             Assert.That(Object.FindObjectsByType<Text>(FindObjectsSortMode.None).Any(t => t.text.Contains("00_StartScene")), Is.True);
         }
 
@@ -149,11 +153,11 @@ namespace StarterProject.Tests
         [UnityTest]
         public IEnumerator BootDisplaysFailureAndStaysOnBoot()
         {
-            var root = new GameObject("FailedRoot").AddComponent<AppRoot>();
+            var root = CreateRoot("FailedRoot");
             LogAssert.Expect(LogType.Error, "[Starter Project] AppBootstrap requires an AppConfig asset.");
             root.Begin(null);
             yield return WaitFor(() => root.State == AppState.Failed);
-            yield return SceneManager.LoadSceneAsync(Boot);
+            yield return LoadBoot();
             yield return null;
             Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(Boot));
             Assert.That(AppRoot.Instance, Is.SameAs(root));
@@ -168,7 +172,7 @@ namespace StarterProject.Tests
             var config = ScriptableObject.CreateInstance<AppConfig>();
             try
             {
-                var root = new GameObject("SnapshotRoot").AddComponent<AppRoot>();
+                var root = CreateRoot("SnapshotRoot");
                 root.Begin(config);
                 yield return WaitFor(() => root.CurrentStep == "Preparing scene navigation");
                 JsonUtility.FromJsonOverwrite("{\"mainScene\":\"Assets/Missing.unity\"}", config);
@@ -185,8 +189,8 @@ namespace StarterProject.Tests
         public IEnumerator ScreenRefreshesWhenRootChangesAndAfterReenable()
         {
             var view = Object.FindFirstObjectByType<StarterScreen>();
-            var button = Object.FindFirstObjectByType<Button>();
-            var root = new GameObject("ScreenTestRoot").AddComponent<AppRoot>();
+            var button = FindActionButton();
+            var root = CreateRoot("ScreenTestRoot");
             LogAssert.Expect(LogType.Error, "[Starter Project] AppBootstrap requires an AppConfig asset.");
             root.Begin(null);
             yield return WaitFor(() => root.State == AppState.Failed);
@@ -214,6 +218,113 @@ namespace StarterProject.Tests
             }
             finally { Object.DestroyImmediate(config); }
         }
+
+        [UnityTest]
+        public IEnumerator SettingsAndSavedGameSurviveAppRootRecreation()
+        {
+            yield return LoadBoot();
+            yield return WaitForScene(Title);
+            var root = AppRoot.Instance;
+            Assert.That(root.TrySaveSettings(new UserSettings { masterVolume = 0, fullscreen = false, language = "ko" }), Is.True);
+            Assert.That(root.TryContinueGame(), Is.False);
+            Assert.That(root.TryStartNewGame(), Is.True);
+            Assert.That(root.TryStartNewGame(), Is.False);
+            yield return WaitForScene(Main);
+            var session = root.Game.Current.SessionId;
+            Assert.That(root.TrySaveGame(), Is.True, root.StorageMessage);
+            Assert.That(root.TryReturnToTitle(), Is.True);
+            yield return WaitForScene(Title);
+            Assert.That(root.Game.Current, Is.Null);
+            Assert.That(GameObject.Find("Secondary Action").GetComponent<Button>().interactable, Is.True);
+            Object.Destroy(root.gameObject);
+            yield return null;
+            yield return LoadBoot();
+            yield return WaitForScene(Title);
+            root = AppRoot.Instance;
+            Assert.That(root.Settings.Current.masterVolume, Is.Zero);
+            Assert.That(root.Settings.Current.fullscreen, Is.False);
+            Assert.That(root.Settings.Current.language, Is.EqualTo("ko"));
+            GameObject.Find("Secondary Action").GetComponent<Button>().onClick.Invoke();
+            Assert.That(root.TryContinueGame(), Is.False);
+            yield return WaitForScene(Main);
+            Assert.That(root.Game.Current.SessionId, Is.EqualTo(session));
+        }
+
+        [UnityTest]
+        public IEnumerator SaveButtonRequiresConfirmationBeforeReplacingAnotherSession()
+        {
+            yield return LoadBoot();
+            yield return WaitForScene(Title);
+            var root = AppRoot.Instance;
+            root.TryStartNewGame();
+            yield return WaitForScene(Main);
+            Assert.That(root.TrySaveGame(), Is.True);
+            var original = File.ReadAllText(Path.Combine(testDirectory, GameSessionService.FileName));
+            root.TryReturnToTitle();
+            yield return WaitForScene(Title);
+            root.TryStartNewGame();
+            yield return WaitForScene(Main);
+            var save = GameObject.Find("Secondary Action").GetComponent<Button>();
+            save.onClick.Invoke();
+            Assert.That(save.GetComponentInChildren<Text>().text, Is.EqualTo("Confirm Replace Save"));
+            Assert.That(File.ReadAllText(Path.Combine(testDirectory, GameSessionService.FileName)), Is.EqualTo(original));
+            GameObject.Find("Cancel Replace").GetComponent<Button>().onClick.Invoke();
+            Assert.That(save.GetComponentInChildren<Text>().text, Is.EqualTo("Save Game"));
+            save.onClick.Invoke();
+            save.onClick.Invoke();
+            Assert.That(File.ReadAllText(Path.Combine(testDirectory, GameSessionService.FileName)), Is.Not.EqualTo(original));
+            Assert.That(File.ReadAllText(Path.Combine(testDirectory, GameSessionService.FileName + ".bak")), Is.EqualTo(original));
+        }
+
+        [UnityTest]
+        public IEnumerator CorruptSettingsAndFutureSaveReachTitleWithProtectedFiles()
+        {
+            Directory.CreateDirectory(testDirectory);
+            File.WriteAllText(Path.Combine(testDirectory, SettingsService.FileName), "broken");
+            File.WriteAllText(Path.Combine(testDirectory, GameSessionService.FileName), "{\"schemaVersion\":999}");
+            yield return LoadBoot();
+            yield return WaitForScene(Title);
+            var root = AppRoot.Instance;
+            Assert.That(root.State, Is.EqualTo(AppState.Ready));
+            Assert.That(root.Settings.Status, Is.EqualTo(StorageStatus.Invalid));
+            Assert.That(root.Game.Status, Is.EqualTo(StorageStatus.UnsupportedVersion));
+            Assert.That(GameObject.Find("Secondary Action").GetComponent<Button>().interactable, Is.False);
+            Assert.That(root.TryContinueGame(), Is.False);
+            root.TryStartNewGame();
+            yield return WaitForScene(Main);
+            Assert.That(root.TrySaveGame(true), Is.False);
+            Assert.That(File.ReadAllText(Path.Combine(testDirectory, GameSessionService.FileName)), Is.EqualTo("{\"schemaVersion\":999}"));
+        }
+
+        [UnityTest]
+        public IEnumerator SettingsButtonsPersistValidZeroAndFalse()
+        {
+            yield return LoadBoot();
+            yield return WaitForScene(Title);
+            GameObject.Find("Volume").GetComponent<Button>().onClick.Invoke();
+            GameObject.Find("Fullscreen").GetComponent<Button>().onClick.Invoke();
+            Assert.That(AppRoot.Instance.Settings.Current.masterVolume, Is.Zero);
+            Assert.That(AppRoot.Instance.Settings.Current.fullscreen, Is.False);
+            var restart = new SettingsService(new UserSettings(), new JsonFileStore(testDirectory));
+            Assert.That(restart.Current.masterVolume, Is.Zero);
+            Assert.That(restart.Current.fullscreen, Is.False);
+        }
+
+        private AppRoot CreateRoot(string name)
+        {
+            var root = new GameObject(name).AddComponent<AppRoot>();
+            root.ConfigureStorage(new JsonFileStore(testDirectory));
+            return root;
+        }
+
+        private IEnumerator LoadBoot()
+        {
+            if (AppRoot.Instance == null) CreateRoot("TestRoot");
+            yield return SceneManager.LoadSceneAsync(Boot);
+        }
+
+        private static Button FindActionButton() => Object.FindObjectsByType<Button>(FindObjectsSortMode.None)
+            .Single(b => b.name == "Start Game" || b.name == "Back to Title");
 
         /// <summary>대상 씬이 활성화되고 AppRoot의 전환 잠금이 풀릴 때까지 기다립니다.</summary>
         /// <param name="path">기다릴 씬의 프로젝트 상대 경로입니다.</param>

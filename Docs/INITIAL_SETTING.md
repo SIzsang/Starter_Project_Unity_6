@@ -1,6 +1,6 @@
 # Initial Setting — 초기화와 데이터 관리 설계
 
-최종 수정: 2026-09-09 · 상태: 1단계 기준 확정 / 2단계 구현·코드 검토·자동 테스트 완료
+최종 수정: 2026-09-10 · 상태: 1~4단계 구현 / 설정·게임 저장 기반 연결
 
 ## 1. 확정 범위와 제안 구분
 
@@ -8,7 +8,7 @@
 
 - 앞으로 만들 게임에서 재사용할 Starter Project를 만든다.
 - 오프라인 게임 공통 기반으로 시작하고 온라인 기능은 필요할 때 추가한다.
-- 설계 이후 개발 로드맵의 1·2단계를 진행한다.
+- 개발 로드맵의 1·2단계에 이어 3·4단계를 진행한다.
 - 현재 변경된 폴더 구조를 바탕으로 작업한다.
 
 **이번 구현의 기준**
@@ -22,7 +22,7 @@
 - 초기화 순서는 코드로 명시하며 Script Execution Order 설정에 의존하지 않는다.
 - 직접적인 Title/Main 실행은 시작 버튼을 막고 Boot 실행을 안내한다. 자동 Boot 경유는 로드맵 6단계다.
 
-플랫폼·UI는 사용자의 설명 요청을 바탕으로 현재 프로젝트에 맞춰 채택한 시작 기준이며, 모든 향후 게임의 플랫폼을 제한하는 정책이 아니다. 세부 저장 정책과 템플릿 배포는 해당 단계에서 검증·구현한다.
+플랫폼·UI는 사용자의 설명 요청을 바탕으로 현재 프로젝트에 맞춰 채택한 시작 기준이며, 모든 향후 게임의 플랫폼을 제한하는 정책이 아니다. 설정·저장 정책 구현은 [3·4단계 가이드](SETTINGS_AND_SAVE.md)를 따른다. 템플릿 배포는 8단계다.
 
 공통 기반의 목표는 게임을 만들기 전에 반복하는 작업을 줄이는 것이다. 전투, 인벤토리, 퀘스트, 스테이지 같은 게임 규칙까지 미리 프레임워크로 만들지는 않는다.
 
@@ -55,7 +55,7 @@ SO는 Unity 안에서 편집하고 에셋을 연결하는 데 사용하고, JSON
 | 실행 중 상태 | 일반 C# 객체 | 현재 상태와 설정 복사본 | 메모리에서 변경하고 필요한 값만 저장 |
 | 대량 밸런스 표·외부 공급 데이터 | JSON/CSV 검토 | 향후 테이블·서버 데이터 | 필요가 생긴 시점에 도입 |
 
-`04_Data/Config/SO_AppConfig.asset`에는 현재 Boot·Title·Main 씬 경로를 저장한다. 사용자 설정과 콘텐츠 관련 폴더·데이터는 해당 단계에서 추가한다.
+`04_Data/Config/SO_AppConfig.asset`에는 Boot·Title·Main 씬 경로와 사용자 설정 기본값을 저장한다. 실행 데이터는 `Core/Settings`, `Core/Save`, `Core/Persistence`에서 관리하며 콘텐츠는 게임별로 추가한다.
 
 **대안 비교**
 
@@ -73,11 +73,11 @@ SO는 Unity 안에서 편집하고 에셋을 연결하는 데 사용하고, JSON
 
 SO는 공유 원본 데이터로 취급하고 플레이 중 변경은 실행용 객체에서 처리한다. 여러 소비자가 SO 하나를 공유할 수 있으므로 실행 상태를 원본에 섞지 않는 것이 이 프로젝트의 설계 원칙이다. [Unity ScriptableObject 문서](https://docs.unity3d.com/6000.3/Documentation/Manual/class-ScriptableObject.html)
 
-JSON 직렬화는 단순한 저장용 클래스를 사용하는 `JsonUtility`를 첫 후보로 한다. 필드 기반이며 Dictionary를 직접 지원하지 않으므로, 딕셔너리·복잡한 다형성·외부 JSON 구조가 필요해지면 전용 JSON 라이브러리를 검토한다. 직렬화 가능한 타입과 게임 도메인 모델을 반드시 동일하게 만들 필요는 없다. [Unity JSON 문서](https://docs.unity3d.com/6000.3/Documentation/Manual/json-serialization.html)
+초기 후보는 `JsonUtility`였으며, 3·4단계에서는 누락 필드·잘못된 자료형·중복 키와 게임별 payload를 명확히 검사하기 위해 Unity 공식 Newtonsoft JSON 3.2.2를 채택했다. `JObject`에서 허용된 필드만 읽으며 저장 모델과 게임 도메인 모델을 분리한다. [Unity JSON 패키지 문서](https://docs.unity3d.com/Packages/com.unity.nuget.newtonsoft-json@3.2/manual/index.html)
 
 ## 4. 초기화 순서
 
-아래 다이어그램은 사용자 설정과 게임 저장까지 연결할 최종 목표다. 현재 2단계는 AppConfig·빌드 씬 검증 → 씬 경로 스냅샷 → Ready → Title → Main이다.
+아래 다이어그램은 공통 기능까지 연결할 최종 목표다. 3·4단계는 사용자 설정 로드·검증·저장과 게임 세션 시작·복원까지 구현했다. 실제 오디오·화면·입력 시스템 적용은 5단계다.
 
 Boot 씬의 단일 진입점이 초기화 순서를 명시적으로 실행한다. 각 Manager가 서로의 `Awake` 실행을 가정하지 않는다. Unity는 서로 다른 GameObject 사이의 Awake 순서를 보장하지 않는다. [Unity Awake 문서](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/MonoBehaviour.Awake.html)
 
@@ -115,7 +115,7 @@ flowchart TD
 
 ## 5. 최소 구성과 책임 제안
 
-AppBootstrap·AppRoot·AppConfig·StarterScreen은 현재 구현 타입이다. 설정 서비스와 저장소는 향후 구현할 책임이다.
+AppBootstrap·AppRoot·AppConfig·StarterScreen·SettingsService·GameSessionService·JsonRepository·JsonFileStore는 현재 구현 타입이다. 실제 게임 상태와 payload 검증은 Gameplay에서 확장한다.
 
 | 구성 | 책임 | 맡기지 않을 일 |
 | --- | --- | --- |
@@ -167,7 +167,7 @@ JSON은 데이터 표현 형식이고 SO는 Unity 데이터 에셋이다. 둘 �
 
 | 항목 | 추천 출발점 | 상태 |
 | --- | --- | --- |
-| SO / JSON 분담 | 기본값·참조는 SO, 사용자 설정·진행 저장은 JSON | 기준 확정; JSON은 3·4단계 |
+| SO / JSON 분담 | 기본값·참조는 SO, 사용자 설정·진행 저장은 JSON | 3·4단계 구현 |
 | 초기화 진입점 | Boot 씬 + 명시적인 순차 초기화 | 구현 |
 | 첫 지원 플랫폼 | Windows PC에서 기준 검증, 모바일·Web은 요구에 따라 추가 | 기준 확정 |
 | 화면 UI | uGUI + Input System UI | 기준 확정 |
@@ -176,4 +176,4 @@ JSON은 데이터 표현 형식이고 SO는 Unity 데이터 에셋이다. 둘 �
 | 템플릿 배포 | GitHub Template Repository부터 시작 | 제안 |
 | 온라인·Addressables·DI | 실제 필요가 생길 때 추가 | 제안 |
 
-1·2단계 검증 이후 다음 기능 개발은 **3단계: 기본 설정·사용자 설정**이다.
+3·4단계의 사용·확장·검증은 [설정·게임 저장 가이드](SETTINGS_AND_SAVE.md)를 따른다. 다음 기능 개발은 **5단계: 최소 공통 기능 연결**이다.

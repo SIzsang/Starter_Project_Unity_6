@@ -5,7 +5,7 @@
 1. Unity 6000.3.16f1에서 프로젝트를 연다.
 2. `Assets/01_Scenes/Boot/00_StartScene.unity`를 연다.
 3. Play하면 설정 검증 후 Title로 이동한다.
-4. `Start Game`으로 Main에 진입하고 `Back to Title`로 돌아온다.
+4. `New Game`으로 Main에 진입하고 `Back to Title`로 돌아온다. 설정·저장·Continue는 [3·4단계 가이드](SETTINGS_AND_SAVE.md)를 따른다.
 
 첫 검증 대상은 Windows PC이며 화면은 uGUI로 구성한다. UI 입력은 기존 `Assets/13_Input/InputSystem_Actions.inputactions`의 UI 맵을 사용한다.
 
@@ -21,7 +21,7 @@
 
 ## 초기화와 실패
 
-`NotStarted → Initializing → 설정·빌드 씬 검증 → 실행 경로 준비 → Ready → Title`
+`NotStarted → Initializing → 설정·빌드 씬 검증 → 기본값 복사 → 사용자 설정·저장 정보 로드 → 실행 경로 준비 → Ready → Title`
 
 - Boot는 첫 번째 활성 빌드 씬이어야 한다. 세 씬은 서로 달라야 하고 빌드 씬 목록에 활성 상태로 포함되어야 한다.
 - 필수 설정이 없거나 잘못되면 Failed 상태와 오류를 표시하고 Title/Main 진입을 막는다.
@@ -60,7 +60,7 @@ Windows 개발 빌드는 `Tools > Starter Project > Build Windows Preview`에서
 
 ## 현재 범위
 
-JSON 설정 저장, 게임 진행 저장, 실제 게임 콘텐츠, 오디오·화면 설정 서비스는 이후 단계다.
+JSON 설정·게임 저장 기반은 3·4단계에서 추가했다. 상세 검증·사용법은 [설정·게임 저장 가이드](SETTINGS_AND_SAVE.md)를 따른다. 실제 게임 콘텐츠와 오디오·화면 적용 서비스는 이후 단계다.
 Title/Main을 직접 열고 Play하면 버튼을 비활성화하고 Boot 실행을 안내한다. 자동 Boot 경유는 6단계다.
 폴더·씬 이름과 GUID는 유지하며, 기존 제품명·Cloud 연결 정리는 8단계에 남긴다.
 
@@ -73,4 +73,4 @@ Title/Main을 직접 열고 Play하면 버튼을 비활성화하고 Boot 실행�
 - 씬을 여는 동안 설정 에셋이 해제될 수 있으므로 경로는 미리 복사하고 에셋 참조는 씬을 연 뒤 다시 가져온다.
 - 자동 테스트의 스크린샷 저장을 제거해 그래픽 장치·이미지 파일 생성에 의존하지 않도록 했다. 화면 배치는 필요할 때 별도로 확인한다.
 
-`CreateExampleAssets`는 기존 예제 씬을 생성·보정하는 도구다. 사용 전 씬을 저장해야 하며, 기존 화면의 입력·Bootstrap 연결을 수정할 수 있다. 새 프로젝트에서 일반적인 Play를 시작할 때마다 호출할 필요는 없다.
+`CreateExampleAssets`는 기존 예제 씬을 생성·보정하는 도구다. 사용 전 씬을 저장해야 하며, 기존 화면의 입력·Bootstrap 연결과 설정·저장 예제 버튼 배치를 수정할 수 있다. 새 프로젝트에서 일반적인 Play를 시작할 때마다 호출할 필요는 없다.

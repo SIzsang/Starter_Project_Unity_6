@@ -15,6 +15,10 @@ namespace StarterProject
         [SerializeField] private string bootScene = "Assets/01_Scenes/Boot/00_StartScene.unity";
         [SerializeField] private string titleScene = "Assets/01_Scenes/Main/01_Title.unity";
         [SerializeField] private string mainScene = "Assets/01_Scenes/Main/02_MainScene.unity";
+        [SerializeField] private UserSettings defaultSettings = new UserSettings();
+
+        /// <summary>공유 SO를 변경하지 않도록 기본 설정의 독립 복사본을 반환합니다.</summary>
+        public UserSettings CreateDefaultSettings() => defaultSettings.Copy();
 
         /// <summary>빌드가 시작되는 Boot 씬의 프로젝트 상대 경로입니다.</summary>
         public string BootScene => bootScene;
@@ -32,6 +36,8 @@ namespace StarterProject
         /// </summary>
         public void Validate()
         {
+            if (defaultSettings == null) throw new InvalidOperationException("Default settings are missing.");
+            defaultSettings.Validate();
             ValidateScene(bootScene, "Boot");
             ValidateScene(titleScene, "Title");
             ValidateScene(mainScene, "Main");

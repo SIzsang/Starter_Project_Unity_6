@@ -15,3 +15,7 @@ MonoBehaviour:
   bootScene: Assets/01_Scenes/Boot/00_StartScene.unity
   titleScene: Assets/01_Scenes/Main/01_Title.unity
   mainScene: Assets/01_Scenes/Main/02_MainScene.unity
+  defaultSettings:
+    masterVolume: 1
+    fullscreen: 1
+    language: en

@@ -507,6 +507,13 @@ MonoBehaviour:
   screen: 0
   status: {fileID: 1834208397}
   actionButton: {fileID: 0}
+  secondaryButton: {fileID: 0}
+  cancelButton: {fileID: 0}
+  volumeButton: {fileID: 0}
+  fullscreenButton: {fileID: 0}
+  languageButton: {fileID: 0}
+  recoverGameButton: {fileID: 0}
+  recoverSettingsButton: {fileID: 0}
 --- !u!114 &1188352965
 MonoBehaviour:
   m_ObjectHideFlags: 0

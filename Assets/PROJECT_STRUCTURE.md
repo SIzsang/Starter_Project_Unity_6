@@ -14,6 +14,9 @@ Assets
 ├─ 02_Scripts
 │  ├─ Core
 │  │  ├─ Bootstrap
+│  │  ├─ Persistence
+│  │  ├─ Settings
+│  │  ├─ Save
 │  │  └─ Manager
 │  ├─ Gameplay
 │  ├─ UI
