@@ -48,13 +48,13 @@ GitHub에서는 저장소 설정의 Template repository 옵션으로 템플릿�
 - [x] Product Name의 기존 Project_DE 이름을 `StarterProject`로 변경
 - [ ] 추적 중인 Unity Cloud 프로젝트·조직 ID는 제거함. Unity Hub/Editor Services UI에서 연결 해제 상태 최종 확인
 - [x] 회사명은 `StarterTemplate`, Standalone 앱 ID는 `com.startertemplate.starterproject`로 정리. 새 게임에서는 첫 실행 전 둘 다 교체
-- [ ] 루트 네임스페이스 정책 최종 확인 (현재 `StarterProject` 공통 코드 유지)
+- [x] 공통 Core/UI/Editor의 `StarterProject.*` 어셈블리·네임스페이스는 유지. 새 게임의 Gameplay 코드는 게임 고유 네임스페이스에 둬 일괄 이름 변경으로 참조를 깨지 않음
 - [ ] 기존 게임 전용 이름·아이콘·콘텐츠·서버 주소 잔존 여부 점검
 - [x] 협업·멀티플레이 센터·Visual Scripting·2D 도구 등의 유지 필요성 검토
 - [x] 현재 코드·씬에 참조가 없는 협업, 멀티플레이 센터, Visual Scripting 패키지를 복제본 테스트·빌드 후 제거. 2D 애니메이션·스프라이트 도구는 미래 게임 에셋 작업을 위해 유지
 - [ ] Assets와 .meta를 쌍으로 포함하고 씬·설정 에셋 참조 검사
 - [ ] 재생성 폴더가 추적되지 않는지 실제 Git 목록 검사
-- [ ] 새 폴더의 깨끗한 복제본에서 패키지 복원·Unity 열기·Play·빌드 검증
+- [x] `3460339`의 새 Git 복제본에서 패키지 첫 복원·Unity 자동 실행·EditMode 46개·PlayMode 29개·Windows 개발 빌드 검증. **GUI 화면 직접 Play는 별도 미완료**
 - [ ] README의 실제 사용 절차와 지원 플랫폼 갱신
 - [ ] 알려진 제한, Unity 버전 및 변경 이력 기록
 - [ ] 검증이 끝난 상태를 커밋·푸시하고 템플릿 지정 및 버전 태그 생성
@@ -71,13 +71,15 @@ GitHub에서는 저장소 설정의 Template repository 옵션으로 템플릿�
 
 2026-09-23: PC와 가로형 모바일 예제 UI의 Canvas Render Mode·Scaler를 확인하고 콘텐츠를 안전 영역에 맞추도록 보완했다. PlayMode의 합성 화면 값 검증은 EditMode 46개·PlayMode 29개에 포함된다. 모바일 실기기 검증과 게임별 UI는 이후 단계다. [반응형 UI 기준](RESPONSIVE_UI.md)
 
-2026-09-23: `966f33f`의 새 Git 복제본에서 Unity 6000.3.16f1의 패키지·에셋 첫 가져오기, EditMode 46개·PlayMode 29개와 Windows 개발 빌드를 확인했다. 이어 검증 복제본에서 미사용 패키지 3개를 제거하고 템플릿 회사명·제품명·앱 ID 및 로컬 Cloud 식별자를 정리한 뒤 같은 테스트·빌드를 다시 통과했다. 원본 Editor의 `Validate Setup` 메뉴도 실제 GUI 경로로 실행해 로그의 통과 메시지를 확인했다. Main 직접 Play·메뉴 대화상자·화면/입력·모바일 실기기 확인, Unity Hub의 Cloud 연결 표시와 변경 후 **새로운 최종 복제본** 검증은 계속 남아 있다. [통합 검증](INTEGRATION_VALIDATION.md)
+2026-09-23: `966f33f`의 새 Git 복제본에서 Unity 6000.3.16f1의 패키지·에셋 첫 가져오기, EditMode 46개·PlayMode 29개와 Windows 개발 빌드를 확인했다. 이어 검증 복제본에서 미사용 패키지 3개를 제거하고 템플릿 회사명·제품명·앱 ID 및 로컬 Cloud 식별자를 정리한 뒤 같은 테스트·빌드를 다시 통과했다. 원본 Editor의 `Validate Setup` 메뉴도 실제 GUI 경로로 실행해 로그의 통과 메시지를 확인했다. 이 시점에는 변경 후 새 최종 복제본 검증과 Main 직접 Play·메뉴 대화상자·화면/입력·모바일 실기기·Unity Hub의 Cloud 연결 표시 확인이 남아 있었다. [통합 검증](INTEGRATION_VALIDATION.md)
+
+2026-09-23 최종 복제 재검증: 정리 내용을 담은 `3460339`를 새 폴더로 다시 복제해, 비어 있는 Library에서 Unity가 패키지를 복원한 뒤 EditMode 46개·PlayMode 29개와 Windows 개발 빌드(169,600,344 bytes)가 통과했다. 추적 중인 Cloud ID는 비어 있고 제거한 선택 패키지는 다시 설치되지 않았다. GUI 창·장치 품질과 Unity Hub 연결 표시를 확인해야 배포 완료로 판정한다.
 
 ## 새 게임을 만들 때
 
 1. 검증된 템플릿 버전에서 새 저장소를 만든다.
 2. 새 프로젝트 폴더를 Unity Hub에 추가하고 문서에 명시된 Unity 버전으로 연다.
-3. **첫 Play·빌드 전에** Product Name, 회사명, 앱 식별자, 아이콘, 네임스페이스를 새 게임에 맞춘다. 기본값을 공유한 채 실행하면 다른 복제 게임과 저장 경로가 겹칠 수 있다.
+3. **첫 Play·빌드 전에** Product Name, 회사명, 앱 식별자, 아이콘을 새 게임에 맞춘다. 게임별 코드의 네임스페이스를 정하되 공통 `StarterProject.*` 어셈블리는 유지한다. 기본 제품 식별자를 공유한 채 실행하면 다른 복제 게임과 저장 경로가 겹칠 수 있다.
 4. 필요한 경우 새 Unity Cloud 프로젝트를 연결한다.
 5. 이전 게임과 저장 경로가 겹치지 않는지 실제 경로를 확인한다.
 6. 플랫폼, 화면 방향·해상도, 입력 장치, 렌더러, 품질 설정을 선택한다.
