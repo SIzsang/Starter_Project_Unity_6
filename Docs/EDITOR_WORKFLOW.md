@@ -2,6 +2,8 @@
 
 상태: 2026-09-23 Unity 6000.3.16f1 복제본 자동 검증 통과. 실제 GUI 직접 조작과 메뉴 대화상자 확인은 7단계 통합 검증에서 이어간다.
 
+2026-09-23 추가 확인: 원본 Unity Editor에서 `Tools > Starter Project > Validate Setup` 메뉴를 실제로 실행했고 Editor 로그에 `Setup validation passed`가 남았다. Main 씬 직접 Play와 Reset Test Data 대화상자 확인은 아직 수행하지 않았다. Main 씬을 열기 위한 Windows 파일 대화상자가 현재 자동화 도구의 입력 대상이 되지 않아 이번 결과에 포함하지 않는다.
+
 ## 실행 방법
 
 - **일반 흐름:** Boot 씬을 열고 Play하면 설정·저장 정보를 준비한 뒤 Title로 진입한다.

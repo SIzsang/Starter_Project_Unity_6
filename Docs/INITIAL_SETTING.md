@@ -1,6 +1,6 @@
 # Initial Setting — 초기화와 데이터 관리 설계
 
-최종 수정: 2026-09-22 · 상태: 1~5단계 구현 / 설정·저장·공통 시스템 연결
+최종 수정: 2026-09-23 · 상태: 공통 기반 구현 후 템플릿 식별 정보 정리 중
 
 ## 1. 확정 범위와 제안 구분
 
@@ -37,7 +37,7 @@
 | 스크립트 | Bootstrap·AppRoot·AppConfig·화면 UI 구현 | 게임 규칙과 공통 초기화 분리 |
 | 씬 | Boot/00_StartScene, Main/01_Title, Main/02_MainScene | 씬 역할을 분리할 기반 존재 |
 | 빌드 씬 목록 | Boot → Title → Main으로 구성 | AppConfig 검증 후 진입 |
-| 제품 정보 | Product Name 및 Cloud 프로젝트에 Project_DE 흔적 | 템플릿 출시 전 식별 정보 정리 필요 |
+| 제품 정보 | `StarterProject` / `StarterTemplate` 중립 기본값, 추적 중인 Cloud ID 제거 | 새 게임은 첫 실행 전에 이름·앱 ID를 바꾸고 Unity Hub 연결 상태를 확인 |
 | 폴더 문서 | Starter Project 기준으로 보정 | 기존 에셋 분류 유지 |
 
 이 표는 파일 확인 결과이며 Unity 실행 검증 결과가 아니다.

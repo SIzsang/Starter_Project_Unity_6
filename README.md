@@ -19,6 +19,7 @@
 - Test: Unity Test Framework (`1.6.0`)
 - 첫 검증 대상: Windows PC / uGUI. 예제 UI는 1920×1080 설계 기준으로 PC와 가로형 모바일 해상도·안전 영역에 대응하도록 설정
 - 시작 씬: `00_StartScene` → `01_Title` → `02_MainScene`
+- 템플릿 기본 식별자: Company `StarterTemplate`, Product `StarterProject`. 새 게임은 첫 Play·빌드 전에 고유한 이름과 앱 ID로 변경
 
 ## 실행
 
@@ -59,4 +60,5 @@ Main 씬을 열고 Play하면 개발용 저장 공간에서 Boot 초기화 후 M
 
 `Assets`와 `.meta`, `Packages`, `ProjectSettings`, 문서를 함께 버전 관리합니다.
 `Library`, `Temp`, `Logs`, `UserSettings`, 자동 생성 IDE 파일은 제외합니다.
+사용하지 않는 Unity Version Control 협업, Multiplayer Center, Visual Scripting 패키지는 제거했습니다. 2D 애니메이션·스프라이트 가져오기 도구는 새 게임에서 프레임 에셋을 사용할 수 있도록 유지합니다.
 템플릿 배포와 버전 지정은 체크리스트의 검증을 마친 뒤 진행합니다.
