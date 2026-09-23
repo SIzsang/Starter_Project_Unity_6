@@ -1,6 +1,6 @@
 # Starter Project — 템플릿 완성·복제 체크리스트
 
-최종 수정: 2026-09-23 · 배포 준비: 미완료
+최종 수정: 2026-09-24 · 배포 준비: 미완료
 
 ## 배포 형태 제안
 
@@ -79,6 +79,8 @@ GitHub에서는 저장소 설정의 Template repository 옵션으로 템플릿�
 2026-09-23 배포 준비 구현: 새 게임이 Core를 수정하지 않고 초기 JSON·payload 버전·검증 규칙을 연결하도록 `GamePayloadPolicy` 확장 지점을 추가했다. Main의 `TrySaveGame(payloadJson)`으로 실제 게임 상태를 전달한다. Windows Preview 파일명은 Product Name을 따른다. 에셋·meta 쌍과 추적 생성 파일, 게임 전용 잔존물 목록을 정적으로 점검하고 새 게임 시작 가이드·변경 이력을 작성했다. **이 새 코드의 Unity 회귀 검증은 제작 작업을 마친 뒤 진행한다.** GUI·실기기 검증은 사용자 요청에 따라 미룬다.
 
 검증 착수 기록: Unity 명령줄 EditMode 테스트가 테스트 시작 전 Licensing Client IPC 연결 실패와 `com.unity.editor.headless` 라이선스 오류로 진행하지 못해 중단했다. 복제본의 생성된 C# 프로젝트로 Core 단독 `dotnet build`는 오류 0개로 통과했지만 Unity 패키지 참조 경고가 있어 Unity Test Runner 결과를 대체하지 않는다. 라이선스 연결이 정상화되면 회귀 테스트·빌드를 한 번에 재개한다. [통합 검증 기록](INTEGRATION_VALIDATION.md)
+
+2026-09-24 Console 수정: 새 PlayMode 테스트의 문자열 닫는 따옴표 누락으로 발생한 `CS1010`·`CS1003`·`CS1026`을 수정했다. 원본 프로젝트의 생성된 C# 프로젝트에서 `StarterProject.PlayModeTests`와 `StarterProject.EditModeTests`를 각각 `dotnet build --no-restore`로 빌드해 모두 경고·오류 0개를 확인했다. 별도 복제본의 Unity 명령줄 Test Runner는 Licensing Client IPC 연결 실패가 반복되어 테스트 시작 전 중단했다. 따라서 이번 코드의 Unity 테스트·Windows 빌드는 계속 미완료다.
 
 ## 새 게임을 만들 때
 

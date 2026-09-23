@@ -411,7 +411,7 @@ namespace StarterProject.Tests
         public override string CreateInitialPayload() => "{\"stage\":1}";
         public override void ValidatePayload(string payloadJson)
         {
-            if (!payloadJson.Contains("\"stage\"))
+            if (!payloadJson.Contains("\"stage\""))
                 throw new InvalidDataException("A stage is required.");
         }
     }

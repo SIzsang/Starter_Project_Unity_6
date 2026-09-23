@@ -55,3 +55,5 @@ Boot 회귀 빌드는 복제본에서만 `productName`을 `StarterProjectBootstr
 템플릿 저장 스모크의 제품명 변경과 검증 스크립트도 Git 제외 복제본에만 있다. 검증 저장은 `Application.persistentDataPath`의 `StarterTemplate/StarterProjectTemplateSmoke` 아래로 격리해 기본 템플릿의 저장 공간과 분리했다.
 
 2026-09-23 후속 저장 정책·빌드명 변경: 구현 완료 뒤 복제본에서 Unity 명령줄 EditMode 회귀 검증을 시도했다. 테스트가 시작되기 전에 Licensing Client IPC 연결이 거부되고 `com.unity.editor.headless` 라이선스 오류가 발생해 중단했다. 새 테스트의 통과 수는 **0개가 아니라 미실행**이며 PlayMode와 새 Windows 빌드도 시작하지 않았다. 복제본의 생성된 C# 프로젝트에서 Core 단독 `dotnet build`는 오류 0개로 끝났으나 Unity 패키지 참조 경고 2개가 있어 Unity 테스트·빌드 완료 증거가 아니다. 사용자 요청에 따라 Computer Use GUI 검증은 진행하지 않았다.
+
+2026-09-24 Console 오류 수정: 원본 Editor 로그의 최신 C# 오류는 `BootstrapFlowTests.cs`의 누락된 문자열 닫는 따옴표에 따른 `CS1010`·`CS1003`·`CS1026`이었다. 수정 후 원본에서 생성된 `StarterProject.PlayModeTests.csproj`와 `StarterProject.EditModeTests.csproj`를 `dotnet build --no-restore`로 각각 컴파일해 모두 경고·오류 0개를 확인했다. 열린 Unity Editor의 Console 표시는 다음 에셋 새로고침 전까지 이전 오류를 남길 수 있다. 별도 복제본 Unity 명령줄 테스트는 Licensing Client IPC 연결 실패가 반복되어 테스트 시작 전 중단했다. 이번 소스의 Unity Test Runner 통과나 Windows Player 빌드 성공은 아직 주장하지 않는다.
