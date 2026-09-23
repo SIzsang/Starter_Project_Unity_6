@@ -79,3 +79,7 @@ Main 직접 Play의 개발용 Boot 경유를 6단계에서 구현하고 복제�
 
 `Validate Setup`에 Boot의 활성 `StarterScreen`·Canvas·상태 Text와 단일 활성 EventSystem·UI 액션 검사를 추가했다. 누락된 AppBootstrap 참조뿐 아니라 준비·오류 화면 자체가 표시되지 않는 구성도 편집 시점에 발견한다. Unity 6000.3.16f1 격리 복제본에서 EditMode 46개·PlayMode 27개 전체 통과. 실제 GUI 화면의 시각적 확인은 7단계에 남겨 두며, 현재 상태·향후 새 게임 인계 기준은 [프리셋 상세 Summary](PRESET_SUMMARY.md)에 기록한다.
 같은 Boot 씬과 Core로 Windows x64 Development 빌드를 만들고 검증용 새 저장 경로에서 서로 다른 Player 프로세스의 첫 저장·재실행 이어하기도 확인했다. 숨겨진 그래픽 Player의 캡처는 검은 화면이라 시각 검증으로 사용하지 않는다.
+
+## 가로형 PC·모바일 UI
+
+Boot·Title·Main과 로딩 오버레이의 Canvas는 `Screen Space - Overlay`, `Scale With Screen Size`, 기준 1280×720, 가로·세로 Match 0.5를 사용한다. 화면 전체 배경은 가장자리까지 채우고 조작 콘텐츠는 안전 영역 안에 맞춘다. 모바일은 가로 좌·우 방향만 허용한다. 적용 범위·기기 검증 한계는 [반응형 UI 가이드](RESPONSIVE_UI.md)에 기록한다.

@@ -10,6 +10,7 @@
 - **첫 검증 환경:** Unity 6000.3.16f1, URP 2D 17.3.0, uGUI, Input System 1.19.0, Windows PC. 현재 렌더링·화면 구성은 2D 시작점이며 모든 플랫폼·장르의 완성품은 아니다.
 - **공통과 게임별 경계:** Boot, 설정, 파일 저장, 기본 씬 전환, 개발용 진입은 공통이다. 전투·인벤토리·캐릭터 성장·스테이지 규칙·사망·자동 저장 시점은 새 게임의 `Gameplay`가 정의한다.
 - **현재 완료 판정:** 1~6단계 약 85%는 로드맵상 범위이며 배포 완성률이 아니다. 7단계의 GUI·기기 확인과 8단계의 템플릿 정리가 남아 있다.
+- **예제 UI 범위:** PC와 가로형 모바일을 대상으로 Screen Space Overlay·1280×720 Canvas Scaler와 안전 영역 맞춤을 사용한다. 모바일 실제 기기 검증과 게임별 HUD는 별개다. [반응형 UI 기준](RESPONSIVE_UI.md)
 
 ## Bootstrap Scene과 실행 흐름
 
@@ -22,7 +23,7 @@
 
 정상 실행은 `Boot → 설정·씬 검증 → 사용자 설정/저장 읽기 → 음량·화면 적용 → Title → New Game 또는 Continue → Main`이다. 초기화 실패는 Boot에 남아 원인을 표시하고 게임 진입을 막는다. 이미 준비된 루트로 Boot에 재진입하면 루트를 재사용해 Title로 돌아간다. 씬 전환 중에는 추가 요청과 버튼 입력을 차단한다.
 
-`Tools > Starter Project > Validate Setup`은 현재 AppConfig·빌드 씬·입력 액션과 Boot의 AppBootstrap 참조, 활성 상태 표시 Canvas·Text, 단일 활성 EventSystem·UI 액션을 **씬을 변경하지 않고** 검사한다. Boot → Title → Main 왕복·중복 루트·실패 차단은 PlayMode 테스트에서 확인했다. GUI의 실제 표시·메뉴 클릭은 아직 사람이 직접 확인하지 않았으므로 시각적 완성으로 표시하지 않는다.
+`Tools > Starter Project > Validate Setup`은 현재 AppConfig·빌드 씬·입력 액션과 Boot의 AppBootstrap 참조, 활성 상태 표시 Canvas·Text, 단일 활성 EventSystem·UI 액션 및 세 씬의 Canvas 해상도 설정을 **씬을 변경하지 않고** 검사한다. Boot → Title → Main 왕복·중복 루트·실패 차단은 PlayMode 테스트에서 확인했다. GUI의 실제 표시·메뉴 클릭은 아직 사람이 직접 확인하지 않았으므로 시각적 완성으로 표시하지 않는다.
 
 ## 데이터와 저장 계약
 
@@ -48,6 +49,8 @@
 - Windows x64 Development 빌드에서 서로 다른 Player 프로세스의 첫 실행 저장·재실행 복원·이어하기, 파손/미래 버전 보호, 명시적 백업 복구, 저장 완료 직후 강제 종료와 계측 복제본의 교체 전 강제 종료를 확인했다. 계측 중단 후 미완료 `.tmp`가 남으며 전원 손실·모든 중단 시점을 증명하지 않는다.
 - Boot 구성 검사 보완 후 새 Windows x64 Development 빌드도 성공했고, 검증용 제품명 `StarterProjectBootstrapValidation`의 다른 두 Player 프로세스에서 `CREATE_PASS`·`RESUME_PASS`를 확인했다. 로그는 `Logs/BootstrapWindowsBuild.log`와 복제본 `Builds/Windows/BootstrapPlayerCreate.log`·`BootstrapPlayerResume.log`다.
 - 숨겨진 그래픽 Player에서 Boot 캡처를 두 번 시도했으나 결과가 검은 화면이라 레이아웃 증거로 사용하지 않는다. 실제 GUI 시각 검증은 남아 있다.
+- 가로형 UI 레이아웃 보완 후 복제본에서 EditMode 46개·PlayMode 29개가 통과했다. 안전 영역·해상도 변경은 합성 화면 값으로 자동 검사했으며 모바일 실기기 시각·터치 확인은 남아 있다.
+- 변경 후 Windows 개발 빌드도 성공했고 검증용 별도 저장 경로의 두 Player 프로세스에서 첫 저장·재실행 이어하기를 통과했다. Android·iOS 빌드 모듈은 설치되지 않아 모바일 패키지 실행은 확인하지 않았다. [검증 기록](INTEGRATION_VALIDATION.md)
 - **남은 7단계:** 원본 Editor의 GUI Main 직접 Play와 메뉴 확인·취소, 실제 Windows 창/전체화면·오디오 청취·키보드/게임패드 조작, 다른 중단 시점과 임시 파일 정리 정책. 자동 테스트와 빌드 성공을 이 현장 검증으로 대체하지 않는다.
 - **남은 8단계:** 현재 `Project_DE` 제품명, `DefaultCompany` 식별자와 기존 Unity Cloud 연결 정리, 패키지 유지 필요성 검토, 깨끗한 복제본에서 Play·빌드, README·버전·템플릿 지정. 원격 푸시·태그·공개는 아직 수행하지 않았다.
 

@@ -17,7 +17,7 @@
 - Rendering: URP 2D (`17.3.0`)
 - Input: Unity Input System (`1.19.0`)
 - Test: Unity Test Framework (`1.6.0`)
-- 첫 검증 대상: Windows PC / uGUI
+- 첫 검증 대상: Windows PC / uGUI. 예제 UI는 PC와 가로형 모바일 해상도·안전 영역에 대응하도록 설정
 - 시작 씬: `00_StartScene` → `01_Title` → `02_MainScene`
 
 ## 실행
@@ -42,6 +42,7 @@ Main 씬을 열고 Play하면 개발용 저장 공간에서 Boot 초기화 후 M
 - [Bootstrap 사용 가이드](Docs/BOOTSTRAP.md): 실행·확장 위치와 검증 결과
 - [설정·게임 저장 사용 가이드](Docs/SETTINGS_AND_SAVE.md): 3·4단계 사용법·버전·복구·게임별 확장
 - [공통 기능 사용 가이드](Docs/COMMON_SERVICES.md): 5단계 음량·화면 적용, 입력·로딩과 검증 범위
+- [가로형 PC·모바일 UI](Docs/RESPONSIVE_UI.md): Render Mode·Canvas Scaler·안전 영역과 검증 한계
 - [Editor 작업 가이드](Docs/EDITOR_WORKFLOW.md): 6단계 Main 직접 Play·설정 검사·테스트 데이터 백업과 검증 상태
 - [통합·Windows 빌드 검증](Docs/INTEGRATION_VALIDATION.md): 7단계 빌드·프로세스 재실행·오류 보호 결과와 남은 GUI 확인
 - [SOLID·패턴 점검](Docs/ARCHITECTURE_REVIEW.md): 공통 기반의 책임·의존 경계와 설정 저장 실패 보완

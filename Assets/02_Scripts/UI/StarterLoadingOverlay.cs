@@ -48,12 +48,7 @@ namespace StarterProject.UI
         {
             appRoot = root;
             overlayCanvas = GetComponent<Canvas>();
-            overlayCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
             overlayCanvas.sortingOrder = short.MaxValue;
-            var scaler = GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
-            scaler.matchWidthOrHeight = 0.5f;
             canvasGroup = GetComponent<CanvasGroup>();
             canvasGroup.interactable = false;
             raycaster = GetComponent<GraphicRaycaster>();
@@ -69,6 +64,7 @@ namespace StarterProject.UI
             Stretch(progressFill.rectTransform);
             // RectTransform을 사용해 단색 이미지에도 진행률을 정확히 적용합니다.
             progressText = CreateLabel("Loading Percentage", 18, new Vector2(0, -70), new Vector2(300, 40));
+            StarterCanvasLayout.EnsureConfigured(overlayCanvas);
             appRoot.StateChanged += Refresh;
             Refresh();
         }

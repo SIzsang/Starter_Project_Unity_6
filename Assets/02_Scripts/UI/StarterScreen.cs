@@ -51,6 +51,7 @@ namespace StarterProject.UI
         /// <summary>버튼 리스너를 등록하고 현재 앱 상태를 즉시 반영합니다.</summary>
         private void OnEnable()
         {
+            StarterCanvasLayout.EnsureConfigured(GetComponent<Canvas>());
             hasDisplayedState = false;
             if (actionButton != null)
                 actionButton.onClick.AddListener(OnActionButtonClicked);

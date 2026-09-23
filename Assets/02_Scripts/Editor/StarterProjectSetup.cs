@@ -104,6 +104,7 @@ namespace StarterProject.Editor
             var scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1280, 720);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
             var background = Panel(canvasObject.transform, "Background", Background);
             Stretch(background.rectTransform);
@@ -302,6 +303,8 @@ namespace StarterProject.Editor
                     || screen.FindProperty("status").objectReferenceValue == null)
                     throw new InvalidOperationException("Boot StarterScreen must show the Boot status text.");
 
+                ValidateResponsiveCanvas(screens[0], "Boot");
+
                 var events = preview.GetRootGameObjects()
                     .SelectMany(root => root.GetComponentsInChildren<EventSystem>(true)).ToArray();
                 var module = events.Length == 1 ? events[0].GetComponent<InputSystemUIInputModule>() : null;
@@ -311,13 +314,39 @@ namespace StarterProject.Editor
                     throw new InvalidOperationException("Boot scene requires one active EventSystem with UI actions.");
             }
             finally { EditorSceneManager.ClosePreviewScene(preview); }
+
+            foreach (var scenePath in new[] { config.TitleScene, config.MainScene })
+            {
+                preview = EditorSceneManager.OpenPreviewScene(scenePath);
+                try
+                {
+                    var screens = preview.GetRootGameObjects()
+                        .SelectMany(root => root.GetComponentsInChildren<StarterScreen>(true)).ToArray();
+                    if (screens.Length != 1 || !screens[0].isActiveAndEnabled)
+                        throw new InvalidOperationException($"{scenePath} requires one active StarterScreen.");
+                    ValidateResponsiveCanvas(screens[0], scenePath);
+                }
+                finally { EditorSceneManager.ClosePreviewScene(preview); }
+            }
+        }
+
+        private static void ValidateResponsiveCanvas(StarterScreen screen, string sceneName)
+        {
+            var canvas = screen.GetComponent<Canvas>();
+            var scaler = screen.GetComponent<CanvasScaler>();
+            if (canvas == null || !canvas.isActiveAndEnabled || canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                || scaler == null || scaler.uiScaleMode != CanvasScaler.ScaleMode.ScaleWithScreenSize
+                || scaler.referenceResolution != new Vector2(1280, 720)
+                || scaler.screenMatchMode != CanvasScaler.ScreenMatchMode.MatchWidthOrHeight
+                || !Mathf.Approximately(scaler.matchWidthOrHeight, 0.5f))
+                throw new InvalidOperationException($"{sceneName} Canvas must use responsive Screen Space Overlay settings.");
         }
 
         [MenuItem("Tools/Starter Project/Validate Setup")]
         public static void ValidateSetup()
         {
             ValidateConfiguration();
-            Debug.Log("[Starter Project] Setup validation passed: AppConfig, build scenes, Boot screen and UI input.");
+            Debug.Log("[Starter Project] Setup validation passed: AppConfig, build scenes, responsive Boot canvas and UI input.");
         }
 
         /// <summary>UI 계층 아래에 단색 Image 패널을 생성합니다.</summary>
