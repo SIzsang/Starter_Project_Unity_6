@@ -30,6 +30,7 @@ namespace StarterProject.Editor
         private static readonly Color Background = new Color32(17, 23, 35, 255);
         private static readonly Color Muted = new Color32(154, 169, 190, 255);
         private static readonly Color Accent = new Color32(103, 226, 190, 255);
+        private const float DesignScale = 1.5f;
 
         /// <summary>
         /// AppConfig를 생성하고 Boot, Title, Main을 빌드 씬 목록 앞에 배치한 뒤
@@ -103,7 +104,8 @@ namespace StarterProject.Editor
             canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
             var scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            scaler.referenceResolution = new Vector2(StarterCanvasLayout.ReferenceWidth,
+                StarterCanvasLayout.ReferenceHeight);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
             var background = Panel(canvasObject.transform, "Background", Background);
@@ -165,7 +167,7 @@ namespace StarterProject.Editor
             if (statusText != null)
             {
                 Position(statusText.rectTransform, new Vector2(0, -20), new Vector2(1080, 130));
-                statusText.fontSize = 19;
+                statusText.fontSize = Mathf.RoundToInt(19 * DesignScale);
             }
             var footerTransform = screenView.transform.Find("Footer");
             if (footerTransform != null)
@@ -336,7 +338,8 @@ namespace StarterProject.Editor
             var scaler = screen.GetComponent<CanvasScaler>();
             if (canvas == null || !canvas.isActiveAndEnabled || canvas.renderMode != RenderMode.ScreenSpaceOverlay
                 || scaler == null || scaler.uiScaleMode != CanvasScaler.ScaleMode.ScaleWithScreenSize
-                || scaler.referenceResolution != new Vector2(1280, 720)
+                || scaler.referenceResolution != new Vector2(StarterCanvasLayout.ReferenceWidth,
+                    StarterCanvasLayout.ReferenceHeight)
                 || scaler.screenMatchMode != CanvasScaler.ScreenMatchMode.MatchWidthOrHeight
                 || !Mathf.Approximately(scaler.matchWidthOrHeight, 0.5f))
                 throw new InvalidOperationException($"{sceneName} Canvas must use responsive Screen Space Overlay settings.");
@@ -379,7 +382,7 @@ namespace StarterProject.Editor
             var label = go.GetComponent<Text>();
             label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             label.text = value;
-            label.fontSize = size;
+            label.fontSize = Mathf.RoundToInt(size * DesignScale);
             label.color = color;
             label.alignment = TextAnchor.MiddleCenter;
             label.raycastTarget = false;
@@ -394,8 +397,8 @@ namespace StarterProject.Editor
         private static void Position(RectTransform rect, Vector2 position, Vector2 dimensions)
         {
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = dimensions;
-            rect.anchoredPosition = position;
+            rect.sizeDelta = dimensions * DesignScale;
+            rect.anchoredPosition = position * DesignScale;
         }
 
         /// <summary>RectTransform이 부모 영역 전체를 여백 없이 채우도록 설정합니다.</summary>

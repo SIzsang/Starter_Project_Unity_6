@@ -51,7 +51,7 @@
 - 같은 화면에서 루트 생성·실패·제거 및 화면 재활성화 반영
 - 미저장 씬 보호, 누락 입력 모듈 보정, 비활성 EventSystem 재사용·반복 호출
 
-테스트 결과는 `Logs/StarterPlayModeTests.xml`, `Logs/StarterEditModeTests.xml`에 기록했다. 이번 실행은 그래픽 출력 없는 batchmode로 진행했다. Title/Main의 1920×1080 화면 배치는 2026-09-07에 확인했으며, 이번 변경은 레이아웃을 수정하지 않는다.
+당시 테스트 결과는 `Logs/StarterPlayModeTests.xml`, `Logs/StarterEditModeTests.xml`에 기록했다. 그래픽 출력 없는 batchmode로 진행했고 Title/Main의 당시 화면 배치는 2026-09-07에 확인했다. 이후 2026-09-23에 예제 UI를 1920×1080 디자인 좌표로 옮겼으며 현재 기준은 아래의 UI 절을 따른다.
 
 2026-09-09 Windows x64 개발 빌드 생성 성공: `Builds/Windows/StarterProject.exe`. 실제 플레이 흐름은 Editor PlayMode에서 검증했으며, 배포 빌드의 장기 실행·다양한 기기 검증은 로드맵 7단계다.
 
@@ -82,4 +82,4 @@ Main 직접 Play의 개발용 Boot 경유를 6단계에서 구현하고 복제�
 
 ## 가로형 PC·모바일 UI
 
-Boot·Title·Main과 로딩 오버레이의 Canvas는 `Screen Space - Overlay`, `Scale With Screen Size`, 기준 1280×720, 가로·세로 Match 0.5를 사용한다. 화면 전체 배경은 가장자리까지 채우고 조작 콘텐츠는 안전 영역 안에 맞춘다. 모바일은 가로 좌·우 방향만 허용한다. 적용 범위·기기 검증 한계는 [반응형 UI 가이드](RESPONSIVE_UI.md)에 기록한다.
+Boot·Title·Main과 로딩 오버레이의 Canvas는 `Screen Space - Overlay`, `Scale With Screen Size`, 기준 1920×1080, 가로·세로 Match 0.5를 사용한다. 기존 1280×720 예제 배치는 1920 기준으로 비례 환산한다. 화면 전체 배경은 가장자리까지 채우고 조작 콘텐츠는 안전 영역 안에 맞춘다. 모바일은 가로 좌·우 방향만 허용한다. 적용 범위·기기 검증 한계는 [반응형 UI 가이드](RESPONSIVE_UI.md)에 기록한다.

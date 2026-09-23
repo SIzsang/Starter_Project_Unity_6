@@ -10,6 +10,7 @@ namespace StarterProject.UI
     [DisallowMultipleComponent]
     public sealed class StarterLoadingOverlay : MonoBehaviour
     {
+        private const float DesignScale = 1.5f;
         private AppRoot appRoot;
         private Canvas overlayCanvas;
         private CanvasGroup canvasGroup;
@@ -129,7 +130,7 @@ namespace StarterProject.UI
             labelObject.transform.SetParent(transform, false);
             var label = labelObject.GetComponent<Text>();
             label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.fontSize = fontSize;
+            label.fontSize = Mathf.RoundToInt(fontSize * DesignScale);
             label.alignment = TextAnchor.MiddleCenter;
             label.color = Color.white;
             label.raycastTarget = false;
@@ -148,8 +149,8 @@ namespace StarterProject.UI
         private static void Position(RectTransform rect, Vector2 position, Vector2 size)
         {
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
+            rect.anchoredPosition = position * DesignScale;
+            rect.sizeDelta = size * DesignScale;
         }
     }
 }

@@ -21,14 +21,16 @@ namespace StarterProject.Tests
             Assert.That(canvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceOverlay));
             Assert.That(root.GetComponent<CanvasScaler>().uiScaleMode,
                 Is.EqualTo(CanvasScaler.ScaleMode.ScaleWithScreenSize));
+            Assert.That(root.GetComponent<CanvasScaler>().referenceResolution,
+                Is.EqualTo(new Vector2(1920, 1080)));
             Assert.That(background.parent, Is.EqualTo(root.transform), "The background must cover the cutout area.");
             Assert.That(button.parent, Is.EqualTo(layout.ContentRoot), "Controls must stay inside the safe area.");
 
-            // 2400x1080 가로 화면, 양쪽 80px 노치 여백, Canvas scale factor 2.
-            layout.ApplyLayout(2400, 1080, new Rect(80, 0, 2240, 1080), 2f);
+            // 2400x1080 가로 화면, 양쪽 80px 노치 여백과 별도 Canvas 배율.
+            layout.ApplyLayout(2400, 1080, new Rect(80, 0, 2240, 1080), 1.125f);
             Assert.That(layout.SafeAreaRoot.anchorMin.x, Is.EqualTo(80f / 2400f).Within(0.0001f));
             Assert.That(layout.SafeAreaRoot.anchorMax.x, Is.EqualTo(2320f / 2400f).Within(0.0001f));
-            Assert.That(layout.ContentRoot.localScale.x, Is.EqualTo(0.75f).Within(0.0001f));
+            Assert.That(layout.ContentRoot.localScale.x, Is.EqualTo(8f / 9f).Within(0.0001f));
 
             Object.Destroy(root);
             yield return null;
@@ -40,11 +42,11 @@ namespace StarterProject.Tests
             var root = new GameObject("Layout Test", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
             var button = CreateRect(root.transform, "Action", false);
             var layout = StarterCanvasLayout.EnsureConfigured(root.GetComponent<Canvas>());
-            layout.ApplyLayout(1920, 1080, new Rect(0, 0, 1920, 1080), 1.5f);
+            layout.ApplyLayout(1920, 1080, new Rect(0, 0, 1920, 1080), 1f);
             Assert.That(layout.ContentRoot.localScale.x, Is.EqualTo(1f).Within(0.0001f));
 
-            layout.ApplyLayout(960, 540, new Rect(0, 0, 960, 540), 1f);
-            Assert.That(layout.ContentRoot.localScale.x, Is.EqualTo(0.75f).Within(0.0001f));
+            layout.ApplyLayout(960, 540, new Rect(0, 0, 960, 540), 0.5f);
+            Assert.That(layout.ContentRoot.localScale.x, Is.EqualTo(1f).Within(0.0001f));
             Assert.That(StarterCanvasLayout.EnsureConfigured(root.GetComponent<Canvas>()), Is.SameAs(layout));
             Assert.That(root.transform.childCount, Is.EqualTo(1));
             Assert.That(button.parent, Is.EqualTo(layout.ContentRoot));

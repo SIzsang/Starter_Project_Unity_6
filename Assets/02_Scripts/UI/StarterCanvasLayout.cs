@@ -9,13 +9,15 @@ namespace StarterProject.UI
 {
     /// <summary>
     /// 예제 화면의 전체 배경은 화면을 채우고, 조작 가능한 콘텐츠는 안전 영역 안에 맞춥니다.
-    /// 가로형 모바일과 창 크기가 달라지는 PC에서 같은 1280x720 배치를 사용합니다.
+    /// 1920x1080 Canvas를 기준으로 가로형 PC·모바일 콘텐츠를 안전 영역에 맞춥니다.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Canvas), typeof(CanvasScaler))]
     public sealed class StarterCanvasLayout : MonoBehaviour
     {
-        private static readonly Vector2 ReferenceResolution = new Vector2(1280, 720);
+        public const int ReferenceWidth = 1920;
+        public const int ReferenceHeight = 1080;
+        private static readonly Vector2 ReferenceResolution = new Vector2(ReferenceWidth, ReferenceHeight);
         private RectTransform safeAreaRoot;
         private RectTransform contentRoot;
         private Canvas canvas;
@@ -25,7 +27,8 @@ namespace StarterProject.UI
         private float lastScaleFactor = -1;
 
         internal RectTransform SafeAreaRoot => safeAreaRoot;
-        internal RectTransform ContentRoot => contentRoot;
+        /// <summary>실행 중 추가하는 조작 UI를 안전 영역 안에 배치할 부모입니다.</summary>
+        public RectTransform ContentRoot => contentRoot;
 
         /// <summary>기존 씬의 Canvas에도 설정을 적용하고 레이아웃을 한 번만 연결합니다.</summary>
         public static StarterCanvasLayout EnsureConfigured(Canvas target)
