@@ -43,6 +43,7 @@ Main 씬을 열고 Play하면 개발용 저장 공간에서 Boot 초기화 후 M
 - [설정·게임 저장 사용 가이드](Docs/SETTINGS_AND_SAVE.md): 3·4단계 사용법·버전·복구·게임별 확장
 - [공통 기능 사용 가이드](Docs/COMMON_SERVICES.md): 5단계 음량·화면 적용, 입력·로딩과 검증 범위
 - [Editor 작업 가이드](Docs/EDITOR_WORKFLOW.md): 6단계 Main 직접 Play·설정 검사·테스트 데이터 백업과 검증 상태
+- [통합·Windows 빌드 검증](Docs/INTEGRATION_VALIDATION.md): 7단계 빌드·프로세스 재실행·오류 보호 결과와 남은 GUI 확인
 - [로그라이크·로그라이트 사전 조사](Docs/ROGUELIKE_PLAY_FLOW_RESEARCH.md): 실제 게임의 런·영구 성장·중단 저장 비교와 6단계 개발 진입 제안
 - [개발 로드맵](Docs/ROADMAP.md): 8단계 작업 순서와 완료 기준
 - [초기화·데이터 관리 설계](Docs/INITIAL_SETTING.md): 구현 기준, 데이터 분담과 오류 처리
