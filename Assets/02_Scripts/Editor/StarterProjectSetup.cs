@@ -269,6 +269,39 @@ namespace StarterProject.Editor
             return references;
         }
 
+        /// <summary>필수 설정, 씬 에셋, UI 입력, Boot의 AppConfig 연결을 변경 없이 검사합니다.</summary>
+        internal static void ValidateConfiguration()
+        {
+            var config = AssetDatabase.LoadAssetAtPath<AppConfig>(ConfigPath);
+            if (config == null)
+                throw new InvalidOperationException($"AppConfig asset is missing: {ConfigPath}");
+            config.Validate();
+            foreach (var path in new[] { config.BootScene, config.TitleScene, config.MainScene })
+                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(path) == null)
+                    throw new InvalidOperationException($"Scene asset is missing: {path}");
+            GetInputReferences();
+
+            var preview = EditorSceneManager.OpenPreviewScene(config.BootScene);
+            try
+            {
+                var bootstrap = preview.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<AppBootstrap>(true)).FirstOrDefault();
+                if (bootstrap == null)
+                    throw new InvalidOperationException("Boot scene is missing AppBootstrap.");
+                var assigned = new SerializedObject(bootstrap).FindProperty("config").objectReferenceValue;
+                if (assigned != config)
+                    throw new InvalidOperationException("Boot AppBootstrap must reference the configured AppConfig asset.");
+            }
+            finally { EditorSceneManager.ClosePreviewScene(preview); }
+        }
+
+        [MenuItem("Tools/Starter Project/Validate Setup")]
+        public static void ValidateSetup()
+        {
+            ValidateConfiguration();
+            Debug.Log("[Starter Project] Setup validation passed: AppConfig, build scenes, Boot reference and UI input.");
+        }
+
         /// <summary>UI 계층 아래에 단색 Image 패널을 생성합니다.</summary>
         /// <param name="parent">새 패널의 부모 Transform입니다.</param>
         /// <param name="name">GameObject 이름입니다.</param>
@@ -334,10 +367,7 @@ namespace StarterProject.Editor
         [MenuItem("Tools/Starter Project/Build Windows Preview")]
         public static void BuildWindowsPreview()
         {
-            var config = AssetDatabase.LoadAssetAtPath<AppConfig>(ConfigPath);
-            if (config == null)
-                throw new InvalidOperationException("AppConfig asset is missing.");
-            config.Validate();
+            ValidateConfiguration();
             Directory.CreateDirectory("Builds/Windows");
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {

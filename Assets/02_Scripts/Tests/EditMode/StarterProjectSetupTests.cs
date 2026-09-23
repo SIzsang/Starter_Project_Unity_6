@@ -81,5 +81,24 @@ namespace StarterProject.Tests
             Assert.That(events.GetComponents<InputSystemUIInputModule>().Length, Is.EqualTo(1));
             Assert.That(events.GetComponent<InputSystemUIInputModule>().actionsAsset, Is.Not.Null);
         }
+
+        [Test]
+        public void ValidationReadsBootWithoutReplacingOpenScene()
+        {
+            var active = SceneManager.GetActiveScene();
+            StarterProjectSetup.ValidateConfiguration();
+            Assert.That(SceneManager.GetActiveScene(), Is.EqualTo(active));
+            Assert.That(active.isDirty, Is.False);
+        }
+
+        [Test]
+        public void EditorTestSessionsUseUniquePathsUnderLibrary()
+        {
+            var first = StarterProjectPlayMode.GetSessionPath(System.Guid.NewGuid().ToString("N"));
+            var second = StarterProjectPlayMode.GetSessionPath(System.Guid.NewGuid().ToString("N"));
+            Assert.That(first, Is.Not.EqualTo(second));
+            Assert.That(first.StartsWith(StarterProjectPlayMode.TestSessionsRoot + System.IO.Path.DirectorySeparatorChar), Is.True);
+            Assert.That(() => StarterProjectPlayMode.GetSessionPath("../StarterData"), Throws.ArgumentException);
+        }
     }
 }

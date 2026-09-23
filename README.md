@@ -1,8 +1,8 @@
 # Starter Project — Unity 6
 
 새 게임을 시작할 때 복제해서 사용하는 Unity 공통 기반 프로젝트입니다.
-현재 작업 범위는 **로드맵 1~5단계: Bootstrap·설정·저장·최소 공통 기능**입니다.
-템플릿 전체는 아직 완성되지 않았으며, 다음은 6단계 개발 편의·설정 검증입니다.
+**로드맵 1~6단계: Bootstrap·설정·저장·공통 기능·Editor 개발 경로**를 구현하고 자동 검증했습니다.
+7단계 통합 테스트와 Windows 빌드 검증을 진행 중입니다.
 
 ## 방향
 
@@ -32,7 +32,7 @@ Main에서 `Save Game`으로 저장하고 `Back to Title` → `Continue`로 복�
 
 설정·저장 정책과 최신 검증 결과는 [3·4단계 사용 가이드](Docs/SETTINGS_AND_SAVE.md)에 기록합니다.
 
-Title/Main의 직접 Play 자동 지원은 6단계입니다. 현재는 Boot 실행을 안내하고 시작 버튼을 막습니다.
+Main 씬을 열고 Play하면 개발용 저장 공간에서 Boot 초기화 후 Main에 진입합니다. 반복 진입과 저장소 분리는 복제본 자동 실행에서 확인했습니다. GUI에서의 직접 조작 확인은 7단계에 남겨 둡니다. Title 직접 Play는 Boot 실행을 안내합니다. 사용법과 검증 범위는 [Editor 작업 가이드](Docs/EDITOR_WORKFLOW.md)를 따릅니다.
 
 공통 코드는 장르에 독립적으로 설계하지만 현재 렌더링 구성은 **2D용**입니다.
 3D 프로젝트에서 사용하려면 렌더러, 카메라, 조명과 관련 패키지를 별도로 검토해야 합니다.
@@ -42,6 +42,8 @@ Title/Main의 직접 Play 자동 지원은 6단계입니다. 현재는 Boot 실�
 - [Bootstrap 사용 가이드](Docs/BOOTSTRAP.md): 실행·확장 위치와 검증 결과
 - [설정·게임 저장 사용 가이드](Docs/SETTINGS_AND_SAVE.md): 3·4단계 사용법·버전·복구·게임별 확장
 - [공통 기능 사용 가이드](Docs/COMMON_SERVICES.md): 5단계 음량·화면 적용, 입력·로딩과 검증 범위
+- [Editor 작업 가이드](Docs/EDITOR_WORKFLOW.md): 6단계 Main 직접 Play·설정 검사·테스트 데이터 백업과 검증 상태
+- [로그라이크·로그라이트 사전 조사](Docs/ROGUELIKE_PLAY_FLOW_RESEARCH.md): 실제 게임의 런·영구 성장·중단 저장 비교와 6단계 개발 진입 제안
 - [개발 로드맵](Docs/ROADMAP.md): 8단계 작업 순서와 완료 기준
 - [초기화·데이터 관리 설계](Docs/INITIAL_SETTING.md): 구현 기준, 데이터 분담과 오류 처리
 - [템플릿 완성·복제 체크리스트](Docs/TEMPLATE_CHECKLIST.md): 완료 조건과 새 프로젝트에서 바꿀 항목

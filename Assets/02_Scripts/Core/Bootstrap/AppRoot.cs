@@ -6,6 +6,9 @@ using UnityEngine.SceneManagement;
 
 namespace StarterProject
 {
+    /// <summary>초기화가 끝난 뒤 처음 열 화면과 빈 게임 세션의 생성 여부입니다.</summary>
+    public enum AppStartupDestination { Title, NewGameInMain }
+
     /// <summary>
     /// 씬 전환 후에도 유지되는 앱 단위 실행 루트입니다. 초기화 상태와 실패 정보,
     /// Title/Main 전환 잠금을 한곳에서 관리하며 <see cref="AppBootstrap"/>과
@@ -43,6 +46,18 @@ namespace StarterProject
         public string StorageMessage { get; private set; } = "";
         private ITextFileStore fileStore;
         private IRuntimeSettings runtimeSettings;
+        private AppStartupDestination startupDestination;
+        private bool startupDestinationConfigured;
+
+        /// <summary>Begin 전에 최초 진입 경로를 설정합니다. 기본 경로는 Title입니다.</summary>
+        public void ConfigureStartupDestination(AppStartupDestination destination)
+        {
+            if (State != AppState.NotStarted) throw new InvalidOperationException("Configure startup destination before Begin.");
+            if (startupDestinationConfigured) throw new InvalidOperationException("Startup destination is already configured.");
+            if (!Enum.IsDefined(typeof(AppStartupDestination), destination)) throw new ArgumentOutOfRangeException(nameof(destination));
+            startupDestination = destination;
+            startupDestinationConfigured = true;
+        }
 
         /// <summary>Begin 전에 시스템 설정 적용 경계를 주입합니다. 루트가 수명을 소유합니다.</summary>
         public void ConfigureRuntimeSettings(IRuntimeSettings runtimeSettings)
@@ -138,7 +153,14 @@ namespace StarterProject
 
                 State = AppState.Ready;
                 CurrentStep = "Ready";
-                if (!TryReturnToTitle()) StateChanged?.Invoke();
+                if (startupDestination == AppStartupDestination.NewGameInMain)
+                {
+                    Game.StartNew();
+                    StorageMessage = Game.Message;
+                    if (!TryNavigate(mainScenePath))
+                        throw new InvalidOperationException("Could not enter the configured Main scene after startup.");
+                }
+                else if (!TryReturnToTitle()) StateChanged?.Invoke();
             }
             catch (OperationCanceledException) when (lifetimeToken.IsCancellationRequested) { }
             catch (Exception exception) { Fail(exception); }

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace StarterProject
@@ -10,6 +11,11 @@ namespace StarterProject
     {
         [SerializeField] private AppConfig config;
 
+#if UNITY_EDITOR
+        /// <summary>Editor Play가 Boot 초기화 전에 개발용 설정을 주입하는 지점입니다.</summary>
+        public static Action<AppRoot> EditorPrepareRoot;
+#endif
+
         /// <summary>
         /// Boot 씬이 시작되면 영속 루트를 찾거나 생성하고 직렬화된 <see cref="AppConfig"/>로
         /// 초기화를 요청합니다. 이미 준비된 루트가 있으면 Title 복귀 요청으로 처리됩니다.
@@ -19,6 +25,10 @@ namespace StarterProject
             var root = AppRoot.Instance;
             if (root == null)
                 root = new GameObject("AppRoot").AddComponent<AppRoot>();
+#if UNITY_EDITOR
+            if (root.State == AppState.NotStarted)
+                EditorPrepareRoot?.Invoke(root);
+#endif
             root.Begin(config);
         }
     }

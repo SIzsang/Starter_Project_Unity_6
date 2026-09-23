@@ -74,6 +74,31 @@ namespace StarterProject.Tests
             Assert.That(AppRoot.Instance, Is.SameAs(root));
         }
 
+        [UnityTest]
+        public IEnumerator ConfiguredMainStartupUsesBootAndFreshSession()
+        {
+            var root = CreateRoot("DirectMainRoot");
+            root.ConfigureStartupDestination(AppStartupDestination.NewGameInMain);
+            var visitedTitle = false;
+            void OnSceneChanged(Scene previous, Scene current) => visitedTitle |= current.path == Title;
+            SceneManager.activeSceneChanged += OnSceneChanged;
+            try
+            {
+                yield return LoadBoot();
+                yield return WaitForScene(Main);
+                Assert.That(visitedTitle, Is.False);
+                Assert.That(AppRoot.Instance, Is.SameAs(root));
+                Assert.That(root.State, Is.EqualTo(AppState.Ready));
+                Assert.That(root.Game.Current, Is.Not.Null);
+                Assert.That(root.Game.CanContinue, Is.False);
+                Assert.That(File.Exists(Path.Combine(testDirectory, GameSessionService.FileName)), Is.False);
+                Assert.That(root.TrySaveGame(), Is.True, root.StorageMessage);
+                Assert.That(File.Exists(Path.Combine(testDirectory, GameSessionService.FileName)), Is.True);
+                Assert.That(root.TryStartNewGame(), Is.False);
+            }
+            finally { SceneManager.activeSceneChanged -= OnSceneChanged; }
+        }
+
         /// <summary>Ready 이후 Boot 재진입이 새 루트를 만들지 않고 Title 복귀로 처리되는지 검증합니다.</summary>
         [UnityTest]
         public IEnumerator ReturningToBootReusesReadyRoot()
