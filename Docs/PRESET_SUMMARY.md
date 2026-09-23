@@ -1,6 +1,6 @@
 # Starter Project 상세 Summary — 새 게임 제작용 인계 기록
 
-최종 점검: 2026-09-24 · 상태: **공통 기능 1~6단계 코드·자동 검증 완료, 최신 저장 확장 코드의 Unity 회귀 검증 대기, 템플릿 배포 전**
+최종 점검: 2026-09-24 · 상태: **공통 기능 1~6단계와 최신 저장 확장의 Unity 자동 검증 완료, GUI·실기기·원격 템플릿 배포 전**
 
 이 문서는 향후 새 프로젝트에서 이 프리셋을 사용할 때 다시 확인할 기준 기록이다. 대화나 모델의 임시 기억에 의존하지 않도록 프로젝트와 함께 버전 관리한다. 변경 후에는 검증 결과와 한계를 함께 갱신한다.
 
@@ -32,7 +32,7 @@
 - `JsonRepository<T>` / `JsonFileStore`: 임시 파일을 기록·검증한 뒤 교체하며 `.bak`을 남긴다. 파손 시 정상 백업을 표시하고 사용자의 명시적 복구 전에는 원본을 바꾸지 않는다. 미래 버전 파일은 덮어쓰지 않는다.
 - 저장 크기는 **파일 전체 최대 1MiB**다. 현재 저장은 동기식이므로 대량 월드 데이터나 긴 이력에는 저장 형식·성능 재검토가 필요하다.
 - 현재 기본 `Save Game` 버튼은 게임 오브젝트의 상태를 자동 수집하지 않고 `GameSessionService.Current.PayloadJson`을 저장한다. 새 게임의 `Gameplay`에서 실제 상태를 JSON 객체로 만들고 저장 버튼/체크포인트와 연결해야 한다. `Continue` 후에는 현재 payload를 새 게임의 타입 모델로 복원한다.
-- Boot의 `AppBootstrap`에 게임별 `GamePayloadPolicy` 에셋을 선택적으로 연결하면 Core 수정 없이 초기 JSON·payload 버전·유효성 검사 규칙을 지정할 수 있다. Main에서 `AppRoot.TrySaveGame(payloadJson)`으로 현재 게임 상태를 전달한다. 미연결 상태는 기존 빈 `{}`·버전 1 동작을 유지한다. **이 신규 연결의 Unity 회귀 검증은 대기 중이다.** [새 게임 시작 가이드](NEW_GAME_SETUP.md)
+- Boot의 `AppBootstrap`에 게임별 `GamePayloadPolicy` 에셋을 선택적으로 연결하면 Core 수정 없이 초기 JSON·payload 버전·유효성 검사 규칙을 지정할 수 있다. Main에서 `AppRoot.TrySaveGame(payloadJson)`으로 현재 게임 상태를 전달한다. 미연결 상태는 기존 빈 `{}`·버전 1 동작을 유지한다. 새 정책의 저장·거부·Continue 복원은 Unity PlayMode에서 확인했다. [새 게임 시작 가이드](NEW_GAME_SETUP.md)
 
 **향후 계획된 약 100명의 캐릭터 능력치와 스테이지 진행:** 프리셋 Core에 고정 필드를 추가하지 않는다. 새 게임에서는 캐릭터 ID와 변화하는 능력치·성장 상태, 스테이지 ID와 진행 단계만 payload에 넣고 고정 캐릭터 정의는 게임 데이터에서 조회한다. 100명 × 1KiB면 약 100KiB, 5KiB면 약 500KiB로 현재 상한 안에 있지만, 실제 JSON 직렬화 크기를 측정한다. 인벤토리·전투 로그·월드 오브젝트 이력을 누적하면 1MiB에 가까워질 수 있다. 이 수치는 설계 예시이며 실제 게임 스키마가 확정된 것은 아니다.
 
@@ -45,7 +45,7 @@
 
 ## 검증된 결과와 한계
 
-- Unity 6000.3.16f1 격리 복제본의 **최신 EditMode 46개·PlayMode 29개 통과, 실패·건너뜀 0개**. 1920×1080 디자인 좌표 이관 후 결과: `Logs/FullHdMigratedEditMode.xml`, `Logs/FullHdFinalPlayMode.xml`.
+- Unity 6000.3.16f1의 `6a31e97` 새 Git 복제본에서 **EditMode 50개·PlayMode 30개 통과, 실패·건너뜀 0개**. 빈 Library에서 패키지·에셋을 가져온 뒤 실행했다. 결과: `Logs/TemplateLatestEditMode.xml`, `Logs/TemplateLatestPlayMode.xml`.
 - Main 직접 Play 반복은 도메인 재로드 켜짐·꺼짐의 자동 실행에서 Boot 경유, 세션 격리, 시작 씬 복원과 일반 저장 보호를 확인했다. 자동 실행용 batchmode 예외는 복제본에만 넣었고 원본 코드에는 없다.
 - Windows x64 Development 빌드에서 서로 다른 Player 프로세스의 첫 실행 저장·재실행 복원·이어하기, 파손/미래 버전 보호, 명시적 백업 복구, 저장 완료 직후 강제 종료와 계측 복제본의 교체 전 강제 종료를 확인했다. 계측 중단 후 미완료 `.tmp`가 남으며 전원 손실·모든 중단 시점을 증명하지 않는다.
 - Boot 구성 검사 보완 후 새 Windows x64 Development 빌드도 성공했고, 검증용 제품명 `StarterProjectBootstrapValidation`의 다른 두 Player 프로세스에서 `CREATE_PASS`·`RESUME_PASS`를 확인했다. 로그는 `Logs/BootstrapWindowsBuild.log`와 복제본 `Builds/Windows/BootstrapPlayerCreate.log`·`BootstrapPlayerResume.log`다.
@@ -56,8 +56,9 @@
 - 템플릿 패키지·식별 정보 정리 시험 복제본에서 EditMode 46개·PlayMode 29개, Windows 개발 빌드와 별도 헤드리스 Player 프로세스의 새 저장·이어하기를 확인했다. 저장 위치는 검증 전용 `StarterProjectTemplateSmoke` 제품명으로 격리했다. 이어 `3460339`의 **새 Git 복제본**을 비어 있는 Library에서 열어 EditMode 46개·PlayMode 29개와 Windows 빌드(169,600,344 bytes)를 재확인했다. 원본 Editor의 Main 직접 Play와 화면 조작은 아직 남아 있다.
 - **남은 7단계:** 원본 Editor의 GUI Main 직접 Play와 메뉴 확인·취소, 실제 Windows 창/전체화면·오디오 청취·키보드/게임패드 조작, 다른 중단 시점과 임시 파일 정리 정책. 자동 테스트와 빌드 성공을 이 현장 검증으로 대체하지 않는다.
 - **8단계 진행:** 추적 중인 `Project_DE`·`DefaultCompany`와 Cloud 프로젝트·조직 ID를 중립 템플릿 값 또는 빈 값으로 바꾸고, 현재 코드·씬에서 사용하지 않는 협업·Multiplayer Center·Visual Scripting 패키지를 제거했다. 2D 애니메이션 도구는 유지한다. 변경 후 깨끗한 복제본의 자동 PlayMode·빌드는 통과했다. Unity Hub/Editor Services의 연결 표시와 GUI 화면·장치 확인, 버전·템플릿 지정은 남아 있다. 원격 푸시·태그·공개는 아직 수행하지 않았다.
-- **8단계 후속 제작:** Product Name에 따라 Windows Preview 파일명을 정하고, 게임별 저장 정책의 선택적 연결, 새 게임 시작 가이드와 변경 이력을 추가했다. 추적된 에셋·meta 쌍과 생성 파일 제외, 게임 전용 콘텐츠·서버 주소 부재를 정적 점검했다. 후속 코드의 Unity 테스트·빌드와 깨끗한 복제본 확인은 아직 진행하지 않았다. GUI Computer Use 검증은 사용자 요청에 따라 제작 완료 뒤로 미뤘다.
+- **8단계 후속 제작:** Product Name에 따라 Windows Preview 파일명을 정하고, 게임별 저장 정책의 선택적 연결, 새 게임 시작 가이드와 변경 이력을 추가했다. 추적된 에셋·meta 쌍과 생성 파일 제외, 게임 전용 콘텐츠·서버 주소 부재를 정적 점검했다. 후속 코드는 깨끗한 Git 복제본의 Unity EditMode·PlayMode 및 Windows 개발 빌드를 통과했다. Product Name 변경 빌드에서 이름이 바뀐 실행 파일도 확인했다. GUI Computer Use 검증은 사용자 요청에 따라 미뤘다.
 - **2026-09-24 Console 수정:** 새 PlayMode 테스트의 문자열 구문 오류를 고쳤다. 원본 프로젝트의 생성된 EditMode·PlayMode C# 프로젝트는 각각 경고·오류 0개로 빌드됐다. 별도 복제본의 Unity Test Runner는 라이선스 클라이언트 연결 실패로 시작하지 못했으므로 이 C# 컴파일을 런타임 동작 검증으로 간주하지 않는다.
+- **2026-09-24 후속 Unity 검증:** 권한이 허용된 명령줄 실행에서 라이선스가 연결됐고 테스트 명령에서 조기 종료를 일으키는 `-quit`을 제거했다. 최신 소스 복제본과 새 Git 복제본에서 각각 EditMode 50개·PlayMode 30개 및 Windows 빌드를 통과했다. 새 복제본의 Product Name 변경 빌드도 성공했다. 자동 실행 결과는 GUI 배치·실제 입력·모바일 기기의 확인을 대체하지 않는다. [검증 기록](INTEGRATION_VALIDATION.md)
 
 ## 새 프로젝트 인계 기준
 

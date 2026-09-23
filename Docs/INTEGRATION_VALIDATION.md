@@ -57,3 +57,15 @@ Boot 회귀 빌드는 복제본에서만 `productName`을 `StarterProjectBootstr
 2026-09-23 후속 저장 정책·빌드명 변경: 구현 완료 뒤 복제본에서 Unity 명령줄 EditMode 회귀 검증을 시도했다. 테스트가 시작되기 전에 Licensing Client IPC 연결이 거부되고 `com.unity.editor.headless` 라이선스 오류가 발생해 중단했다. 새 테스트의 통과 수는 **0개가 아니라 미실행**이며 PlayMode와 새 Windows 빌드도 시작하지 않았다. 복제본의 생성된 C# 프로젝트에서 Core 단독 `dotnet build`는 오류 0개로 끝났으나 Unity 패키지 참조 경고 2개가 있어 Unity 테스트·빌드 완료 증거가 아니다. 사용자 요청에 따라 Computer Use GUI 검증은 진행하지 않았다.
 
 2026-09-24 Console 오류 수정: 원본 Editor 로그의 최신 C# 오류는 `BootstrapFlowTests.cs`의 누락된 문자열 닫는 따옴표에 따른 `CS1010`·`CS1003`·`CS1026`이었다. 수정 후 원본에서 생성된 `StarterProject.PlayModeTests.csproj`와 `StarterProject.EditModeTests.csproj`를 `dotnet build --no-restore`로 각각 컴파일해 모두 경고·오류 0개를 확인했다. 열린 Unity Editor의 Console 표시는 다음 에셋 새로고침 전까지 이전 오류를 남길 수 있다. 별도 복제본 Unity 명령줄 테스트는 Licensing Client IPC 연결 실패가 반복되어 테스트 시작 전 중단했다. 이번 소스의 Unity Test Runner 통과나 Windows Player 빌드 성공은 아직 주장하지 않는다.
+
+## 2026-09-24 최신 코드·깨끗한 Git 복제본 회귀 검증
+
+권한이 허용된 명령줄 경로에서 Unity 6000.3.16f1의 Licensing Client 연결이 성공했다. `-runTests`에 `-quit`을 함께 전달하면 스크립트 컴파일 뒤 테스트 시작 전에 종료되어, Test Runner 실행에서는 `-quit`을 제거했다. 이전 라이선스 실패와 조기 종료는 **미실행 시도**로 남기고 아래 통과 결과와 구분한다.
+
+| 대상 | 결과 | 증거 |
+| --- | --- | --- |
+| 최신 추적 소스가 원본과 SHA-256 일치하는 기존 검증 복제본 | EditMode 50/50·PlayMode 30/30, Windows 개발 빌드 성공 | `Logs/TemplateFinalValidation/Logs/PostFixEditMode.xml`, `PostFixPlayMode.xml`, `PostFixWindowsBuild.log` |
+| `6a31e97`의 새 Git 복제본, 빈 Library에서 패키지·에셋 첫 가져오기 | EditMode 50/50·PlayMode 30/30, 실패·건너뜀 0개. Windows 개발 빌드 성공(169,602,028 bytes) | `Logs/TemplateLatestEditMode.xml`, `Logs/TemplateLatestPlayMode.xml`, `Logs/TemplateLatestWindowsBuild.log` |
+| 새 복제본의 Product Name만 `StarterProjectTemplateProbe`로 변경 | 추가 Windows 개발 빌드 성공(169,602,070 bytes), `StarterProjectTemplateProbe.exe` 생성 | `Logs/TemplateLatestProductNameBuild.log` |
+
+원본의 추적 파일 155개에 Library·Temp·Logs·UserSettings·Builds·IDE 생성 파일은 없고, 추적 에셋과 `.meta`의 누락 쌍도 없다. 원본 Editor 로그에는 오류 수정 후 새 C# 컴파일 실패가 없었다. Unity가 검증 복제본에서 재직렬화한 URP·프로젝트 설정과 생성 파일은 원본으로 복사하지 않았다. 테스트 빌드 산출물은 검증 후 정리하고 로그·XML은 `Logs/`에 남긴다. GUI Main 직접 Play, 화면·오디오·실제 입력, 모바일 기기, Unity Hub Cloud 연결 표시와 원격 배포는 계속 별도 확인 사항이다.

@@ -52,12 +52,12 @@ GitHub에서는 저장소 설정의 Template repository 옵션으로 템플릿�
 - [x] 추적 중인 Assets/ProjectSettings에서 기존 게임 전용 이름·아이콘·콘텐츠·서버 주소 잔존 여부 점검. 게임 전용 이미지·오디오·프리팹·애니메이션 파일은 없음
 - [x] 협업·멀티플레이 센터·Visual Scripting·2D 도구 등의 유지 필요성 검토
 - [x] 현재 코드·씬에 참조가 없는 협업, 멀티플레이 센터, Visual Scripting 패키지를 복제본 테스트·빌드 후 제거. 2D 애니메이션·스프라이트 도구는 미래 게임 에셋 작업을 위해 유지
-- [x] 추적 중인 Assets와 .meta의 쌍 검사. 새 저장 정책 스크립트의 .meta도 포함; 기존 씬·설정 에셋 연결은 깨끗한 복제본의 Unity 자동 테스트·빌드에서 확인. 이번 변경의 회귀 검증은 아래에 별도 보류
+- [x] 추적 중인 Assets와 .meta의 쌍 검사. 새 저장 정책 스크립트의 .meta도 포함; 기존 씬·설정 에셋 연결은 깨끗한 최신 복제본의 Unity 자동 테스트·빌드에서 확인
 - [x] 실제 Git 목록 151개에서 Library/Temp/Logs/UserSettings/Builds/IDE 생성 파일이 추적되지 않음을 검사 (새 파일 추가 전 기준)
 - [x] `3460339`의 새 Git 복제본에서 패키지 첫 복원·Unity 자동 실행·EditMode 46개·PlayMode 29개·Windows 개발 빌드 검증. **GUI 화면 직접 Play는 별도 미완료**
 - [x] README의 실제 사용 절차와 지원 플랫폼 갱신; [새 게임 시작 가이드](NEW_GAME_SETUP.md)에 복제·게임 데이터 연결 절차 기록
 - [x] [변경 이력](CHANGELOG.md)과 Unity 버전·알려진 제한 기록. 배포 태그는 아직 없음
-- [ ] 새 `GamePayloadPolicy` 연결·Product Name 기반 빌드명의 Unity 회귀 검증 및 깨끗한 복제본 확인
+- [x] 새 `GamePayloadPolicy` 연결·Product Name 기반 빌드명의 Unity 회귀 검증 및 깨끗한 복제본 확인. EditMode 50개·PlayMode 30개, 기본 Windows 빌드와 Product Name 변경 빌드 성공
 - [ ] 검증이 끝난 상태를 커밋·푸시하고 템플릿 지정 및 버전 태그 생성
 
 2026-09-10: EditMode 30개·PlayMode 14개 통과. 서비스·AppRoot 재생성 후 설정·게임 저장 복원과 쓰기 실패 시 기존 파일 보호를 확인했다. 전체 앱 프로세스 재실행·강제 종료 내구성·출시 검증 항목은 7단계에서 완료 처리한다. 상세 범위는 [3·4단계 가이드](SETTINGS_AND_SAVE.md)를 따른다.
@@ -81,6 +81,8 @@ GitHub에서는 저장소 설정의 Template repository 옵션으로 템플릿�
 검증 착수 기록: Unity 명령줄 EditMode 테스트가 테스트 시작 전 Licensing Client IPC 연결 실패와 `com.unity.editor.headless` 라이선스 오류로 진행하지 못해 중단했다. 복제본의 생성된 C# 프로젝트로 Core 단독 `dotnet build`는 오류 0개로 통과했지만 Unity 패키지 참조 경고가 있어 Unity Test Runner 결과를 대체하지 않는다. 라이선스 연결이 정상화되면 회귀 테스트·빌드를 한 번에 재개한다. [통합 검증 기록](INTEGRATION_VALIDATION.md)
 
 2026-09-24 Console 수정: 새 PlayMode 테스트의 문자열 닫는 따옴표 누락으로 발생한 `CS1010`·`CS1003`·`CS1026`을 수정했다. 원본 프로젝트의 생성된 C# 프로젝트에서 `StarterProject.PlayModeTests`와 `StarterProject.EditModeTests`를 각각 `dotnet build --no-restore`로 빌드해 모두 경고·오류 0개를 확인했다. 별도 복제본의 Unity 명령줄 Test Runner는 Licensing Client IPC 연결 실패가 반복되어 테스트 시작 전 중단했다. 따라서 이번 코드의 Unity 테스트·Windows 빌드는 계속 미완료다.
+
+2026-09-24 후속 회귀 검증: 권한이 허용된 명령줄 경로에서 라이선스가 연결됐다. `-runTests`와 `-quit`을 함께 사용하면 테스트 시작 전에 종료되어 `-quit`을 제거했다. 최신 추적 소스가 원본과 해시 일치하는 기존 복제본, 이어 `6a31e97`의 빈 Library 새 Git 복제본에서 각각 EditMode 50개·PlayMode 30개가 통과하고 Windows 개발 빌드가 성공했다. 새 복제본의 Product Name을 `StarterProjectTemplateProbe`로 바꾼 추가 빌드도 성공해 같은 이름의 `.exe` 생성을 확인했다. 결과: `Logs/TemplateLatestEditMode.xml`, `Logs/TemplateLatestPlayMode.xml`, `Logs/TemplateLatestWindowsBuild.log`, `Logs/TemplateLatestProductNameBuild.log`. GUI·실기기·Cloud 연결 표시와 푸시·태그·Template 지정은 미완료다.
 
 ## 새 게임을 만들 때
 

@@ -31,3 +31,5 @@ GitHub Template 배포를 우선 검토하며 Unity Hub 커스텀 템플릿은 v
 2026-09-23: 사용자가 GUI Computer Use 검증을 뒤로 미루고 제작을 우선하도록 요청했다. 8단계 배포 준비에서 게임별 `GamePayloadPolicy` 연결, JSON 저장 API, Product Name 기반 Windows Preview 이름과 새 게임 인계·변경 이력 문서를 추가했다. 기존 추적 에셋·meta와 생성 파일 목록을 점검했다. 새 코드의 Unity 회귀 검증과 GUI·실기기·Cloud 연결 확인은 아직 완료하지 않았으므로 7·8단계 완료율을 올리지 않는다.
 
 2026-09-24: 새 PlayMode 테스트의 Console 컴파일 오류를 수정하고 생성된 EditMode·PlayMode C# 프로젝트가 경고·오류 없이 빌드됨을 확인했다. Unity 명령줄 Test Runner는 라이선스 IPC 연결 실패로 시작하지 못했다. Computer Use 없이 진행하며, 7·8단계의 Unity 회귀·실기기·배포 완료 판정은 보류한다.
+
+2026-09-24 후속 검증: 권한이 허용된 명령줄 실행에서 Unity 라이선스가 연결됐다. 테스트 명령의 `-quit`을 제거한 뒤 최신 코드가 반영된 복제본과 `6a31e97`의 새 Git 복제본에서 각각 EditMode 50개·PlayMode 30개가 모두 통과하고 Windows 개발 빌드가 성공했다. 새 복제본의 Product Name만 바꾼 추가 빌드는 해당 이름의 `.exe`를 생성했다. 추적 에셋·meta와 생성 파일 목록도 다시 점검했다. GUI Main 직접 Play·실제 Windows 조작/장치·모바일 기기·Unity Hub Cloud 연결 표시와 원격 배포는 남아 있으므로 7·8단계 완료율은 아직 올리지 않는다.
