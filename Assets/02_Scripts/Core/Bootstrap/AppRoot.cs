@@ -46,6 +46,7 @@ namespace StarterProject
         public string StorageMessage { get; private set; } = "";
         private ITextFileStore fileStore;
         private IRuntimeSettings runtimeSettings;
+        private bool isCommittingSettings;
         private AppStartupDestination startupDestination;
         private bool startupDestinationConfigured;
 
@@ -201,8 +202,38 @@ namespace StarterProject
         public bool TrySaveSettings(UserSettings settings)
         {
             if (Instance != this || State != AppState.Ready || IsTransitioning) return false;
-            var isSaved = Settings.TryApplyAndSave(settings);
+            if (settings == null || !Settings.CanSave)
+            {
+                var accepted = Settings.TryApplyAndSave(settings);
+                StorageMessage = Settings.Message;
+                StateChanged?.Invoke();
+                return accepted && State == AppState.Ready;
+            }
+
+            try { settings.Validate(); }
+            catch (ArgumentException exception)
+            {
+                StorageMessage = exception.Message;
+                StateChanged?.Invoke();
+                return false;
+            }
+
+            var previous = Settings.Current;
+            // 플랫폼 적용 실패가 디스크에 새 값을 남기지 않도록 먼저 적용한다.
+            try { runtimeSettings.Apply(settings); }
+            catch (Exception exception) { Fail(exception); return false; }
+
+            bool isSaved;
+            // 서비스 알림은 외부 Reload·복구에도 쓰인다. 이 저장 호출에서만 중복 적용을 생략한다.
+            isCommittingSettings = true;
+            try { isSaved = Settings.TryApplyAndSave(settings); }
+            finally { isCommittingSettings = false; }
             StorageMessage = Settings.Message;
+            if (!isSaved)
+            {
+                try { runtimeSettings.Apply(previous); }
+                catch (Exception exception) { Fail(exception); return false; }
+            }
             StateChanged?.Invoke();
             return isSaved && State == AppState.Ready;
         }
@@ -218,6 +249,7 @@ namespace StarterProject
 
         private void OnSettingsChanged()
         {
+            if (isCommittingSettings) return;
             StorageMessage = Settings.Message;
             try { runtimeSettings.Apply(Settings.Current); }
             catch (Exception exception) { Fail(exception); }

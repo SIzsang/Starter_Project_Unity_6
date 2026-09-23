@@ -23,7 +23,7 @@ namespace StarterProject
         public UnsupportedDataVersionException(string message) : base(message) { }
     }
 
-    /// <summary>테스트에서 디스크 실패를 주입할 수 있는 작은 파일 경계입니다.</summary>
+    /// <summary>작은 파일 경계입니다. 쓰기 실패 시 기존 주 파일을 보존하는 구현만 대체할 수 있습니다.</summary>
     public interface ITextFileStore
     {
         string ReadAllText(string fileName);

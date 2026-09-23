@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace StarterProject
 {
-    /// <summary>검증한 사용자 설정을 실행 환경에 적용하고 소유권 해제 시 이전 상태를 복원합니다.</summary>
+    /// <summary>설정을 실행 환경에 적용하고 소유권 해제 시 이전 상태를 복원합니다. Apply 실패 시 직전 상태 복원을 시도하고 실패를 예외로 알립니다.</summary>
     public interface IRuntimeSettings : IDisposable
     {
         void Apply(UserSettings settings);

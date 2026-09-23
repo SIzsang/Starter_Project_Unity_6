@@ -103,22 +103,41 @@ namespace StarterProject.Tests
         }
 
         [UnityTest]
-        public IEnumerator FailedWritesAndProtectedVersionsDoNotApplyRequestedSettings()
+        public IEnumerator FailedWritesAndProtectedVersionsRestorePreviousRuntimeSettings()
         {
             CreateRoot(new WriteFailureFileStore(fileStore));
             yield return LoadBoot();
             var original = AppRoot.Instance.Settings.Current;
             var requested = new UserSettings { masterVolume = 0.25f, fullscreen = false, language = "ko" };
             Assert.That(AppRoot.Instance.TrySaveSettings(requested), Is.False);
-            Assert.That(runtime.Applied.Count, Is.EqualTo(1));
+            Assert.That(runtime.Applied.Count, Is.EqualTo(3));
+            AssertSettings(runtime.Applied.Last(), original.masterVolume, original.fullscreen, original.language);
             AssertSettings(AppRoot.Instance.Settings.Current, original.masterVolume, original.fullscreen, original.language);
 
             Directory.CreateDirectory(testDirectory);
             var protectedJson = "{\"schemaVersion\":999}";
             File.WriteAllText(Path.Combine(testDirectory, SettingsService.FileName), protectedJson);
             Assert.That(AppRoot.Instance.TrySaveSettings(requested), Is.False);
-            Assert.That(runtime.Applied.Count, Is.EqualTo(1));
+            Assert.That(runtime.Applied.Count, Is.EqualTo(5));
+            AssertSettings(runtime.Applied.Last(), original.masterVolume, original.fullscreen, original.language);
             Assert.That(File.ReadAllText(Path.Combine(testDirectory, SettingsService.FileName)), Is.EqualTo(protectedJson));
+        }
+
+        [UnityTest]
+        public IEnumerator RuntimeApplyFailureDoesNotPersistNewSettings()
+        {
+            yield return LoadBoot();
+            var root = AppRoot.Instance;
+            Assert.That(root.TrySaveSettings(new UserSettings { masterVolume = 0.75f, fullscreen = true, language = "en" }), Is.True);
+            var settingsPath = Path.Combine(testDirectory, SettingsService.FileName);
+            var previousFile = File.ReadAllText(settingsPath);
+            runtime.FailApply = true;
+            LogAssert.Expect(LogType.Error, "[Starter Project] Injected runtime apply failure.");
+
+            Assert.That(root.TrySaveSettings(new UserSettings { masterVolume = 0.25f, fullscreen = false, language = "ko" }), Is.False);
+            Assert.That(root.State, Is.EqualTo(AppState.Failed));
+            Assert.That(File.ReadAllText(settingsPath), Is.EqualTo(previousFile));
+            AssertSettings(root.Settings.Current, 0.75f, true, "en");
         }
 
         [UnityTest]

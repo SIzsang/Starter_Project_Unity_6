@@ -2,7 +2,7 @@
 
 ## 실행과 적용 범위
 
-`00_StartScene`에서 Play한다. Boot가 사용자 설정을 읽은 뒤 음량·화면에 적용하고 Title로 이동한다. Title/Main의 설정 버튼은 저장 성공 후 시스템에 반영한다. 저장 실패 시 기존 설정을 유지하며, 백업 복구나 `SettingsService.Reload()`로 확정된 설정도 반영한다.
+`00_StartScene`에서 Play한다. Boot가 사용자 설정을 읽은 뒤 음량·화면에 적용하고 Title로 이동한다. Title/Main의 설정 버튼은 새 값을 검증·시스템 적용한 뒤 저장한다. 저장 실패 시 이전 시스템 값을 다시 적용하며, 백업 복구나 `SettingsService.Reload()`로 확정된 설정도 반영한다.
 
 - `Volume`: 전체 음량 0~100%. `AudioListener.volume`을 사용하므로 일반 AudioSource의 소리에 적용한다. 예제에 배경음이나 효과음 콘텐츠를 추가하지는 않는다. 실제 청취 확인은 AudioSource에 클립을 연결해 수행한다.
 - `Fullscreen`: 켜짐은 테두리 없는 전체화면(`FullScreenWindow`), 꺼짐은 창 모드(`Windowed`). 해상도·주사율·품질 설정은 변경하지 않는다. Editor의 Game View로는 실제 Windows 창 전환을 검증할 수 없으므로 빌드 검증 항목으로 남긴다.
@@ -15,7 +15,7 @@
 
 `AppRoot`가 `IRuntimeSettings`를 소유한다. 기본 구현 `UnityRuntimeSettings`는 같은 화면 모드 요청을 반복하지 않으며, 루트 파괴나 초기화 실패 시 생성 당시 전역 음량·화면 모드로 복원한다. 이는 Play 반복 실행에서 이전 실행의 전역 설정을 남기지 않기 위한 처리다.
 
-`SettingsService.Changed`는 현재 값이 확정된 뒤 발생한다. `AppRoot`는 이 알림으로 시스템 설정을 적용하며 해제 시 구독을 제거한다. 설정 파일 저장 성공 후 플랫폼 적용에서 예외가 나면 앱을 실패 상태로 바꾸고 초기 시스템 설정을 복원한다. 이미 저장된 사용자 JSON은 유지되므로 원인 수정 후 재실행하면 다시 적용한다.
+`SettingsService.Changed`는 현재 값이 확정된 뒤 발생한다. `AppRoot`는 Reload·백업 복구의 알림으로 시스템 설정을 적용하며 해제 시 구독을 제거한다. 화면 버튼의 설정 저장은 `AppRoot`가 검증 → 시스템 적용 → JSON 저장을 조정한다. 플랫폼 적용에서 예외가 나면 새 JSON을 쓰지 않고 앱을 실패 상태로 바꾸며 초기 시스템 설정을 복원한다. JSON 저장이 실패하면 이전 실행 설정으로 되돌린다. 이 보상 적용마저 실패하면 앱을 실패 상태로 전환한다.
 
 테스트와 플랫폼별 구현은 `Begin` 전에 `ConfigureRuntimeSettings`로 대체 구현을 전달한다. 루트가 `Dispose`를 호출하므로 동일 인스턴스를 다른 루트와 공유하지 않는다. Core는 UI·Input System에 의존하지 않는다.
 
@@ -42,6 +42,8 @@
 최초 PlayMode 실행에서 포커스가 없는 batchmode의 키보드 이벤트가 Editor 쪽으로 전달되어 2개 테스트가 실패했다. 설치된 Input System의 자체 테스트 방식에 맞춰 테스트 동안만 입력 라우팅·백그라운드 처리를 조정하고 종료 시 원복했다. 버튼 함수를 직접 호출하는 우회 없이 입력 이벤트 경로를 유지한 최종 실행에서 전부 통과했다. 프로젝트의 일반 입력 설정은 변경하지 않았다.
 
 Windows 플레이어의 전체화면 전환, 실제 오디오 장치 청취, 물리 게임패드 조작과 앱 프로세스 재실행은 로드맵 7단계의 실제 실행 검증에 남긴다.
+
+2026-09-23 설계 점검 후 설정 저장의 플랫폼 적용 순서를 보완했다. 격리 복제본에서 EditMode 46개·PlayMode 27개 통과, Windows 개발 빌드와 별도 프로세스 저장·재실행 이어하기 통과. 상세 책임 경계와 미검증 범위는 [SOLID·패턴 점검](ARCHITECTURE_REVIEW.md)과 [통합 검증 기록](INTEGRATION_VALIDATION.md)을 따른다.
 
 ## API 참고
 
