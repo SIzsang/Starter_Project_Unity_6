@@ -137,7 +137,8 @@ namespace StarterProject.Tests
             var game = new GameSessionService(fileStore);
             game.StartNew("{\"checkpoint\":\"town\"}");
             Assert.That(game.TrySave(), Is.True, game.Message);
-            var old = JObject.Parse(File.ReadAllText(GetTestFilePath(GameSessionService.FileName)));
+            // Keep the saved UTC text unchanged while constructing a v1 fixture.
+            var old = JsonData.ParseObject(File.ReadAllText(GetTestFilePath(GameSessionService.FileName)));
             old["schemaVersion"] = 1;
             old["data"] = old["payload"];
             old.Remove("payload");

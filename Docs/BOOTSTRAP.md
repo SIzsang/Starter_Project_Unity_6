@@ -74,3 +74,8 @@ Main 직접 Play의 개발용 Boot 경유를 6단계에서 구현하고 복제�
 - 자동 테스트의 스크린샷 저장을 제거해 그래픽 장치·이미지 파일 생성에 의존하지 않도록 했다. 화면 배치는 필요할 때 별도로 확인한다.
 
 `CreateExampleAssets`는 기존 예제 씬을 생성·보정하는 도구다. 사용 전 씬을 저장해야 하며, 기존 화면의 입력·Bootstrap 연결과 설정·저장 예제 버튼 배치를 수정할 수 있다. 새 프로젝트에서 일반적인 Play를 시작할 때마다 호출할 필요는 없다.
+
+## 2026-09-23 Boot 씬 구성 재검증
+
+`Validate Setup`에 Boot의 활성 `StarterScreen`·Canvas·상태 Text와 단일 활성 EventSystem·UI 액션 검사를 추가했다. 누락된 AppBootstrap 참조뿐 아니라 준비·오류 화면 자체가 표시되지 않는 구성도 편집 시점에 발견한다. Unity 6000.3.16f1 격리 복제본에서 EditMode 46개·PlayMode 27개 전체 통과. 실제 GUI 화면의 시각적 확인은 7단계에 남겨 두며, 현재 상태·향후 새 게임 인계 기준은 [프리셋 상세 Summary](PRESET_SUMMARY.md)에 기록한다.
+같은 Boot 씬과 Core로 Windows x64 Development 빌드를 만들고 검증용 새 저장 경로에서 서로 다른 Player 프로세스의 첫 저장·재실행 이어하기도 확인했다. 숨겨진 그래픽 Player의 캡처는 검은 화면이라 시각 검증으로 사용하지 않는다.

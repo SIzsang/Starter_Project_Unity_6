@@ -269,7 +269,7 @@ namespace StarterProject.Editor
             return references;
         }
 
-        /// <summary>필수 설정, 씬 에셋, UI 입력, Boot의 AppConfig 연결을 변경 없이 검사합니다.</summary>
+        /// <summary>필수 설정, 씬 에셋, UI 입력과 Boot 화면 구성을 변경 없이 검사합니다.</summary>
         internal static void ValidateConfiguration()
         {
             var config = AssetDatabase.LoadAssetAtPath<AppConfig>(ConfigPath);
@@ -291,6 +291,24 @@ namespace StarterProject.Editor
                 var assigned = new SerializedObject(bootstrap).FindProperty("config").objectReferenceValue;
                 if (assigned != config)
                     throw new InvalidOperationException("Boot AppBootstrap must reference the configured AppConfig asset.");
+
+                var screens = preview.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<StarterScreen>(true)).ToArray();
+                if (screens.Length != 1 || !screens[0].isActiveAndEnabled
+                    || screens[0].GetComponent<Canvas>()?.isActiveAndEnabled != true)
+                    throw new InvalidOperationException("Boot scene requires one active StarterScreen on a Canvas.");
+                var screen = new SerializedObject(screens[0]);
+                if (screen.FindProperty("screen").enumValueIndex != (int)StarterScreenKind.Boot
+                    || screen.FindProperty("status").objectReferenceValue == null)
+                    throw new InvalidOperationException("Boot StarterScreen must show the Boot status text.");
+
+                var events = preview.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<EventSystem>(true)).ToArray();
+                var module = events.Length == 1 ? events[0].GetComponent<InputSystemUIInputModule>() : null;
+                if (events.Length != 1 || !events[0].isActiveAndEnabled || module == null
+                    || !module.isActiveAndEnabled || module.actionsAsset == null
+                    || module.submit?.action == null || module.cancel?.action == null)
+                    throw new InvalidOperationException("Boot scene requires one active EventSystem with UI actions.");
             }
             finally { EditorSceneManager.ClosePreviewScene(preview); }
         }
@@ -299,7 +317,7 @@ namespace StarterProject.Editor
         public static void ValidateSetup()
         {
             ValidateConfiguration();
-            Debug.Log("[Starter Project] Setup validation passed: AppConfig, build scenes, Boot reference and UI input.");
+            Debug.Log("[Starter Project] Setup validation passed: AppConfig, build scenes, Boot screen and UI input.");
         }
 
         /// <summary>UI 계층 아래에 단색 Image 패널을 생성합니다.</summary>
