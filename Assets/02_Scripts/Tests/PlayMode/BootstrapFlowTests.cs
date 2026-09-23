@@ -99,6 +99,31 @@ namespace StarterProject.Tests
             finally { SceneManager.activeSceneChanged -= OnSceneChanged; }
         }
 
+        [UnityTest]
+        public IEnumerator GamePayloadPolicySupportsGameDataWithoutChangingCore()
+        {
+            var policy = ScriptableObject.CreateInstance<TestStagePayloadPolicy>();
+            var root = CreateRoot("PayloadRoot");
+            root.ConfigureGamePayload(policy);
+            yield return LoadBoot();
+            yield return WaitForScene(Title);
+            Assert.That(root.TryStartNewGame(), Is.True);
+            yield return WaitForScene(Main);
+            Assert.That(root.Game.Current.PayloadJson, Does.Contain("\"stage\":1"));
+            Assert.That(root.TrySaveGame("{\"stage\":3}"), Is.True, root.StorageMessage);
+            var savePath = Path.Combine(testDirectory, GameSessionService.FileName);
+            var saved = File.ReadAllText(savePath);
+            Assert.That(saved, Does.Contain("\"payloadVersion\": 2"));
+            Assert.That(root.TrySaveGame("{\"other\":4}"), Is.False);
+            Assert.That(File.ReadAllText(savePath), Is.EqualTo(saved));
+            Assert.That(root.TryReturnToTitle(), Is.True);
+            yield return WaitForScene(Title);
+            Assert.That(root.TryContinueGame(), Is.True);
+            yield return WaitForScene(Main);
+            Assert.That(root.Game.Current.PayloadJson, Does.Contain("\"stage\": 3"));
+            Object.Destroy(policy);
+        }
+
         /// <summary>Ready 이후 Boot 재진입이 새 루트를 만들지 않고 Title 복귀로 처리되는지 검증합니다.</summary>
         [UnityTest]
         public IEnumerator ReturningToBootReusesReadyRoot()
@@ -377,6 +402,17 @@ namespace StarterProject.Tests
                 Assert.That(Time.realtimeSinceStartup, Is.LessThan(deadline), "Timed out waiting for app flow.");
                 yield return null;
             }
+        }
+    }
+
+    public sealed class TestStagePayloadPolicy : GamePayloadPolicy
+    {
+        public override int PayloadVersion => 2;
+        public override string CreateInitialPayload() => "{\"stage\":1}";
+        public override void ValidatePayload(string payloadJson)
+        {
+            if (!payloadJson.Contains("\"stage\"))
+                throw new InvalidDataException("A stage is required.");
         }
     }
 }

@@ -59,7 +59,7 @@
 
 ## 게임별 확장
 
-`GameSessionService`는 게임 규칙을 모르는 저장 기반이다. `Gameplay`에서 자신의 모델을 JSON 객체로 만들고 `StartNew(initialPayloadJson)` / `TrySave(payloadJson)`에 전달한다. 생성자의 `payloadVersion`과 `payloadValidator`를 게임에 맞게 지정한다. 검증기는 잘못된 데이터에 `JsonException` 또는 `InvalidDataException`을 던지도록 작성한다. `AppRoot.Initialize`에서 해당 구성을 연결하고 `Current.PayloadJson`을 게임 상태로 복원하는 단계도 추가한다.
+`GameSessionService`는 게임 규칙을 모르는 저장 기반이다. `Gameplay`에서 `GamePayloadPolicy` 파생 ScriptableObject를 만들고 Boot의 `AppBootstrap`에 연결해 초기 JSON·`PayloadVersion`·검증 규칙을 지정한다. 검증기는 잘못된 데이터에 `JsonException` 또는 `InvalidDataException`을 던진다. 실제 게임 상태는 JSON 객체로 만들어 `AppRoot.TrySaveGame(payloadJson)`에 전달하고, `Continue` 뒤 `AppRoot.Game.Current.PayloadJson`을 게임 모델로 복원한다. Core 코드를 수정할 필요는 없다. [새 게임 시작 가이드](NEW_GAME_SETUP.md)
 
 현재는 단일 슬롯·단일 앱 소유권·메인 스레드 호출을 전제로 한다. 파일 읽기/쓰기는 동기이며 한 파일 최대 1 MiB, JSON 깊이 최대 32다. 동일 저장소/리포지토리 내부 작업은 잠금으로 직렬화하지만 여러 앱 프로세스가 같은 경로를 공유하는 동시 편집은 지원하지 않는다. 대규모 데이터·자동 저장·다중 슬롯·클라우드 저장은 요구가 생기면 추가한다.
 

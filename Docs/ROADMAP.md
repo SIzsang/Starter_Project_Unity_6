@@ -27,3 +27,5 @@
 2026-09-23: 식별 정보·패키지 정리 커밋 `3460339`의 새 Git 복제본을 빈 Library에서 다시 열어 EditMode 46개·PlayMode 29개, Windows 개발 빌드까지 통과했다. 프레임이 나뉜 캐릭터 에셋의 Animator 제작은 프리셋 완료 후 새 게임 프로젝트에서 수행한다. GUI·실기기와 Unity Hub 연결 확인 전에는 7·8단계 완료율을 올리지 않는다.
 테스트는 기능 구현과 함께 진행하며, 7단계에서는 전체 연결을 검증한다.
 GitHub Template 배포를 우선 검토하며 Unity Hub 커스텀 템플릿은 v1 이후 별도 작업이다.
+
+2026-09-23: 사용자가 GUI Computer Use 검증을 뒤로 미루고 제작을 우선하도록 요청했다. 8단계 배포 준비에서 게임별 `GamePayloadPolicy` 연결, JSON 저장 API, Product Name 기반 Windows Preview 이름과 새 게임 인계·변경 이력 문서를 추가했다. 기존 추적 에셋·meta와 생성 파일 목록을 점검했다. 새 코드의 Unity 회귀 검증과 GUI·실기기·Cloud 연결 확인은 아직 완료하지 않았으므로 7·8단계 완료율을 올리지 않는다.

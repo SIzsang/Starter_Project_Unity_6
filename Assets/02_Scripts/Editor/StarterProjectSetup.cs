@@ -412,23 +412,40 @@ namespace StarterProject.Editor
 
         /// <summary>
         /// 현재 활성 빌드 씬으로 Windows x64 Development 빌드를 생성합니다.
-        /// 빌드 전 AppConfig를 검증하며 결과는 Builds/Windows/StarterProject.exe에 저장합니다.
+        /// 빌드 전 AppConfig를 검증하며 결과는 Builds/Windows/{Product Name}.exe에 저장합니다.
         /// </summary>
         [MenuItem("Tools/Starter Project/Build Windows Preview")]
         public static void BuildWindowsPreview()
         {
             ValidateConfiguration();
-            Directory.CreateDirectory("Builds/Windows");
+            var outputDirectory = Path.Combine("Builds", "Windows");
+            Directory.CreateDirectory(outputDirectory);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
                 scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(),
-                locationPathName = "Builds/Windows/StarterProject.exe",
+                locationPathName = Path.Combine(outputDirectory, GetWindowsPreviewExecutableName(PlayerSettings.productName)),
                 target = BuildTarget.StandaloneWindows64,
                 options = BuildOptions.Development
             });
             if (report.summary.result != BuildResult.Succeeded)
                 throw new InvalidOperationException($"Build failed: {report.summary.result}");
             Debug.Log($"[Starter Project] Windows build succeeded ({report.summary.totalSize} bytes).");
+        }
+
+        /// <summary>복제한 게임의 Product Name을 Windows 실행 파일명으로 안전하게 변환합니다.</summary>
+        internal static string GetWindowsPreviewExecutableName(string productName)
+        {
+            const string invalidCharacters = "<>:\"/\\|?*";
+            var name = new string((productName ?? string.Empty).Trim()
+                .Select(character => character < ' ' || invalidCharacters.IndexOf(character) >= 0 ? '_' : character)
+                .ToArray()).TrimEnd(' ', '.');
+            if (string.IsNullOrEmpty(name)) name = "Game";
+            var reservedName = name.Split('.')[0];
+            if (new[] { "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+                        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" }
+                .Contains(reservedName, StringComparer.OrdinalIgnoreCase))
+                name = "Game_" + name;
+            return name + ".exe";
         }
     }
 }

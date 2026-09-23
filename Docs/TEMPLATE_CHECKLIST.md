@@ -49,14 +49,15 @@ GitHub에서는 저장소 설정의 Template repository 옵션으로 템플릿�
 - [ ] 추적 중인 Unity Cloud 프로젝트·조직 ID는 제거함. Unity Hub/Editor Services UI에서 연결 해제 상태 최종 확인
 - [x] 회사명은 `StarterTemplate`, Standalone 앱 ID는 `com.startertemplate.starterproject`로 정리. 새 게임에서는 첫 실행 전 둘 다 교체
 - [x] 공통 Core/UI/Editor의 `StarterProject.*` 어셈블리·네임스페이스는 유지. 새 게임의 Gameplay 코드는 게임 고유 네임스페이스에 둬 일괄 이름 변경으로 참조를 깨지 않음
-- [ ] 기존 게임 전용 이름·아이콘·콘텐츠·서버 주소 잔존 여부 점검
+- [x] 추적 중인 Assets/ProjectSettings에서 기존 게임 전용 이름·아이콘·콘텐츠·서버 주소 잔존 여부 점검. 게임 전용 이미지·오디오·프리팹·애니메이션 파일은 없음
 - [x] 협업·멀티플레이 센터·Visual Scripting·2D 도구 등의 유지 필요성 검토
 - [x] 현재 코드·씬에 참조가 없는 협업, 멀티플레이 센터, Visual Scripting 패키지를 복제본 테스트·빌드 후 제거. 2D 애니메이션·스프라이트 도구는 미래 게임 에셋 작업을 위해 유지
-- [ ] Assets와 .meta를 쌍으로 포함하고 씬·설정 에셋 참조 검사
-- [ ] 재생성 폴더가 추적되지 않는지 실제 Git 목록 검사
+- [x] 추적 중인 Assets와 .meta의 쌍 검사. 새 저장 정책 스크립트의 .meta도 포함; 기존 씬·설정 에셋 연결은 깨끗한 복제본의 Unity 자동 테스트·빌드에서 확인. 이번 변경의 회귀 검증은 아래에 별도 보류
+- [x] 실제 Git 목록 151개에서 Library/Temp/Logs/UserSettings/Builds/IDE 생성 파일이 추적되지 않음을 검사 (새 파일 추가 전 기준)
 - [x] `3460339`의 새 Git 복제본에서 패키지 첫 복원·Unity 자동 실행·EditMode 46개·PlayMode 29개·Windows 개발 빌드 검증. **GUI 화면 직접 Play는 별도 미완료**
-- [ ] README의 실제 사용 절차와 지원 플랫폼 갱신
-- [ ] 알려진 제한, Unity 버전 및 변경 이력 기록
+- [x] README의 실제 사용 절차와 지원 플랫폼 갱신; [새 게임 시작 가이드](NEW_GAME_SETUP.md)에 복제·게임 데이터 연결 절차 기록
+- [x] [변경 이력](CHANGELOG.md)과 Unity 버전·알려진 제한 기록. 배포 태그는 아직 없음
+- [ ] 새 `GamePayloadPolicy` 연결·Product Name 기반 빌드명의 Unity 회귀 검증 및 깨끗한 복제본 확인
 - [ ] 검증이 끝난 상태를 커밋·푸시하고 템플릿 지정 및 버전 태그 생성
 
 2026-09-10: EditMode 30개·PlayMode 14개 통과. 서비스·AppRoot 재생성 후 설정·게임 저장 복원과 쓰기 실패 시 기존 파일 보호를 확인했다. 전체 앱 프로세스 재실행·강제 종료 내구성·출시 검증 항목은 7단계에서 완료 처리한다. 상세 범위는 [3·4단계 가이드](SETTINGS_AND_SAVE.md)를 따른다.
@@ -74,6 +75,10 @@ GitHub에서는 저장소 설정의 Template repository 옵션으로 템플릿�
 2026-09-23: `966f33f`의 새 Git 복제본에서 Unity 6000.3.16f1의 패키지·에셋 첫 가져오기, EditMode 46개·PlayMode 29개와 Windows 개발 빌드를 확인했다. 이어 검증 복제본에서 미사용 패키지 3개를 제거하고 템플릿 회사명·제품명·앱 ID 및 로컬 Cloud 식별자를 정리한 뒤 같은 테스트·빌드를 다시 통과했다. 원본 Editor의 `Validate Setup` 메뉴도 실제 GUI 경로로 실행해 로그의 통과 메시지를 확인했다. 이 시점에는 변경 후 새 최종 복제본 검증과 Main 직접 Play·메뉴 대화상자·화면/입력·모바일 실기기·Unity Hub의 Cloud 연결 표시 확인이 남아 있었다. [통합 검증](INTEGRATION_VALIDATION.md)
 
 2026-09-23 최종 복제 재검증: 정리 내용을 담은 `3460339`를 새 폴더로 다시 복제해, 비어 있는 Library에서 Unity가 패키지를 복원한 뒤 EditMode 46개·PlayMode 29개와 Windows 개발 빌드(169,600,344 bytes)가 통과했다. 추적 중인 Cloud ID는 비어 있고 제거한 선택 패키지는 다시 설치되지 않았다. GUI 창·장치 품질과 Unity Hub 연결 표시를 확인해야 배포 완료로 판정한다.
+
+2026-09-23 배포 준비 구현: 새 게임이 Core를 수정하지 않고 초기 JSON·payload 버전·검증 규칙을 연결하도록 `GamePayloadPolicy` 확장 지점을 추가했다. Main의 `TrySaveGame(payloadJson)`으로 실제 게임 상태를 전달한다. Windows Preview 파일명은 Product Name을 따른다. 에셋·meta 쌍과 추적 생성 파일, 게임 전용 잔존물 목록을 정적으로 점검하고 새 게임 시작 가이드·변경 이력을 작성했다. **이 새 코드의 Unity 회귀 검증은 제작 작업을 마친 뒤 진행한다.** GUI·실기기 검증은 사용자 요청에 따라 미룬다.
+
+검증 착수 기록: Unity 명령줄 EditMode 테스트가 테스트 시작 전 Licensing Client IPC 연결 실패와 `com.unity.editor.headless` 라이선스 오류로 진행하지 못해 중단했다. 복제본의 생성된 C# 프로젝트로 Core 단독 `dotnet build`는 오류 0개로 통과했지만 Unity 패키지 참조 경고가 있어 Unity Test Runner 결과를 대체하지 않는다. 라이선스 연결이 정상화되면 회귀 테스트·빌드를 한 번에 재개한다. [통합 검증 기록](INTEGRATION_VALIDATION.md)
 
 ## 새 게임을 만들 때
 

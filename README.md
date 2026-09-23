@@ -2,7 +2,7 @@
 
 새 게임을 시작할 때 복제해서 사용하는 Unity 공통 기반 프로젝트입니다.
 **로드맵 1~6단계: Bootstrap·설정·저장·공통 기능·Editor 개발 경로**를 구현하고 자동 검증했습니다.
-7단계 통합 테스트와 Windows 빌드 검증을 진행 중입니다.
+7단계 통합 테스트의 자동 검증을 진행했고, 템플릿 인계·배포 준비를 진행 중입니다. GUI·실기기 검증은 남아 있습니다.
 
 ## 방향
 
@@ -20,6 +20,7 @@
 - 첫 검증 대상: Windows PC / uGUI. 예제 UI는 1920×1080 설계 기준으로 PC와 가로형 모바일 해상도·안전 영역에 대응하도록 설정
 - 시작 씬: `00_StartScene` → `01_Title` → `02_MainScene`
 - 템플릿 기본 식별자: Company `StarterTemplate`, Product `StarterProject`. 새 게임은 첫 Play·빌드 전에 고유한 이름과 앱 ID로 변경
+- Windows Preview 빌드: `Tools > Starter Project > Build Windows Preview` → `Builds/Windows/<Product Name>.exe`
 
 ## 실행
 
@@ -48,6 +49,8 @@ Main 씬을 열고 Play하면 개발용 저장 공간에서 Boot 초기화 후 M
 - [통합·Windows 빌드 검증](Docs/INTEGRATION_VALIDATION.md): 7단계 빌드·프로세스 재실행·오류 보호 결과와 남은 GUI 확인
 - [SOLID·패턴 점검](Docs/ARCHITECTURE_REVIEW.md): 공통 기반의 책임·의존 경계와 설정 저장 실패 보완
 - [프리셋 상세 Summary](Docs/PRESET_SUMMARY.md): 확인된 기능·검증·한계와 새 게임 제작 시 인계 기준
+- [새 게임 시작 가이드](Docs/NEW_GAME_SETUP.md): 복제 직후 식별자·씬 확인과 게임별 JSON 데이터 연결 절차
+- [변경 이력](Docs/CHANGELOG.md): 아직 배포 전인 템플릿의 주요 변경과 버전 상태
 - [제작 가능 범위 브리핑](Docs/GAME_CAPABILITY_BRIEF.md): 현재 프리셋으로 시작할 수 있는 게임과 추가 구현 영역, 캐릭터 에셋 애니메이션 인계 조건
 - [로그라이크·로그라이트 사전 조사](Docs/ROGUELIKE_PLAY_FLOW_RESEARCH.md): 실제 게임의 런·영구 성장·중단 저장 비교와 6단계 개발 진입 제안
 - [개발 로드맵](Docs/ROADMAP.md): 8단계 작업 순서와 완료 기준

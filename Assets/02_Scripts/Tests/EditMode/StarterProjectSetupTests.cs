@@ -100,5 +100,14 @@ namespace StarterProject.Tests
             Assert.That(first.StartsWith(StarterProjectPlayMode.TestSessionsRoot + System.IO.Path.DirectorySeparatorChar), Is.True);
             Assert.That(() => StarterProjectPlayMode.GetSessionPath("../StarterData"), Throws.ArgumentException);
         }
+
+        [TestCase("My Game", "My Game.exe")]
+        [TestCase("Boss: Rush?", "Boss_ Rush_.exe")]
+        [TestCase("CON", "Game_CON.exe")]
+        [TestCase("  ", "Game.exe")]
+        public void WindowsPreviewUsesSafeGameProductName(string productName, string executableName)
+        {
+            Assert.That(StarterProjectSetup.GetWindowsPreviewExecutableName(productName), Is.EqualTo(executableName));
+        }
     }
 }

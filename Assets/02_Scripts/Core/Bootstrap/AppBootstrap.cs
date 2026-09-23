@@ -10,6 +10,7 @@ namespace StarterProject
     public sealed class AppBootstrap : MonoBehaviour
     {
         [SerializeField] private AppConfig config;
+        [SerializeField] private GamePayloadPolicy gamePayloadPolicy;
 
 #if UNITY_EDITOR
         /// <summary>Editor Play가 Boot 초기화 전에 개발용 설정을 주입하는 지점입니다.</summary>
@@ -29,6 +30,8 @@ namespace StarterProject
             if (root.State == AppState.NotStarted)
                 EditorPrepareRoot?.Invoke(root);
 #endif
+            if (root.State == AppState.NotStarted && gamePayloadPolicy != null)
+                root.ConfigureGamePayload(gamePayloadPolicy);
             root.Begin(config);
         }
     }

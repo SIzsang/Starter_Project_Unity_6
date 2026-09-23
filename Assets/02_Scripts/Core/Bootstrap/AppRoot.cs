@@ -45,6 +45,7 @@ namespace StarterProject
         public GameSessionService Game { get; private set; }
         public string StorageMessage { get; private set; } = "";
         private ITextFileStore fileStore;
+        private GamePayloadPolicy gamePayloadPolicy;
         private IRuntimeSettings runtimeSettings;
         private bool isCommittingSettings;
         private AppStartupDestination startupDestination;
@@ -73,6 +74,14 @@ namespace StarterProject
         {
             if (State != AppState.NotStarted) throw new InvalidOperationException("Configure storage before Begin.");
             this.fileStore = fileStore ?? throw new ArgumentNullException(nameof(fileStore));
+        }
+
+        /// <summary>Boot 시작 전에 게임별 저장 버전·초기값·검증 규칙을 연결합니다.</summary>
+        public void ConfigureGamePayload(GamePayloadPolicy policy)
+        {
+            if (State != AppState.NotStarted) throw new InvalidOperationException("Configure game payload before Begin.");
+            if (gamePayloadPolicy != null) throw new InvalidOperationException("Game payload policy is already configured.");
+            gamePayloadPolicy = policy ?? throw new ArgumentNullException(nameof(policy));
         }
 
         /// <summary>
@@ -140,7 +149,8 @@ namespace StarterProject
                 CurrentStep = "Loading user settings and save information";
                 fileStore = fileStore ?? new JsonFileStore(Path.Combine(Application.persistentDataPath, "StarterData"));
                 Settings = new SettingsService(defaultSettings, fileStore);
-                Game = new GameSessionService(fileStore);
+                Game = new GameSessionService(fileStore, gamePayloadPolicy != null ? gamePayloadPolicy.PayloadVersion : 1,
+                    gamePayloadPolicy != null ? (Action<string>)gamePayloadPolicy.ValidatePayload : null);
                 StorageMessage = string.Join("\n", new[] { Settings.Message, Game.Message }).Trim();
 
                 CurrentStep = "Applying audio and display settings";
@@ -156,7 +166,7 @@ namespace StarterProject
                 CurrentStep = "Ready";
                 if (startupDestination == AppStartupDestination.NewGameInMain)
                 {
-                    Game.StartNew();
+                    Game.StartNew(CreateInitialPayload());
                     StorageMessage = Game.Message;
                     if (!TryNavigate(mainScenePath))
                         throw new InvalidOperationException("Could not enter the configured Main scene after startup.");
@@ -174,10 +184,14 @@ namespace StarterProject
         public bool TryStartNewGame()
         {
             if (!CanStartGame()) return false;
-            Game.StartNew();
+            try { Game.StartNew(CreateInitialPayload()); }
+            catch (Exception exception) { Fail(exception); return false; }
             StorageMessage = Game.Message;
             return TryNavigate(mainScenePath);
         }
+
+        private string CreateInitialPayload() => gamePayloadPolicy != null
+            ? gamePayloadPolicy.CreateInitialPayload() : "{}";
 
         public bool TryContinueGame()
         {
@@ -190,11 +204,14 @@ namespace StarterProject
         private bool CanStartGame() => Instance == this && State == AppState.Ready && !IsTransitioning
             && !lifetimeToken.IsCancellationRequested && SceneManager.GetActiveScene().path == titleScenePath;
 
-        public bool TrySaveGame(bool replaceExisting = false)
+        public bool TrySaveGame(bool replaceExisting = false) => TrySaveGame(null, replaceExisting);
+
+        /// <summary>게임별 JSON 객체를 현재 슬롯에 저장합니다. null이면 현재 payload를 다시 저장합니다.</summary>
+        public bool TrySaveGame(string payloadJson, bool replaceExisting = false)
         {
             if (Instance != this || State != AppState.Ready || IsTransitioning
                 || SceneManager.GetActiveScene().path != mainScenePath) return false;
-            var isSaved = Game.TrySave(replaceExisting: replaceExisting);
+            var isSaved = Game.TrySave(payloadJson, replaceExisting);
             StorageMessage = Game.Message;
             return isSaved;
         }

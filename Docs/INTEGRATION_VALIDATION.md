@@ -53,3 +53,5 @@ Boot 회귀 빌드는 복제본에서만 `productName`을 `StarterProjectBootstr
 
 새 Git 복제본은 Unity 첫 실행·테스트·빌드까지 통과했다. Unity가 첫 가져오기와 빌드 중 일부 URP 설정을 재직렬화하고 기본 `ProjectSettings/SceneTemplateSettings.json`을 생성했으므로, 이 자동 생성 변경을 기능 수정으로 복사하지 않았다. 패키지·식별 정보 실험은 이 복제본에서 이어 했고, 원본 코드·씬 참조를 직접 변경하지 않았다.
 템플릿 저장 스모크의 제품명 변경과 검증 스크립트도 Git 제외 복제본에만 있다. 검증 저장은 `Application.persistentDataPath`의 `StarterTemplate/StarterProjectTemplateSmoke` 아래로 격리해 기본 템플릿의 저장 공간과 분리했다.
+
+2026-09-23 후속 저장 정책·빌드명 변경: 구현 완료 뒤 복제본에서 Unity 명령줄 EditMode 회귀 검증을 시도했다. 테스트가 시작되기 전에 Licensing Client IPC 연결이 거부되고 `com.unity.editor.headless` 라이선스 오류가 발생해 중단했다. 새 테스트의 통과 수는 **0개가 아니라 미실행**이며 PlayMode와 새 Windows 빌드도 시작하지 않았다. 복제본의 생성된 C# 프로젝트에서 Core 단독 `dotnet build`는 오류 0개로 끝났으나 Unity 패키지 참조 경고 2개가 있어 Unity 테스트·빌드 완료 증거가 아니다. 사용자 요청에 따라 Computer Use GUI 검증은 진행하지 않았다.
