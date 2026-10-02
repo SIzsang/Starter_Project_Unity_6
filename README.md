@@ -2,7 +2,7 @@
 
 새 게임을 시작할 때 복제해서 사용하는 Unity 공통 기반 프로젝트입니다.
 Bootstrap·설정·저장·공통 기능·Editor 개발 경로와 UI 에셋 교체 경로를 구현했습니다.
-필수 Unity 회귀 테스트와 Windows Player의 시작·저장·이어하기 흐름, 1920×1080 화면 표시를 확인했고 v1.0.0 배포를 준비했습니다. 검증 범위와 새 게임 인계 절차는 [v1.0.0 배포 가이드](Docs/RELEASE.md)에 있습니다.
+필수 Unity 회귀 테스트와 Windows Player의 시작·저장·이어하기 흐름, 1920×1080 화면 표시를 확인하고 **v1.0.0**으로 배포했습니다. 검증 범위와 새 게임 인계 절차는 [v1.0.0 배포 가이드](Docs/RELEASE.md)에 있습니다.
 
 ## 방향
 
@@ -22,6 +22,10 @@ Bootstrap·설정·저장·공통 기능·Editor 개발 경로와 UI 에셋 교�
 - 시작 씬: `00_StartScene` → `01_Title` → `02_MainScene`
 - 템플릿 기본 식별자: Company `StarterTemplate`, Product `StarterProject`. 새 게임은 첫 Play·빌드 전에 고유한 이름과 앱 ID로 변경
 - Windows Preview 빌드: `Tools > Starter Project > Build Windows Preview` → `Builds/Windows/<Product Name>.exe`
+
+## 새 게임용 프리셋 받기
+
+[GitHub Template](https://github.com/SIzsang/Starter_Project_Unity_6)의 `Use this template`으로 새 저장소를 만들거나 [v1.0.0 소스 ZIP](https://github.com/SIzsang/Starter_Project_Unity_6/archive/refs/tags/v1.0.0.zip)을 받습니다. 복제 후 첫 Play 전에 게임의 Product Name과 앱 식별자를 바꿉니다.
 
 ## 실행
 

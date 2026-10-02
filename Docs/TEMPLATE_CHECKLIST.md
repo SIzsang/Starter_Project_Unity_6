@@ -1,6 +1,6 @@
 # Starter Project — 템플릿 완성·복제 체크리스트
 
-최종 수정: 2026-10-02 · 필수 기능 검증 완료 · 배포 진행 중
+최종 수정: 2026-10-02 · v1.0.0 필수 기능 검증·버전·Template 배포 완료
 
 ## 배포 형태 제안
 
@@ -56,9 +56,16 @@ GitHub에서는 저장소 설정의 Template repository 옵션으로 템플릿�
 - [x] 실제 Git 목록 151개에서 Library/Temp/Logs/UserSettings/Builds/IDE 생성 파일이 추적되지 않음을 검사 (새 파일 추가 전 기준)
 - [x] `3460339`의 새 Git 복제본에서 패키지 첫 복원·Unity 자동 실행·EditMode 46개·PlayMode 29개·Windows 개발 빌드 검증. **GUI 화면 직접 Play는 별도 미완료**
 - [x] README의 실제 사용 절차와 지원 플랫폼 갱신; [새 게임 시작 가이드](NEW_GAME_SETUP.md)에 복제·게임 데이터 연결 절차 기록
-- [x] [변경 이력](CHANGELOG.md)과 Unity 버전·알려진 제한 기록. 배포 태그는 아직 없음
+- [x] [변경 이력](CHANGELOG.md)과 Unity 버전·알려진 제한 기록. v1.0.0 배포 태그·[인계 가이드](RELEASE.md) 제공
 - [x] 새 `GamePayloadPolicy` 연결·Product Name 기반 빌드명의 Unity 회귀 검증 및 깨끗한 복제본 확인. EditMode 50개·PlayMode 30개, 기본 Windows 빌드와 Product Name 변경 빌드 성공
-- [ ] 검증이 끝난 상태를 커밋·푸시하고 템플릿 지정 및 버전 태그 생성
+- [x] 검증이 끝난 상태를 main에 커밋·푸시하고 GitHub Template 지정 및 v1.0.0 버전 태그 생성
+
+## 새 게임·추가 플랫폼에서 확인할 사항
+
+- [ ] Android·iOS 빌드 모듈과 실제 모바일 가로 화면의 안전 영역·가독성·터치 조작
+- [ ] 대상 키보드·게임패드의 물리 입력, 오디오 청취와 최종 에셋 배치
+
+이 항목은 게임 콘텐츠·지원 기기별 출시 품질 확인이다. v1.0.0 공통 기반의 필수 기능 검증과 구분하며 미검증 범위는 [배포 가이드](RELEASE.md)에 명시한다.
 
 2026-09-10: EditMode 30개·PlayMode 14개 통과. 서비스·AppRoot 재생성 후 설정·게임 저장 복원과 쓰기 실패 시 기존 파일 보호를 확인했다. 전체 앱 프로세스 재실행·강제 종료 내구성·출시 검증 항목은 7단계에서 완료 처리한다. 상세 범위는 [3·4단계 가이드](SETTINGS_AND_SAVE.md)를 따른다.
 

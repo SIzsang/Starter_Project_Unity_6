@@ -1,6 +1,6 @@
 # Starter Project 상세 Summary — 새 게임 제작용 인계 기록
 
-최종 점검: 2026-10-02 · 상태: **프리셋 구현·필수 기능 검증 완료, v1.0.0 배포 진행 중**
+최종 점검: 2026-10-02 · 상태: **v1.0.0 프리셋 제작·필수 기능 검증·GitHub Template 배포 완료**
 
 이 문서는 향후 새 프로젝트에서 이 프리셋을 사용할 때 다시 확인할 기준 기록이다. 대화나 모델의 임시 기억에 의존하지 않도록 프로젝트와 함께 버전 관리한다. 변경 후에는 검증 결과와 한계를 함께 갱신한다.
 
@@ -9,7 +9,7 @@
 - **목표:** 새 게임에서 초기화·설정·저장·씬 흐름을 다시 만들지 않고 게임별 콘텐츠와 규칙을 개발할 수 있는 Unity 스타터를 제공한다.
 - **첫 검증 환경:** Unity 6000.3.16f1, URP 2D 17.3.0, uGUI, Input System 1.19.0, Windows PC. 현재 렌더링·화면 구성은 2D 시작점이며 모든 플랫폼·장르의 완성품은 아니다.
 - **공통과 게임별 경계:** Boot, 설정, 파일 저장, 기본 씬 전환, 개발용 진입은 공통이다. 전투·인벤토리·캐릭터 성장·스테이지 규칙·사망·자동 저장 시점은 새 게임의 `Gameplay`가 정의한다.
-- **현재 완료 판정:** 사용자 요청에 따라 새 게임 제작의 일반적인 오류를 막는 검증으로 범위를 정리했다. 구현·필수 회귀와 Windows Player 시작·저장·이어하기·1920×1080 표시 확인은 완료했다. 버전·소스 묶음·원격 Template 게시를 진행한다. 게임별 기기 품질·물리 입력은 별도 확인 범위다. [배포 기준](RELEASE.md)
+- **현재 완료 판정:** 사용자 요청에 따라 새 게임 제작의 일반적인 오류를 막는 검증으로 범위를 정리했다. 구현·필수 회귀와 Windows Player 시작·저장·이어하기·1920×1080 표시 확인은 완료했다. v1.0.0 태그·소스 ZIP·GitHub Template으로 배포한다. 게임별 기기 품질·물리 입력은 별도 확인 범위다. [배포 기준](RELEASE.md)
 - **예제 UI 범위:** PC와 가로형 모바일을 대상으로 Screen Space Overlay·1920×1080 Canvas Scaler와 안전 영역 맞춤을 사용한다. 기존 1280×720 예제 배치는 비례 환산한다. 배경·버튼 `Image`에 게임 스프라이트를 지정하고 Boot의 로딩 프리팹 슬롯으로 로딩 화면을 교체할 수 있다. 모바일 실제 기기 검증과 게임별 HUD는 별개다. [반응형 UI 기준](RESPONSIVE_UI.md)
 
 ## Bootstrap Scene과 실행 흐름
@@ -64,8 +64,10 @@
 
 - **2026-10-02 원본 Editor 부분 확인:** Boot에서 Play하여 Title 로드, Play 종료 후 Boot 복귀를 확인했다. Computer Use의 Unity 창 캡처가 반복 시간 초과되고 GameView 내부 버튼이 접근성에 표시되지 않아 Title→Main 조작·Main 직접 Play·시각 확인은 완료하지 못했다. 별도 Windows Player 재빌드는 성공했지만 Computer Use 앱 실행 승인 대기가 시간 초과돼 Player 화면은 열지 못했다. [검증 기록](INTEGRATION_VALIDATION.md)
 
+- **2026-10-02 v1.0.0 인계:** 네이티브 Windows Player Title·Main 화면과 합성 키 입력의 New Game→Save→Title→Continue, 같은 저장 세션 복원을 확인했다. main·GitHub Template·v1.0.0 태그로 기준 소스를 고정한다. 임시 테스트 코드와 Cloud ID는 포함하지 않는다. [배포 가이드](RELEASE.md)
+
 ## 새 프로젝트 인계 기준
 
-이 프리셋이 최종 검증·버전 지정된 뒤 새 저장소를 만든다. 복제 직후 Product Name·Company Name·앱 식별자와 저장 경로 충돌 여부, Cloud 연결, 플랫폼·렌더러·입력 요구사항을 새 게임에 맞춘다. `SO_AppConfig`와 씬 구성을 검사하고 Unity Test Runner·첫 실행·저장·재실행·Windows 빌드를 다시 확인한다. 어떤 프리셋 버전에서 출발했는지 새 게임의 기록에 남긴다. 향후 게임에서 바꾼 Core를 이 원본 프리셋에 자동으로 역반영하지 않는다.
+v1.0.0 태그 또는 GitHub Template을 기준으로 새 저장소를 만든다. 복제 직후 Product Name·Company Name·앱 식별자와 저장 경로 충돌 여부, Cloud 연결, 플랫폼·렌더러·입력 요구사항을 새 게임에 맞춘다. `SO_AppConfig`와 씬 구성을 검사하고 Unity Test Runner·첫 실행·저장·재실행·Windows 빌드를 다시 확인한다. 어떤 프리셋 버전에서 출발했는지 새 게임의 기록에 남긴다. 향후 게임에서 바꾼 Core를 이 원본 프리셋에 자동으로 역반영하지 않는다.
 
 세부 기록: [새 게임 시작 가이드](NEW_GAME_SETUP.md), [제작 가능 범위](GAME_CAPABILITY_BRIEF.md), [Bootstrap 사용 가이드](BOOTSTRAP.md), [설정·저장](SETTINGS_AND_SAVE.md), [공통 기능](COMMON_SERVICES.md), [Editor 개발 경로](EDITOR_WORKFLOW.md), [SOLID 점검](ARCHITECTURE_REVIEW.md), [통합 검증](INTEGRATION_VALIDATION.md), [로드맵](ROADMAP.md), [템플릿 체크리스트](TEMPLATE_CHECKLIST.md), [변경 이력](CHANGELOG.md).
