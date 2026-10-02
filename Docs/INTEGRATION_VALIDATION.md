@@ -69,3 +69,9 @@ Boot 회귀 빌드는 복제본에서만 `productName`을 `StarterProjectBootstr
 | 새 복제본의 Product Name만 `StarterProjectTemplateProbe`로 변경 | 추가 Windows 개발 빌드 성공(169,602,070 bytes), `StarterProjectTemplateProbe.exe` 생성 | `Logs/TemplateLatestProductNameBuild.log` |
 
 원본의 추적 파일 155개에 Library·Temp·Logs·UserSettings·Builds·IDE 생성 파일은 없고, 추적 에셋과 `.meta`의 누락 쌍도 없다. 원본 Editor 로그에는 오류 수정 후 새 C# 컴파일 실패가 없었다. Unity가 검증 복제본에서 재직렬화한 URP·프로젝트 설정과 생성 파일은 원본으로 복사하지 않았다. 테스트 빌드 산출물은 검증 후 정리하고 로그·XML은 `Logs/`에 남긴다. GUI Main 직접 Play, 화면·오디오·실제 입력, 모바일 기기, Unity Hub Cloud 연결 표시와 원격 배포는 계속 별도 확인 사항이다.
+
+## 2026-10-02 UI 에셋 교체 경로 검증
+
+예제 씬의 배경·버튼 `Image`는 Inspector에서 스프라이트를 연결할 수 있다. 로딩 화면은 Boot `StarterScreen`의 선택형 `StarterLoadingOverlay` 프리팹 슬롯으로 교체 가능하게 했고, 사용자 프리팹에서도 전환 중 포인터 입력 차단이 유지되도록 투명 막을 생성한다. 기존 기본 로딩 화면 경로는 그대로 유지한다.
+
+최신 UI·테스트 소스를 기존 검증 복제본에 해시 일치로 반영한 뒤 Unity 6000.3.16f1 PlayMode **31/31**을 통과했다(`Logs/ReleaseCandidatePlayMode.xml`). 입력 차단 보완 후 해당 신규 테스트 **1/1**을 다시 통과했다(`Logs/LoadingPrefabPlayMode.xml`). 변경 직후 Windows 개발 빌드와 최종 입력 차단 보완 후 빌드도 성공했다(`Logs/ReleaseCandidateWindowsBuild.log`, `Logs/LoadingPrefabFinalWindowsBuild.log`). 이 빌드가 실행된 복제본의 Product Name은 검증용 `StarterProjectTemplateProbe`이며 원본 프로젝트의 제품명·Cloud ID 변경은 포함하지 않았다. EditMode 코드는 이번에 변경하지 않아 기존 깨끗한 복제본의 50/50 결과를 유지한다. 실제 화면 시각·터치·물리 입력 검증은 수행하지 않았다.

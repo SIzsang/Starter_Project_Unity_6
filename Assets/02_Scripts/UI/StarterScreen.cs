@@ -35,6 +35,7 @@ namespace StarterProject.UI
         [SerializeField] private Button languageButton;
         [SerializeField] private Button recoverGameButton;
         [SerializeField] private Button recoverSettingsButton;
+        [SerializeField] private StarterLoadingOverlay loadingOverlayPrefab;
         private bool isAwaitingOverwriteConfirmation;
         private AppRoot subscribedRoot;
         private InputAction cancelAction;
@@ -80,7 +81,7 @@ namespace StarterProject.UI
             if (subscribedRoot != null) subscribedRoot.StateChanged -= OnStateChanged;
             subscribedRoot = appRoot;
             if (subscribedRoot == null) return;
-            StarterLoadingOverlay.EnsureCreated(subscribedRoot);
+            StarterLoadingOverlay.EnsureCreated(subscribedRoot, loadingOverlayPrefab);
             subscribedRoot.StateChanged += OnStateChanged;
         }
 

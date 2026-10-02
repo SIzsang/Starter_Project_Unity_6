@@ -8,6 +8,8 @@ namespace StarterProject.UI
     /// 표시 계층이 공개 상태를 구독하므로 Core는 UI를 참조하지 않습니다.
     /// </summary>
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster))]
+    [RequireComponent(typeof(CanvasGroup))]
     public sealed class StarterLoadingOverlay : MonoBehaviour
     {
         private const float DesignScale = 1.5f;
@@ -15,10 +17,10 @@ namespace StarterProject.UI
         private Canvas overlayCanvas;
         private CanvasGroup canvasGroup;
         private GraphicRaycaster raycaster;
-        private Image progressTrack;
-        private Image progressFill;
-        private Text messageText;
-        private Text progressText;
+        [SerializeField] private Image progressTrack;
+        [SerializeField] private Image progressFill;
+        [SerializeField] private Text messageText;
+        [SerializeField] private Text progressText;
         private int displayedPercent = -1;
 
         /// <summary>현재 로딩 화면을 표시하고 포인터 입력을 차단하는지 나타냅니다.</summary>
@@ -31,21 +33,29 @@ namespace StarterProject.UI
         public string Message { get; private set; } = string.Empty;
 
         /// <summary>루트의 수명을 공유하는 오버레이를 한 번만 생성하고 기존 인스턴스를 재사용합니다.</summary>
-        public static StarterLoadingOverlay EnsureCreated(AppRoot root)
+        public static StarterLoadingOverlay EnsureCreated(AppRoot root, StarterLoadingOverlay prefab = null)
         {
             if (root == null) return null;
             var existing = root.GetComponentInChildren<StarterLoadingOverlay>(true);
             if (existing != null) return existing;
 
+            if (prefab != null)
+            {
+                var customOverlay = Instantiate(prefab, root.transform, false);
+                customOverlay.gameObject.SetActive(true);
+                customOverlay.Initialize(root, true);
+                return customOverlay;
+            }
+
             var overlayObject = new GameObject("Loading Overlay", typeof(RectTransform), typeof(Canvas),
                 typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
             overlayObject.transform.SetParent(root.transform, false);
             var overlay = overlayObject.AddComponent<StarterLoadingOverlay>();
-            overlay.Initialize(root);
+            overlay.Initialize(root, false);
             return overlay;
         }
 
-        private void Initialize(AppRoot root)
+        private void Initialize(AppRoot root, bool usesPrefab)
         {
             appRoot = root;
             overlayCanvas = GetComponent<Canvas>();
@@ -54,6 +64,28 @@ namespace StarterProject.UI
             canvasGroup.interactable = false;
             raycaster = GetComponent<GraphicRaycaster>();
 
+            if (messageText == null || progressTrack == null || progressFill == null || progressText == null)
+            {
+                if (usesPrefab)
+                    Debug.LogWarning("[Starter Project] Loading prefab needs Message, Progress Track, Progress Fill and Percentage references. Using default visuals.", this);
+                CreateDefaultVisuals();
+            }
+            else if (usesPrefab)
+            {
+                // Custom artwork can omit its own raycast target; transitions still block all pointer input.
+                var blocker = CreateImage(transform, "Input Blocker", Color.clear);
+                Stretch(blocker.rectTransform);
+                blocker.raycastTarget = true;
+                blocker.transform.SetAsFirstSibling();
+            }
+            StarterCanvasLayout.EnsureConfigured(overlayCanvas);
+            appRoot.StateChanged -= Refresh;
+            appRoot.StateChanged += Refresh;
+            Refresh();
+        }
+
+        private void CreateDefaultVisuals()
+        {
             var background = CreateImage(transform, "Input Blocker", new Color(0.035f, 0.065f, 0.10f, 0.98f));
             Stretch(background.rectTransform);
             background.raycastTarget = true;
@@ -63,11 +95,7 @@ namespace StarterProject.UI
             Position(progressTrack.rectTransform, new Vector2(0, -25), new Vector2(640, 14));
             progressFill = CreateImage(progressTrack.transform, "Progress Fill", new Color(0.39f, 0.89f, 0.76f));
             Stretch(progressFill.rectTransform);
-            // RectTransform을 사용해 단색 이미지에도 진행률을 정확히 적용합니다.
             progressText = CreateLabel("Loading Percentage", 18, new Vector2(0, -70), new Vector2(300, 40));
-            StarterCanvasLayout.EnsureConfigured(overlayCanvas);
-            appRoot.StateChanged += Refresh;
-            Refresh();
         }
 
         private void OnEnable()

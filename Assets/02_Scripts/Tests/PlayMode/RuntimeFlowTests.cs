@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using StarterProject.UI;
 using UnityEngine;
@@ -237,6 +238,48 @@ namespace StarterProject.Tests
                 Assert.That(runtime.DisposeCount, Is.Zero);
             }
             finally { Object.DestroyImmediate(config); }
+        }
+
+        [UnityTest]
+        public IEnumerator CustomLoadingOverlayPrefabKeepsAssignedVisuals()
+        {
+            var root = CreateRoot();
+            var prefabObject = new GameObject("Custom Loading", typeof(RectTransform), typeof(Canvas),
+                typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
+            prefabObject.SetActive(false);
+            var prefab = prefabObject.AddComponent<StarterLoadingOverlay>();
+            var artwork = new GameObject("Artwork", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            artwork.transform.SetParent(prefabObject.transform, false);
+            var track = new GameObject("Track", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)).GetComponent<Image>();
+            track.transform.SetParent(prefabObject.transform, false);
+            var fill = new GameObject("Fill", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)).GetComponent<Image>();
+            fill.transform.SetParent(track.transform, false);
+            var message = new GameObject("Message", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text)).GetComponent<Text>();
+            message.transform.SetParent(prefabObject.transform, false);
+            var percentage = new GameObject("Percentage", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text)).GetComponent<Text>();
+            percentage.transform.SetParent(prefabObject.transform, false);
+            SetVisual("progressTrack", track);
+            SetVisual("progressFill", fill);
+            SetVisual("messageText", message);
+            SetVisual("progressText", percentage);
+
+            var overlay = StarterLoadingOverlay.EnsureCreated(root, prefab);
+            Assert.That(overlay, Is.Not.SameAs(prefab));
+            Assert.That(overlay.transform.parent, Is.EqualTo(root.transform));
+            Assert.That(overlay.GetComponentsInChildren<Image>(true).Any(image => image.name == "Artwork"), Is.True);
+            var blocker = overlay.GetComponentsInChildren<Image>(true).Single(image => image.name == "Input Blocker");
+            Assert.That(blocker.raycastTarget, Is.True);
+            Assert.That(blocker.color.a, Is.Zero);
+            Assert.That(StarterLoadingOverlay.EnsureCreated(root), Is.SameAs(overlay));
+            Object.Destroy(prefabObject);
+            yield return null;
+
+            void SetVisual(string fieldName, object value)
+            {
+                var field = typeof(StarterLoadingOverlay).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(field, Is.Not.Null);
+                field.SetValue(prefab, value);
+            }
         }
 
         [UnityTest]

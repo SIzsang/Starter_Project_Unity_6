@@ -7,5 +7,6 @@
 - Windows Preview 실행 파일명이 복제한 게임의 Product Name을 따르도록 바꾸고, 새 게임 설정 절차와 템플릿 인계 범위를 문서화했다.
 - 게임/조직 Cloud ID와 불필요한 선택 패키지를 제거하고 기본 Company/Product/Application Identifier를 중립 값으로 정리했다.
 - 2026-09-24: 저장 정책 PlayMode 테스트의 문자열 구문 오류를 고쳤다. Unity 6000.3.16f1의 최신 Git 복제본에서 EditMode 50개·PlayMode 30개가 모두 통과했고 Windows 개발 빌드가 성공했다. 검증 복제본의 Product Name 변경 후 해당 이름의 실행 파일도 생성됐다.
+- 2026-10-02: 예제 씬의 `Image`에 게임 스프라이트를 연결하는 절차를 명시하고, Boot `StarterScreen`에 선택형 로딩 UI 프리팹 슬롯을 추가했다. 사용자 프리팹에도 전환 중 입력 차단을 자동 적용한다. PlayMode 31개와 Windows 개발 빌드가 통과했고, 입력 차단 보완 후 관련 테스트 1개를 다시 통과했다.
 
 이 항목은 **배포 태그가 아니다**. 남은 GUI·모바일·장치 확인 및 원격 템플릿 설정을 마친 뒤 버전을 확정한다. 이전 단계별 작업 날짜와 검증 범위는 [로드맵](ROADMAP.md)과 [통합 검증 기록](INTEGRATION_VALIDATION.md)에 있다.

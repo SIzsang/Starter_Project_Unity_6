@@ -14,6 +14,13 @@
 
 세 씬은 원래 Screen Space Overlay와 1280×720 Canvas Scaler를 사용했다. 세 씬의 직렬화 설정과 UI 요소, 생성 도구·런타임 적용·`Validate Setup`을 1920×1080으로 통일하되 기존 화면의 상대 비율과 버튼 참조·입력 연결은 유지한다.
 
+## 새 게임 에셋으로 화면 교체
+
+- Boot·Title·Main 씬의 `Starter UI` 아래 `Background`, `Accent`, 각 버튼에는 uGUI `Image`가 있다. 스프라이트를 `Source Image`에 넣고 색상·`Image Type`·`RectTransform`을 게임 에셋에 맞춘다. 버튼의 `Button.targetGraphic`, `StarterScreen`의 직렬화된 버튼·상태 `Text` 참조는 유지한다. 버튼 자식 `Label`의 글꼴·문구·색상도 Inspector에서 교체할 수 있다.
+- 전체 배경은 Canvas 직속에서 화면 끝까지 채운다. 새 조작 UI는 실행 시 만들어지는 `StarterCanvasLayout.ContentRoot` 아래에 배치하거나, 씬의 Canvas 아래에 넣어 실행 시 안전 영역으로 이동하게 한다. 전체 화면으로 늘어나는 배경·입력 차단막은 안전 영역으로 옮겨지지 않는다.
+- 로딩 화면을 바꿀 때는 `StarterLoadingOverlay`가 붙은 프리팹을 만들고 `Canvas`, `CanvasScaler`, `GraphicRaycaster`, `CanvasGroup`을 유지한다. 프리팹의 `Message`·`Progress Track`·`Progress Fill`·`Percentage` 참조에 각각 uGUI `Text`·`Image`를 연결하고, Boot 씬 `Starter UI`의 `StarterScreen > Loading Overlay Prefab`에 프리팹을 할당한다. 배경·막대·장식 이미지에는 원하는 스프라이트를 넣는다. 전환 중 입력을 막는 투명 전체 화면 이미지는 런타임이 추가한다. 프리팹 참조가 빠지면 경고를 남기고 기본 로딩 시각 요소를 생성한다.
+- 현재 동적 문구는 uGUI `Text`를 갱신한다. TextMeshPro 등 다른 텍스트 컴포넌트로 교체하려면 해당 화면 표시 스크립트도 함께 조정한다. 게임별 HUD·레이아웃과 터치 목표 크기는 실제 사용 기기에서 다시 설계한다.
+
 ## 검증과 남은 확인
 
 - Unity 6000.3.16f1 격리 복제본: EditMode 46개·PlayMode 29개 통과. 새 PlayMode 테스트는 가로형 모바일의 양쪽 안전 여백, PC 해상도 변경, 전체 배경 유지, 중복 계층 생성을 확인한다.

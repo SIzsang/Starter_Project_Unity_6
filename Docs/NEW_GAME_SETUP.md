@@ -10,6 +10,10 @@
 4. `Tools > Starter Project > Validate Setup`을 실행한다. `00_StartScene` → `01_Title` → `02_MainScene`이 빌드 씬 앞에 있고 `SO_AppConfig`가 세 씬을 가리키는지 확인한다. 처음에는 Boot에서 Play한다.
 5. 예제 UI는 **Screen Space Overlay + Scale With Screen Size, 1920×1080, Match 0.5**를 사용한다. 1920×1080은 최대 해상도가 아니라 디자인 기준이다. 현재 모바일 방향은 가로이며 실제 기기·터치·노치 확인은 새 게임에서도 필요하다.
 
+## 예제 UI에 게임 에셋 적용
+
+Boot·Title·Main 씬의 `Starter UI`에서 배경과 버튼 `Image`의 `Source Image`를 게임 스프라이트로 교체한다. `StarterScreen`의 버튼·상태 `Text` 참조와 `EventSystem`·Input System UI 모듈은 유지한다. 로딩 화면도 바꿀 경우 `StarterLoadingOverlay` 프리팹의 문구·진행률 참조를 연결하고 Boot의 `StarterScreen > Loading Overlay Prefab` 슬롯에 넣는다. 프리팹을 지정하지 않으면 기본 로딩 UI가 유지된다. 화면 전체 배경과 조작 콘텐츠의 안전 영역 위치, 글꼴과 버튼 터치 크기는 [UI 기준](RESPONSIVE_UI.md)을 따른다.
+
 ## 게임별 저장 데이터 연결
 
 Core는 게임 내용을 모르는 단일 슬롯 파일 저장을 제공한다. `Gameplay` 어셈블리에서 `GamePayloadPolicy` 파생 ScriptableObject를 만들고, **Boot 씬의 `AppBootstrap` 컴포넌트에 에셋을 연결**한다. 정책을 연결하지 않으면 현재 예제대로 payloadVersion 1과 빈 `{}` 객체를 사용한다. 정책은 새 게임과 Editor의 Main 직접 Play에도 같은 초기 JSON을 제공한다.

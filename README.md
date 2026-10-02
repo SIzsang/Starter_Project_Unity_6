@@ -18,6 +18,7 @@
 - Input: Unity Input System (`1.19.0`)
 - Test: Unity Test Framework (`1.6.0`)
 - 첫 검증 대상: Windows PC / uGUI. 예제 UI는 1920×1080 설계 기준으로 PC와 가로형 모바일 해상도·안전 영역에 대응하도록 설정
+- 예제 배경·버튼은 `Image.Source Image`로 게임 스프라이트를 교체하고, 로딩 화면은 Boot `StarterScreen`의 선택형 프리팹 슬롯으로 교체 가능
 - 시작 씬: `00_StartScene` → `01_Title` → `02_MainScene`
 - 템플릿 기본 식별자: Company `StarterTemplate`, Product `StarterProject`. 새 게임은 첫 Play·빌드 전에 고유한 이름과 앱 ID로 변경
 - Windows Preview 빌드: `Tools > Starter Project > Build Windows Preview` → `Builds/Windows/<Product Name>.exe`

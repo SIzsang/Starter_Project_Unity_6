@@ -1,6 +1,6 @@
 # Starter Project — 템플릿 완성·복제 체크리스트
 
-최종 수정: 2026-09-24 · 배포 준비: 미완료
+최종 수정: 2026-10-02 · 배포 준비: 미완료
 
 ## 배포 형태 제안
 
@@ -30,7 +30,7 @@ GitHub에서는 저장소 설정의 Template repository 옵션으로 템플릿�
 - [x] 사용자 설정 저장 후 앱 재실행 시 복원 (Windows 검증 빌드의 별도 프로세스)
 - [x] JSON 파손·필드 누락·범위 오류에 대한 정책 동작
 - [x] 이전 저장 형식 변환 및 미래 버전 덮어쓰기 방지
-- [ ] 저장 실패·중단 시 기존 파일 또는 백업 보존
+- [x] 검증한 저장 실패·중단 시점에서 기존 파일 또는 백업 보존 (임의 전원 손실까지 보장하지 않음)
 - [x] 필수 참조 누락 시 원인을 표시하고 게임 진입 중단
 - [x] Boot 중복 호출·씬 전환 연타에도 공통 객체와 구독 중복 없음
 - [x] Play 종료·재시작 시 이전 실행 상태가 남지 않음 (복제본 자동 실행)
@@ -40,6 +40,7 @@ GitHub에서는 저장소 설정의 Template repository 옵션으로 템플릿�
 - [x] 확정된 음량·화면 설정의 시스템 적용과 저장 실패 시 기존 적용 값 보호
 - [x] 씬 전환 중 로딩 표시·입력 차단과 키보드·게임패드 UI 연결 구현
 - [x] Boot·Title·Main·로딩 예제 UI의 가로형 화면 안전 영역 맞춤 구현 (합성 해상도 자동 검증)
+- [x] 예제 씬 `Image`에 게임 스프라이트를 연결할 수 있고, 로딩 화면은 Boot의 선택형 프리팹 슬롯으로 교체 가능. 기본 화면과 전환 중 입력 차단 유지
 - [ ] 실제 모바일 가로 화면의 안전 영역·가독성·터치 조작 검증
 - [x] 첫 지원 플랫폼의 실제 빌드에서 실행·저장·복원 확인 (Windows 자동 실행; GUI 현장 확인 대기)
 
@@ -83,6 +84,8 @@ GitHub에서는 저장소 설정의 Template repository 옵션으로 템플릿�
 2026-09-24 Console 수정: 새 PlayMode 테스트의 문자열 닫는 따옴표 누락으로 발생한 `CS1010`·`CS1003`·`CS1026`을 수정했다. 원본 프로젝트의 생성된 C# 프로젝트에서 `StarterProject.PlayModeTests`와 `StarterProject.EditModeTests`를 각각 `dotnet build --no-restore`로 빌드해 모두 경고·오류 0개를 확인했다. 별도 복제본의 Unity 명령줄 Test Runner는 Licensing Client IPC 연결 실패가 반복되어 테스트 시작 전 중단했다. 따라서 이번 코드의 Unity 테스트·Windows 빌드는 계속 미완료다.
 
 2026-09-24 후속 회귀 검증: 권한이 허용된 명령줄 경로에서 라이선스가 연결됐다. `-runTests`와 `-quit`을 함께 사용하면 테스트 시작 전에 종료되어 `-quit`을 제거했다. 최신 추적 소스가 원본과 해시 일치하는 기존 복제본, 이어 `6a31e97`의 빈 Library 새 Git 복제본에서 각각 EditMode 50개·PlayMode 30개가 통과하고 Windows 개발 빌드가 성공했다. 새 복제본의 Product Name을 `StarterProjectTemplateProbe`로 바꾼 추가 빌드도 성공해 같은 이름의 `.exe` 생성을 확인했다. 결과: `Logs/TemplateLatestEditMode.xml`, `Logs/TemplateLatestPlayMode.xml`, `Logs/TemplateLatestWindowsBuild.log`, `Logs/TemplateLatestProductNameBuild.log`. GUI·실기기·Cloud 연결 표시와 푸시·태그·Template 지정은 미완료다.
+
+2026-10-02 UI 에셋 교체 경로: Boot·Title·Main의 `Image` 스프라이트 교체 지점을 문서화하고 Boot `StarterScreen`에 선택형 로딩 프리팹 슬롯을 추가했다. 새 프리팹은 투명 입력 차단막을 자동으로 받는다. 최신 소스가 복사된 검증 복제본에서 PlayMode 31/31, 추가 입력 차단 테스트 1/1과 최종 Windows 개발 빌드가 통과했다. 편집기 GUI·실기기 검증은 별도다. 로컬 Editor가 Cloud ID를 다시 채운 `ProjectSettings.asset` 변경은 배포 커밋에 포함하지 않는다.
 
 ## 새 게임을 만들 때
 
