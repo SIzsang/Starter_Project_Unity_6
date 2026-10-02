@@ -12,6 +12,21 @@
 - **현재 완료 판정:** 사용자 요청에 따라 새 게임 제작의 일반적인 오류를 막는 검증으로 범위를 정리했다. 구현·필수 회귀와 Windows Player 시작·저장·이어하기·1920×1080 표시 확인은 완료했다. v1.0.0 태그·소스 ZIP·GitHub Template으로 배포한다. 게임별 기기 품질·물리 입력은 별도 확인 범위다. [배포 기준](RELEASE.md)
 - **예제 UI 범위:** PC와 가로형 모바일을 대상으로 Screen Space Overlay·1920×1080 Canvas Scaler와 안전 영역 맞춤을 사용한다. 기존 1280×720 예제 배치는 비례 환산한다. 배경·버튼 `Image`에 게임 스프라이트를 지정하고 Boot의 로딩 프리팹 슬롯으로 로딩 화면을 교체할 수 있다. 모바일 실제 기기 검증과 게임별 HUD는 별개다. [반응형 UI 기준](RESPONSIVE_UI.md)
 
+## 최신 완료 상태와 다음 프로젝트의 확인 항목
+
+| 범위 | 현재 결과 |
+| --- | --- |
+| 공통 프리셋 구현 | Boot·설정·단일 슬롯 저장·복구·씬 흐름·개발 저장소 격리·UI 에셋 연결 완료 |
+| 필수 회귀 | 깨끗한 복제본 EditMode 50/50, UI 확장 후 PlayMode 31/31, 입력 차단 보완의 해당 테스트 1/1 통과 |
+| 실제 Windows Player | 별도 프로세스 저장·재실행 복원, 합성 UI 입력의 새 게임·저장·이어하기, 네이티브 1920×1080 Title·Main 표시 확인 |
+| 배포 | 공개 GitHub Template, main, v1.0.0 태그와 Release의 ZIP·SHA-256·manifest 확인 |
+| 추가 Computer Use | Editor 창 캡처는 재선택 후에도 시간 초과. 추가 화면 모드·960×540 Player는 빌드 성공했지만 앱 실행 권한 거부로 미실행 |
+| 새 게임 대상 장치 | Android/iOS 빌드·실기기, 실제 터치·물리 키보드/게임패드·오디오 청취는 미검증 |
+
+[Template](https://github.com/SIzsang/Starter_Project_Unity_6) · [Release](https://github.com/SIzsang/Starter_Project_Unity_6/releases/tag/v1.0.0). 배포 소스 기준은 `53db0d56dcb693b0c1a65088583de715d8b95038`이며 ZIP은 156개 파일, 243,977 bytes다. SHA-256은 `B32A4F070EAD6CC555C00722560F087B3B54A29C1890F54FE1C9D44B57F8D4FA`다. GitHub 업로드 파일의 digest가 로컬 해시와 같음을 확인했다. 배포 후 인계 문서 보완은 main에 기록하며 v1.0.0 태그와 ZIP을 바꾸지 않는다.
+
+새 프로젝트는 **식별자 변경 → Validate Setup → 게임별 payload·콘텐츠 연결 → 대상 플랫폼의 첫 실행·저장·재실행·빌드** 순서로 시작한다. 예제 배경·버튼에 스프라이트를 넣고 로딩 프리팹을 연결할 수 있다. 캐릭터 프레임 에셋의 Walk/Attack/Hurt Clip·Animator는 새 게임의 콘텐츠 작업에서 구성한다. 1920×1080은 UI 설계 좌표이며 최대 해상도가 아니다. 화면 크기와 안전 영역에 따른 비례 축소 기반은 구현·자동 검증했고, 최종 에셋의 가독성과 조작 크기는 대상 기기에서 확인한다.
+
 ## Bootstrap Scene과 실행 흐름
 
 | 요소 | 현재 역할 |
@@ -23,7 +38,7 @@
 
 정상 실행은 `Boot → 설정·씬 검증 → 사용자 설정/저장 읽기 → 음량·화면 적용 → Title → New Game 또는 Continue → Main`이다. 초기화 실패는 Boot에 남아 원인을 표시하고 게임 진입을 막는다. 이미 준비된 루트로 Boot에 재진입하면 루트를 재사용해 Title로 돌아간다. 씬 전환 중에는 추가 요청과 버튼 입력을 차단한다.
 
-`Tools > Starter Project > Validate Setup`은 현재 AppConfig·빌드 씬·입력 액션과 Boot의 AppBootstrap 참조, 활성 상태 표시 Canvas·Text, 단일 활성 EventSystem·UI 액션 및 세 씬의 Canvas 해상도 설정을 **씬을 변경하지 않고** 검사한다. Boot → Title → Main 왕복·중복 루트·실패 차단은 PlayMode 테스트에서 확인했다. GUI의 실제 표시·메뉴 클릭은 아직 사람이 직접 확인하지 않았으므로 시각적 완성으로 표시하지 않는다.
+`Tools > Starter Project > Validate Setup`은 현재 AppConfig·빌드 씬·입력 액션과 Boot의 AppBootstrap 참조, 활성 상태 표시 Canvas·Text, 단일 활성 EventSystem·UI 액션 및 세 씬의 Canvas 해상도 설정을 **씬을 변경하지 않고** 검사한다. Boot → Title → Main 왕복·중복 루트·실패 차단은 PlayMode 테스트에서 확인했다. 원본 Editor의 Validate Setup 메뉴와 Boot Play → Title → 정지 후 Boot 복귀를 확인했고, Windows Player의 네이티브 Title·Main 화면도 확인했다. Computer Use의 창 캡처·물리 입력 전달과 Main 직접 Play의 GUI 확인에는 제한이 남아 있다.
 
 ## 데이터와 저장 계약
 
@@ -43,7 +58,9 @@
 3. `Validate Setup`으로 설정을 확인하고, 개발 세션 파일은 `Open Test Data Folder`에서 확인한다. `Reset Test Data`는 확인 대화상자와 백업 이동을 거치며 취소할 수 있다.
 4. 새 게임의 `Gameplay`에 캐릭터/스테이지 타입 모델과 직렬화·복원 코드를 둔다. 현재 단일 슬롯과 JSON payload 계약을 유지할지 게임 요구사항에 맞춰 결정한다.
 
-## 검증된 결과와 한계
+## 날짜별 검증 기록
+
+아래의 대기·미완료 표현은 각 작업 당시의 기록이다. 현재 완료 상태는 위 표를 따른다. 상세 날짜·로그·실행 범위는 [통합 검증 기록](INTEGRATION_VALIDATION.md)에 보관한다.
 
 - Unity 6000.3.16f1의 `6a31e97` 새 Git 복제본에서 **EditMode 50개·PlayMode 30개 통과, 실패·건너뜀 0개**. 빈 Library에서 패키지·에셋을 가져온 뒤 실행했다. 결과: `Logs/TemplateLatestEditMode.xml`, `Logs/TemplateLatestPlayMode.xml`.
 - Main 직접 Play 반복은 도메인 재로드 켜짐·꺼짐의 자동 실행에서 Boot 경유, 세션 격리, 시작 씬 복원과 일반 저장 보호를 확인했다. 자동 실행용 batchmode 예외는 복제본에만 넣었고 원본 코드에는 없다.

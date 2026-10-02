@@ -1,6 +1,6 @@
 # 7단계 통합·Windows 빌드 검증
 
-상태: 2026-09-23 진행 중. 아래 자동 검증은 통과했으며 GUI 직접 조작·기기 확인은 남아 있다. 로드맵의 7단계 완료 판정과 95% 반영은 보류한다.
+최종 점검: 2026-10-02. **v1.0.0의 공통 프리셋 구현·필수 회귀·Windows Player 확인·배포는 완료했다.** 이 문서는 날짜별 실행 기록이며 과거의 대기·미완료 표현은 당시 상태다. 최신 지원 범위와 추가 Computer Use 제한은 [배포 기준](RELEASE.md)과 문서 마지막 절을 따른다.
 
 ## 검증 환경
 
@@ -35,7 +35,7 @@
 
 `CREATE_PASS`와 `RESUME_PASS`는 **서로 다른 Windows Player 프로세스**에서 생성했다. 저장 위치는 검증 전용 제품명 아래의 `Application.persistentDataPath/StarterData`다. `ERROR_PASS`는 파손 파일 준비와 검증을 또 다른 두 프로세스로 실행했고, Direct3D 11 경로에서도 한 번 더 확인했다. 이어 별도 두 프로세스로 정상 백업을 준비·복구해 `BACKUP_PASS`를 확인했다. 완료 직후 강제 종료와 재실행도 다른 프로세스에서 확인했다. 저장 도중 종료 실험에서는 복제본의 `JsonFileStore`에만 임시 파일 flush 직후 일시 정지 지점을 넣고 외부에서 해당 Player를 종료했다. 남은 `.tmp` 파일은 교체되지 않은 새 payload를 담고 있으며 정상 주 파일·백업은 이전 payload를 유지했다. 원본 템플릿 코드에는 이 지연 지점이나 일회성 런타임 검사 코드를 넣지 않았다. 이 검증용 빌드는 배포물로 사용하지 않는다.
 
-## 남은 확인
+## 2026-09-23 당시 남은 확인
 
 1. 원본 Editor GUI에서 Main 직접 Play 두 번, 미저장 씬·기존 시작 씬 설정과 메뉴 확인·취소를 눈으로 확인한다. `Validate Setup` 메뉴는 원본 Editor에서 실행해 통과했지만 Main 씬 열기용 Windows 파일 대화상자는 자동화 도구가 입력 대상으로 잡지 못했다. 복제본 자동 검증과 구분한다.
 2. 잘못된 AppConfig·입력 참조의 Console 안내, Reset Test Data의 백업 경로·파일과 취소 동작을 GUI에서 확인한다.
@@ -93,3 +93,13 @@ Computer Use로 검증 Player를 실행했고, 창이 늦게 생성된 뒤 목�
 이어진 설정 테스트는 아래 방향키의 선택 대상을 Volume으로 가정한 임시 테스트 자체의 오류로 중단됐다. 실제 선택은 Fullscreen이었다. 보정한 추가 시나리오 빌드는 성공했으나 `StarterProjectGuiScenario20261002` 실행에서 `Computer Use was not approved to use starterprojectguiscenario20261002` 응답을 받았다. 따라서 추가 화면 모드·960×540 네이티브 화면 검증은 완료하지 않았다. 제품 코드 실패로 기록하지 않는다.
 
 빌드 로그: `Logs/ComputerUseRetryWindowsBuild.log`, `Logs/ComputerUseNativeWindowsBuild.log`, `Logs/ComputerUseNativeScenarioBuild.log`, `Logs/ComputerUseNativeScenarioFinalBuild.log`. 실제 입력 진단과 합성 입력 시나리오 기록은 각각 `Logs/ComputerUseNativeValidation/events.log`, `Logs/ComputerUseNativeScenario/events.log`에 있다. 원본 런타임 코드는 `61b5355` 이후 변경하지 않았다. [v1.0.0 배포 범위](RELEASE.md)
+
+## 2026-10-02 배포 후 마무리
+
+- GitHub Template 설정과 공개 v1.0.0 Release를 확인했다. 소스 ZIP·SHA-256·manifest의 업로드 상태·크기·digest를 검증했다. ZIP은 소스 커밋 `53db0d5`, 156개 파일이며 Cloud 식별자·Library·검증 코드·사용자 저장을 포함하지 않는다.
+- 기존 테스트 빌드·임시 진단 코드·시험용 저장 폴더를 정리했고 Player 로그와 네이티브 화면·테스트 XML은 보관했다. 기록은 `Logs/ReleaseCleanup-v1.0.0.json`에 있다.
+- 추가 마무리 요청 후 Unity Editor 창을 새로 선택해 캡처·복구를 각각 한 번 시도했지만 `FrameArrived timed out: timed out waiting on channel`와 `window capture timed out: timed out waiting on channel`로 실패했다. 이전 좌표나 접근성 인덱스로 클릭하지 않았다.
+- 남은 화면 모드·960×540 확인을 위해 v1.0.0 ZIP의 소스를 기존 격리 복제본에 다시 반영하고 Product Name만 `StarterProjectGuiScenario20261002`로 분리했다. 임시 진단은 설정 버튼의 Unity 이벤트·실제 플랫폼 반영, 960×540 Title/Main 화면과 버튼 경계, 단일 AppRoot를 확인하도록 구성했다. Windows 개발 빌드는 성공했다(169,614,335 bytes, `Logs/FinalHandoffWindowsBuild.log`).
+- 해당 Player의 Computer Use 실행은 다시 `Computer Use was not approved to use starterprojectguiscenario20261002`로 거부됐다. 따라서 이 추가 시나리오는 **미실행**이며 화면 모드·960×540 네이티브 표시를 새 통과 결과로 추가하지 않는다. 임시 진단은 원본과 배포 ZIP에 반영하지 않았다. 원본 런타임 코드는 변경하지 않았다.
+
+새 게임의 플랫폼·장치 확인과 도구의 실행 권한 제한을 프리셋의 일반 기능 검증과 구분한다. 물리 키보드/게임패드·오디오 청취·모바일 실기기 결과는 아직 없다.
