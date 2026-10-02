@@ -62,6 +62,8 @@
 
 - **2026-10-02 UI 교체·재검증:** 예제 씬은 `Image` 스프라이트를 직접 교체할 수 있고 Boot의 선택형 로딩 프리팹 슬롯으로 로딩 화면을 바꿀 수 있다. 사용자 프리팹에 필요한 동적 문구·진행률 참조를 연결하며, 런타임이 투명 입력 차단막을 추가한다. 최신 UI 소스를 반영한 Unity PlayMode 31/31, 입력 차단 보완 후 관련 테스트 1/1과 Windows 개발 빌드가 성공했다. 실제 에셋을 넣은 화면·터치 가독성은 미검증이다. [UI 기준](RESPONSIVE_UI.md)
 
+- **2026-10-02 원본 Editor 부분 확인:** Boot에서 Play하여 Title 로드, Play 종료 후 Boot 복귀를 확인했다. Computer Use의 Unity 창 캡처가 반복 시간 초과되고 GameView 내부 버튼이 접근성에 표시되지 않아 Title→Main 조작·Main 직접 Play·시각 확인은 완료하지 못했다. [검증 기록](INTEGRATION_VALIDATION.md)
+
 ## 새 프로젝트 인계 기준
 
 이 프리셋이 최종 검증·버전 지정된 뒤 새 저장소를 만든다. 복제 직후 Product Name·Company Name·앱 식별자와 저장 경로 충돌 여부, Cloud 연결, 플랫폼·렌더러·입력 요구사항을 새 게임에 맞춘다. `SO_AppConfig`와 씬 구성을 검사하고 Unity Test Runner·첫 실행·저장·재실행·Windows 빌드를 다시 확인한다. 어떤 프리셋 버전에서 출발했는지 새 게임의 기록에 남긴다. 향후 게임에서 바꾼 Core를 이 원본 프리셋에 자동으로 역반영하지 않는다.

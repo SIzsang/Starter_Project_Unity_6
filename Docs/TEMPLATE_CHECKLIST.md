@@ -87,6 +87,8 @@ GitHub에서는 저장소 설정의 Template repository 옵션으로 템플릿�
 
 2026-10-02 UI 에셋 교체 경로: Boot·Title·Main의 `Image` 스프라이트 교체 지점을 문서화하고 Boot `StarterScreen`에 선택형 로딩 프리팹 슬롯을 추가했다. 새 프리팹은 투명 입력 차단막을 자동으로 받는다. 최신 소스가 복사된 검증 복제본에서 PlayMode 31/31, 추가 입력 차단 테스트 1/1과 최종 Windows 개발 빌드가 통과했다. 편집기 GUI·실기기 검증은 별도다. 로컬 Editor가 Cloud ID를 다시 채운 `ProjectSettings.asset` 변경은 배포 커밋에 포함하지 않는다.
 
+2026-10-02 원본 Editor 부분 확인: Boot 씬에서 Play를 시작해 Title 로드와 Play 종료 후 Boot 복귀를 확인했다. Computer Use의 Unity 화면 캡처가 반복 실패해 Title→Main 직접 조작, Main 직접 Play, 실제 화면·입력 검증은 완료하지 못했다. [통합 검증 기록](INTEGRATION_VALIDATION.md)
+
 ## 새 게임을 만들 때
 
 1. 검증된 템플릿 버전에서 새 저장소를 만든다.

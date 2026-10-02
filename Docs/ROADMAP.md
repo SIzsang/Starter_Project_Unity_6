@@ -35,3 +35,5 @@ GitHub Template 배포를 우선 검토하며 Unity Hub 커스텀 템플릿은 v
 2026-09-24 후속 검증: 권한이 허용된 명령줄 실행에서 Unity 라이선스가 연결됐다. 테스트 명령의 `-quit`을 제거한 뒤 최신 코드가 반영된 복제본과 `6a31e97`의 새 Git 복제본에서 각각 EditMode 50개·PlayMode 30개가 모두 통과하고 Windows 개발 빌드가 성공했다. 새 복제본의 Product Name만 바꾼 추가 빌드는 해당 이름의 `.exe`를 생성했다. 추적 에셋·meta와 생성 파일 목록도 다시 점검했다. GUI Main 직접 Play·실제 Windows 조작/장치·모바일 기기·Unity Hub Cloud 연결 표시와 원격 배포는 남아 있으므로 7·8단계 완료율은 아직 올리지 않는다.
 
 2026-10-02: 예제 화면의 Image 스프라이트 교체 경로를 명시하고 선택형 로딩 UI 프리팹 슬롯과 전환 중 입력 차단을 추가했다. 최신 소스 복제본에서 PlayMode 31/31, 입력 차단 보완 후 신규 테스트 1/1 및 Windows 개발 빌드가 통과했다. GUI 직접 조작과 모바일 실기기, 원격 템플릿 설정은 남아 있어 7·8단계 완료율은 올리지 않는다. 로컬 Editor가 채운 Cloud ID는 배포 커밋에서 제외한다. [UI 기준](RESPONSIVE_UI.md) [검증 기록](INTEGRATION_VALIDATION.md)
+
+2026-10-02 원본 Editor Computer Use: Boot 씬 Play에서 Title 로드와 Play 종료 후 Boot 복귀를 확인했다. 화면 캡처 시간 초과와 GameView 내부 접근성 부재로 Title→Main 조작·Main 직접 Play·시각·물리 입력 검증은 완료하지 못했다. 별도 검증 복제본의 자동 테스트·빌드 결과와 구분하며 7·8단계 완료율은 올리지 않는다. [검증 기록](INTEGRATION_VALIDATION.md)
