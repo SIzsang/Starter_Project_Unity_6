@@ -34,7 +34,15 @@
 - **실제 Windows 그래픽 결과:** 검증 복제본의 일회성 시나리오가 Title에서 음량 버튼의 Unity 이벤트를 호출하고 `AudioListener.volume`·저장 설정의 일치를 확인했다. 전체화면 해제, 실제 960×540 창 크기 변경, Main 이동 후 크기 유지와 전체화면 복귀를 통과했다. 전체화면 복귀 때 렌더링 크기는 960×540이었으며 1920×1080 복귀를 검사한 것은 아니다.
 - **화면 확인:** 초기 1920×1080 Title과 960×540 Title·Main·전체화면 Main을 네이티브 렌더링 이미지로 기록했다. 960×540 이미지에서 문구·버튼 배치를 확인했고 모든 활성 버튼의 경계가 화면 안에 있음을 검사했다. 전환 후 AppRoot는 1개였고 시나리오에 런타임 오류가 없었다. `Logs/FinalHandoffValidation/result.txt`는 `PASS`다.
 - **직접 입력의 한계:** 자동 이벤트 호출과 구분하기 위해 입력을 주입하거나 버튼을 호출하지 않는 관찰용 Player를 따로 빌드·실행했다. 포커스가 있고 Start Game이 선택된 Ready 상태에서 Computer Use로 Enter를 보냈으나 키·클릭 로그와 Main 전환이 없었다. Windows 창 캡처는 Editor·Player에서 각각 재선택 후에도 시간 초과됐다. 따라서 OS 마우스·키보드 전달을 통과로 기록하지 않으며 원인도 제품 코드로 단정하지 않는다.
-- **증거와 배포 경계:** `Logs/FinalHandoffValidation/`의 로그·이미지와 `Logs/FinalComputerUseInputValidation/events.log`, `Logs/FinalComputerUseInputWindowsBuild.log`를 보관한다. 관찰용 빌드는 169,610,584 bytes였다. 임시 코드는 검증 복제본에만 사용했고 원본 런타임·v1.0.0 ZIP은 변경하지 않았다. 관찰 소스·Player 로그도 증거 폴더에 복사했다. 사용이 끝난 테스트 빌드·임시 코드·해당 시험용 저장의 삭제 명령은 자동 승인 검사에서 `blocked by policy`로 거절되어 이번 산출물은 남아 있다. 상세 거절 사유는 제공되지 않았으며 기록은 `Logs/FinalComputerUseCleanup-20261002.json`에 남긴다.
+- **증거와 배포 경계:** `Logs/FinalHandoffValidation/`의 로그·이미지와 `Logs/FinalComputerUseInputValidation/events.log`, `Logs/FinalComputerUseInputWindowsBuild.log`를 보관한다. 관찰용 빌드는 169,610,584 bytes였다. 임시 코드는 검증 복제본에만 사용했고 원본 런타임·v1.0.0 ZIP은 변경하지 않았다. 관찰 소스·Player 로그도 증거 폴더에 복사했다. 이후 사용자의 테스트 자료 정리 요청에 따라 시험용 빌드·임시 코드·저장 폴더는 일반 삭제로 정리했다. 앞선 강제 삭제 거부 기록은 당시 결과이며 최신 정리 상태는 아래와 `Logs/TestMaterialCleanup-20261002.json`을 따른다.
+
+### 사용이 끝난 테스트 자료 정리 — 2026-10-02
+
+- 검증 폴더 5개(`NamingValidation`, `Stage34Validation`, `TemplateCloneValidation`, `TemplateFinalValidation`, `TemplateLatestValidation`)의 불필요한 캐시·실행 파일·소스 복사본·임시 진단을 정리했다. 현재 실행 중인 Editor가 원본 프로젝트를 사용하고 있음을 확인한 뒤 삭제했다.
+- 필요한 복제본 로그·결과와 Player 로그는 `Logs/ArchivedValidation/`에 **46개 파일, 약 0.91MB**로 보관했다. 복제본에서 복사한 44개 증거 파일은 삭제 전에 원본과 SHA-256 일치를 확인했다. 기존 문서가 참조한 `Logs/<검증 폴더>/Logs/...` 또는 `Builds/Windows/<로그>`는 이제 `Logs/ArchivedValidation/<검증 폴더>/...`에서 확인한다.
+- 시험용 제품명 `StarterProjectGuiScenario20261002`, `StarterProjectTemplateProbe`, `StarterProjectTemplateSmoke`의 저장 폴더 3개와 임시 커밋 본문·테스트 백업·실행 상태·GUI 권한 안내 도구 21개를 삭제했다. 실제 프로젝트의 기본 사용자 설정과 최종 테스트 XML·GUI 이미지·로그 및 `Builds/Template` 배포 파일은 보관했다.
+- 파일 크기 합산과 새 증거 보관분을 기준으로 **약 9.303GB**를 정리했다. ZIP SHA-256은 기존 배포 값과 일치한다. 원본 프로젝트의 개인 Cloud 연결 변경은 정리 대상에 포함하지 않았다.
+- **남은 정리 제한:** 검증 폴더 3곳의 숨김 `.git` 메타데이터만 약 **1.768MB** 남았다. 해당 메타데이터의 강제 삭제는 자동 승인 검사에서 `blocked by policy`로 거절됐으며 상세 사유는 제공되지 않았다. 빈 `.git` 폴더도 남아 있다. 로그·캐시·빌드가 남았다는 의미는 아니며, 원본 저장소의 `.git`과 별개의 시험용 메타데이터다.
 
 ## Bootstrap Scene과 실행 흐름
 

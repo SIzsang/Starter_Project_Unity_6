@@ -122,3 +122,13 @@ Computer Use 플러그인 26.930.21537에서 대상 Player 실행을 다시 시�
 3회차 관찰용 빌드는 성공했다(169,610,584 bytes, `Logs/FinalComputerUseInputWindowsBuild.log`). `Logs/FinalComputerUseInputValidation/events.log`에는 씬·선택·화면 크기·포커스·실제 수신한 키와 버튼 이벤트만 관찰하도록 구성했다. 자동 입력이나 UI 동작은 실행하지 않았다. Computer Use Enter의 수신을 확인하지 못했으므로 반복 입력·추측 좌표 클릭으로 통과 판정을 만들지 않았다. 대상 Player를 닫고 로그·화면·관찰 소스를 보관했다. 사용이 끝난 시험용 빌드·임시 소스·시험용 저장의 삭제는 경로 확인 후 명시적 대상 경로로도 시도했지만 자동 승인 검사에서 `blocked by policy`로 거절됐다. 상세 사유는 제공되지 않아 삭제를 멈췄으며 이번 산출물은 남아 있다. `Logs/FinalComputerUseCleanup-20261002.json`에 정리 보류 상태를 기록한다.
 
 이 회차에서 제품 런타임 코드는 변경하지 않았다. Summary·배포 기준만 결과에 맞게 보완하고 v1.0.0 태그·ZIP은 유지한다. OS 마우스·키보드, 물리 게임패드·오디오 청취·모바일 실기기는 별도 미확인이다.
+
+## 2026-10-02 후속 테스트 자료 정리
+
+사용자가 기존 시험용 자료 중 불필요한 자료의 삭제를 요청했다. 검증 폴더 5개의 범위·용량·링크 유무, 원본 Editor와 자식 프로세스만 실행 중인 상태, 관리형 worktree 첨부가 없는 상태를 확인했다. 각 삭제 경로는 프로젝트의 `Logs` 안이거나 특정 시험용 제품명의 저장 폴더였다.
+
+검증 복제본의 필요한 로그·결과 44개를 `Logs/ArchivedValidation/<검증 폴더>/`에 복사하고 SHA-256 일치를 확인했다. Player 로그·결과 2개도 같은 보관 폴더의 `PlayerData/` 아래에 추가했다. 합계 46개, 911,320 bytes다. 이전 기록의 복제본 내부 로그 경로는 이 보관 폴더에서 같은 상대 경로로 확인한다. 최종 GUI 화면·입력 기록과 루트의 테스트 XML·빌드 로그는 기존 경로에 있다.
+
+일반 삭제 방식으로 검증 복제본의 캐시·빌드·소스 복사본·임시 진단을 정리했다. 시험용 저장 폴더 3개와 임시 커밋 본문·백업·상태·안내 파일 21개도 삭제했다. 새 증거 보관분을 제외한 파일 크기 기준 정리 용량은 약 9.303GB다. `Builds/Template/StarterProject-v1.0.0.zip`의 SHA-256은 `B32A4F070EAD6CC555C00722560F087B3B54A29C1890F54FE1C9D44B57F8D4FA`로 유지됐고 실제 프로젝트 사용자 설정과 소스는 정리 대상에서 제외했다.
+
+검증 폴더 `TemplateCloneValidation`, `TemplateFinalValidation`, `TemplateLatestValidation`에는 숨김 `.git`만 남아 있다. 합계 1,768,408 bytes이며 첫 폴더의 `.git`은 비어 있다. 해당 메타데이터의 강제 삭제 명령은 자동 승인 검사에서 `blocked by policy`로 거절돼 중단했다. 상세 사유는 제공되지 않았다. 원본 저장소의 `.git`을 삭제한 것은 아니다. 최신 정리 결과·보관 위치·잔여 경로는 `Logs/TestMaterialCleanup-20261002.json`에 기록했다.
