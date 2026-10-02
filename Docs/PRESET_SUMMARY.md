@@ -20,12 +20,21 @@
 | 필수 회귀 | 깨끗한 복제본 EditMode 50/50, UI 확장 후 PlayMode 31/31, 입력 차단 보완의 해당 테스트 1/1 통과 |
 | 실제 Windows Player | 별도 프로세스 저장·재실행 복원, 합성 UI 입력의 새 게임·저장·이어하기, 네이티브 1920×1080 Title·Main 표시 확인 |
 | 배포 | 공개 GitHub Template, main, v1.0.0 태그와 Release의 ZIP·SHA-256·manifest 확인 |
-| 추가 Computer Use | Editor 창 캡처는 재선택 후에도 시간 초과. 추가 화면 모드·960×540 Player는 빌드 성공했지만 앱 실행 권한 거부로 미실행 |
+| 추가 Windows 표시·설정 검증 | Codex 재시작 후 Player 실행 성공. 960×540 Title·Main 배치, 음량 적용, 창/전체화면 전환, 씬 전환과 단일 AppRoot 통과 |
+| Computer Use 직접 조작 | Editor·Player 창 캡처는 재선택 후에도 시간 초과. 대기형 Player에 보낸 Enter가 Unity 입력 로그에 나타나지 않아 클릭·키보드 조작은 미확인 |
 | 새 게임 대상 장치 | Android/iOS 빌드·실기기, 실제 터치·물리 키보드/게임패드·오디오 청취는 미검증 |
 
 [Template](https://github.com/SIzsang/Starter_Project_Unity_6) · [Release](https://github.com/SIzsang/Starter_Project_Unity_6/releases/tag/v1.0.0). 배포 소스 기준은 `53db0d56dcb693b0c1a65088583de715d8b95038`이며 ZIP은 156개 파일, 243,977 bytes다. SHA-256은 `B32A4F070EAD6CC555C00722560F087B3B54A29C1890F54FE1C9D44B57F8D4FA`다. GitHub 업로드 파일의 digest가 로컬 해시와 같음을 확인했다. 배포 후 인계 문서 보완은 main에 기록하며 v1.0.0 태그와 ZIP을 바꾸지 않는다.
 
 새 프로젝트는 **식별자 변경 → Validate Setup → 게임별 payload·콘텐츠 연결 → 대상 플랫폼의 첫 실행·저장·재실행·빌드** 순서로 시작한다. 예제 배경·버튼에 스프라이트를 넣고 로딩 프리팹을 연결할 수 있다. 캐릭터 프레임 에셋의 Walk/Attack/Hurt Clip·Animator는 새 게임의 콘텐츠 작업에서 구성한다. 1920×1080은 UI 설계 좌표이며 최대 해상도가 아니다. 화면 크기와 안전 영역에 따른 비례 축소 기반은 구현·자동 검증했고, 최종 에셋의 가독성과 조작 크기는 대상 기기에서 확인한다.
+
+### 재시작 후 GUI 검증 결과 — 2026-10-02
+
+- **실행 제한 해소:** 대상 Player의 허용 설정을 좁게 추가하고 Codex를 재시작한 뒤 Computer Use로 실행했다. 이전 앱 권한 거부는 당시 시도 기록이며 현재 실행 장애가 아니다.
+- **실제 Windows 그래픽 결과:** 검증 복제본의 일회성 시나리오가 Title에서 음량 버튼의 Unity 이벤트를 호출하고 `AudioListener.volume`·저장 설정의 일치를 확인했다. 전체화면 해제, 실제 960×540 창 크기 변경, Main 이동 후 크기 유지와 전체화면 복귀를 통과했다. 전체화면 복귀 때 렌더링 크기는 960×540이었으며 1920×1080 복귀를 검사한 것은 아니다.
+- **화면 확인:** 초기 1920×1080 Title과 960×540 Title·Main·전체화면 Main을 네이티브 렌더링 이미지로 기록했다. 960×540 이미지에서 문구·버튼 배치를 확인했고 모든 활성 버튼의 경계가 화면 안에 있음을 검사했다. 전환 후 AppRoot는 1개였고 시나리오에 런타임 오류가 없었다. `Logs/FinalHandoffValidation/result.txt`는 `PASS`다.
+- **직접 입력의 한계:** 자동 이벤트 호출과 구분하기 위해 입력을 주입하거나 버튼을 호출하지 않는 관찰용 Player를 따로 빌드·실행했다. 포커스가 있고 Start Game이 선택된 Ready 상태에서 Computer Use로 Enter를 보냈으나 키·클릭 로그와 Main 전환이 없었다. Windows 창 캡처는 Editor·Player에서 각각 재선택 후에도 시간 초과됐다. 따라서 OS 마우스·키보드 전달을 통과로 기록하지 않으며 원인도 제품 코드로 단정하지 않는다.
+- **증거와 배포 경계:** `Logs/FinalHandoffValidation/`의 로그·이미지와 `Logs/FinalComputerUseInputValidation/events.log`, `Logs/FinalComputerUseInputWindowsBuild.log`를 보관한다. 관찰용 빌드는 169,610,584 bytes였다. 임시 코드는 검증 복제본에만 사용했고 원본 런타임·v1.0.0 ZIP은 변경하지 않았다. 관찰 소스·Player 로그도 증거 폴더에 복사했다. 사용이 끝난 테스트 빌드·임시 코드·해당 시험용 저장의 삭제 명령은 자동 승인 검사에서 `blocked by policy`로 거절되어 이번 산출물은 남아 있다. 상세 거절 사유는 제공되지 않았으며 기록은 `Logs/FinalComputerUseCleanup-20261002.json`에 남긴다.
 
 ## Bootstrap Scene과 실행 흐름
 

@@ -103,3 +103,22 @@ Computer Use로 검증 Player를 실행했고, 창이 늦게 생성된 뒤 목�
 - 해당 Player의 Computer Use 실행은 다시 `Computer Use was not approved to use starterprojectguiscenario20261002`로 거부됐다. 따라서 이 추가 시나리오는 **미실행**이며 화면 모드·960×540 네이티브 표시를 새 통과 결과로 추가하지 않는다. 임시 진단은 원본과 배포 ZIP에 반영하지 않았다. 원본 런타임 코드는 변경하지 않았다.
 
 새 게임의 플랫폼·장치 확인과 도구의 실행 권한 제한을 프리셋의 일반 기능 검증과 구분한다. 물리 키보드/게임패드·오디오 청취·모바일 실기기 결과는 아직 없다.
+
+## 2026-10-02 Codex 재시작 후 GUI 검증
+
+Computer Use 플러그인 26.930.21537에서 대상 Player 실행을 다시 시도했다. 허용 설정 반영·Codex 재시작 후 앱 권한 거부 없이 Player가 실행됐다. 첫 시나리오는 약 8초에 검사를 마치고 자동 종료하여 `launch_app`에는 대상 창을 찾지 못했다는 응답이 남았지만, 새 결과 파일·타임스탬프·이미지에서 실제 실행과 완료를 확인했다. 같은 실행을 중복으로 시작하지 않았다.
+
+| 회차 | 실행과 관찰 | 판정·증거 |
+| --- | --- | --- |
+| 1 | Title 준비·AppRoot 1개, 음량 버튼의 Unity 이벤트 호출 후 설정값·AudioListener 반영, 전체화면 해제 | 통과. `Logs/FinalHandoffValidation/events.log` |
+| 1 | 실제 Windows 창을 960×540으로 변경하고 Title → Main 이동, 화면 크기 유지·활성 버튼 경계 검사 | 통과. 같은 폴더의 `result.txt`가 PASS, Title·Main PNG 기록 |
+| 1 | Main에서 전체화면 버튼 이벤트 호출 후 전체화면 상태·설정 반영, 버튼 경계·단일 AppRoot 재확인 | 통과. 전체화면 렌더링은 960×540. 1920×1080 복귀를 검증하지 않음 |
+| 2 | 네이티브 960×540 Title·Main·전체화면 Main 이미지를 직접 열어 문구와 버튼 배치 확인 | 잘림·겹침 없이 표시. `title_960x540_960x540.png`, `main_960x540_960x540.png`, `main_fullscreen_960x540.png` |
+| 2–3 | 원본 Editor와 대기형 Player의 Windows 창 캡처, 각각 새 창 선택 후 한 번 재시도 | 미완료. `FrameArrived timed out: timed out waiting on channel` / `window capture timed out: timed out waiting on channel` |
+| 3 | 입력 주입·버튼 이벤트 호출 없는 관찰용 Player 실행, 접근성 포커스 확인 후 Computer Use Enter | 미확인. Ready·포커스 있음·Start Game 선택 상태였으나 Unity 키·클릭 로그와 Main 전환 없음 |
+
+1회차 버튼 호출은 `Button.onClick.Invoke()`이며 실제 OS 클릭이 아니다. 크기 변경은 임시 시나리오의 `Screen.SetResolution(960, 540, Windowed)`다. PNG는 Unity `ScreenCapture`로 기록한 실제 게임 렌더링이며 Windows 창 캡처 결과와 구분한다. 시나리오의 런타임 오류 기록은 없었다.
+
+3회차 관찰용 빌드는 성공했다(169,610,584 bytes, `Logs/FinalComputerUseInputWindowsBuild.log`). `Logs/FinalComputerUseInputValidation/events.log`에는 씬·선택·화면 크기·포커스·실제 수신한 키와 버튼 이벤트만 관찰하도록 구성했다. 자동 입력이나 UI 동작은 실행하지 않았다. Computer Use Enter의 수신을 확인하지 못했으므로 반복 입력·추측 좌표 클릭으로 통과 판정을 만들지 않았다. 대상 Player를 닫고 로그·화면·관찰 소스를 보관했다. 사용이 끝난 시험용 빌드·임시 소스·시험용 저장의 삭제는 경로 확인 후 명시적 대상 경로로도 시도했지만 자동 승인 검사에서 `blocked by policy`로 거절됐다. 상세 사유는 제공되지 않아 삭제를 멈췄으며 이번 산출물은 남아 있다. `Logs/FinalComputerUseCleanup-20261002.json`에 정리 보류 상태를 기록한다.
+
+이 회차에서 제품 런타임 코드는 변경하지 않았다. Summary·배포 기준만 결과에 맞게 보완하고 v1.0.0 태그·ZIP은 유지한다. OS 마우스·키보드, 물리 게임패드·오디오 청취·모바일 실기기는 별도 미확인이다.
