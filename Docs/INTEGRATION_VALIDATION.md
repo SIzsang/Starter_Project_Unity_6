@@ -81,3 +81,5 @@ Boot 회귀 빌드는 복제본에서만 `productName`을 `StarterProjectBootstr
 원본 Unity 6000.3.16f1 Editor에서 저장된 `00_StartScene` 상태로 Play를 시작했고, Editor 창 제목과 로그에서 `01_Title` 로드를 확인했다. Play를 종료하자 `00_StartScene`으로 돌아왔다. 해당 실행 구간의 Editor 로그에는 예외·오류가 없었다. 파일 열기 대화상자는 취소했고 씬 파일을 수정하지 않았다.
 
 Unity 창의 화면 캡처가 반복해서 `window capture timed out: timed out waiting on channel` 오류로 실패했다. 접근성 정보에는 Editor의 GameView 창만 있고 게임 안의 버튼·텍스트가 노출되지 않았다. Title의 키보드 입력으로 Main 전환을 확인하지 못했으며, Main 직접 Play·실제 화면 배치·클릭·터치·오디오 검증은 완료하지 않았다. 기존 자동 테스트와 Windows 빌드 결과의 범위를 넘겨 GUI 검증 완료로 판정하지 않는다.
+
+추가로 같은 검증 복제본의 Windows Player를 다시 빌드했으며 성공했다(169,603,386 bytes, `Logs/ComputerUseWindowsBuild.log`). Computer Use에서 이 Player를 실행하려던 호출은 `Computer Use app approval timed out`으로 끝났고, Player 창이 없음을 확인했다. 따라서 Player GUI 실행 결과는 없다. 임시 빌드 산출물은 정리했다.
