@@ -83,3 +83,13 @@ Boot 회귀 빌드는 복제본에서만 `productName`을 `StarterProjectBootstr
 Unity 창의 화면 캡처가 반복해서 `window capture timed out: timed out waiting on channel` 오류로 실패했다. 접근성 정보에는 Editor의 GameView 창만 있고 게임 안의 버튼·텍스트가 노출되지 않았다. Title의 키보드 입력으로 Main 전환을 확인하지 못했으며, Main 직접 Play·실제 화면 배치·클릭·터치·오디오 검증은 완료하지 않았다. 기존 자동 테스트와 Windows 빌드 결과의 범위를 넘겨 GUI 검증 완료로 판정하지 않는다.
 
 추가로 같은 검증 복제본의 Windows Player를 다시 빌드했으며 성공했다(169,603,386 bytes, `Logs/ComputerUseWindowsBuild.log`). Computer Use에서 이 Player를 실행하려던 호출은 `Computer Use app approval timed out`으로 끝났고, Player 창이 없음을 확인했다. 따라서 Player GUI 실행 결과는 없다. 임시 빌드 산출물은 정리했다.
+
+## 2026-10-02 Windows Player 네이티브 화면·UI 흐름 확인
+
+Computer Use로 검증 Player를 실행했고, 창이 늦게 생성된 뒤 목록에서 확인됐다. Windows 창 캡처는 계속 시간 초과됐으므로, Git에서 제외된 검증 복제본에만 임시 진단 코드를 넣어 게임의 실제 렌더링 이미지를 생성했다. `Logs/ComputerUseNativeValidation/frame_02_01_Title_1920x1080.png`와 `Logs/ComputerUseNativeScenario/frame_03_02_MainScene_1920x1080.png`에서 Title·Main 문구·버튼 배치를 확인했다.
+
+초기 진단 Player는 포커스가 있고 New Game이 선택된 Ready 상태였지만, Computer Use로 보낸 Enter·F8은 Unity 키 입력 로그에 나타나지 않았다. 물리 입력을 확인한 결과로 처리하지 않는다. 별도 Player 시나리오는 Unity 입력 시스템에 합성 키 상태를 주입해 New Game → Save Game → Back to Title → Continue를 실행했고, 저장 후 같은 SessionId로 Main에 복귀하는 조건을 통과했다. 임시 시나리오는 테스트용으로 background input을 허용했다.
+
+이어진 설정 테스트는 아래 방향키의 선택 대상을 Volume으로 가정한 임시 테스트 자체의 오류로 중단됐다. 실제 선택은 Fullscreen이었다. 보정한 추가 시나리오 빌드는 성공했으나 `StarterProjectGuiScenario20261002` 실행에서 `Computer Use was not approved to use starterprojectguiscenario20261002` 응답을 받았다. 따라서 추가 화면 모드·960×540 네이티브 화면 검증은 완료하지 않았다. 제품 코드 실패로 기록하지 않는다.
+
+빌드 로그: `Logs/ComputerUseRetryWindowsBuild.log`, `Logs/ComputerUseNativeWindowsBuild.log`, `Logs/ComputerUseNativeScenarioBuild.log`, `Logs/ComputerUseNativeScenarioFinalBuild.log`. 실제 입력 진단과 합성 입력 시나리오 기록은 각각 `Logs/ComputerUseNativeValidation/events.log`, `Logs/ComputerUseNativeScenario/events.log`에 있다. 원본 런타임 코드는 `61b5355` 이후 변경하지 않았다. [v1.0.0 배포 범위](RELEASE.md)

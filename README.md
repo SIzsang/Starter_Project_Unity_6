@@ -1,8 +1,8 @@
 # Starter Project — Unity 6
 
 새 게임을 시작할 때 복제해서 사용하는 Unity 공통 기반 프로젝트입니다.
-**로드맵 1~6단계: Bootstrap·설정·저장·공통 기능·Editor 개발 경로**를 구현하고 자동 검증했습니다.
-7단계 통합 테스트의 자동 검증을 진행했고, 템플릿 인계·배포 준비를 진행 중입니다. GUI·실기기 검증은 남아 있습니다.
+Bootstrap·설정·저장·공통 기능·Editor 개발 경로와 UI 에셋 교체 경로를 구현했습니다.
+필수 Unity 회귀 테스트와 Windows Player의 시작·저장·이어하기 흐름, 1920×1080 화면 표시를 확인했고 v1.0.0 배포를 준비했습니다. 검증 범위와 새 게임 인계 절차는 [v1.0.0 배포 가이드](Docs/RELEASE.md)에 있습니다.
 
 ## 방향
 
@@ -35,7 +35,7 @@ Main에서 `Save Game`으로 저장하고 `Back to Title` → `Continue`로 복�
 
 설정·저장 정책과 최신 검증 결과는 [3·4단계 사용 가이드](Docs/SETTINGS_AND_SAVE.md)에 기록합니다.
 
-Main 씬을 열고 Play하면 개발용 저장 공간에서 Boot 초기화 후 Main에 진입합니다. 반복 진입과 저장소 분리는 복제본 자동 실행에서 확인했습니다. GUI에서의 직접 조작 확인은 7단계에 남겨 둡니다. Title 직접 Play는 Boot 실행을 안내합니다. 사용법과 검증 범위는 [Editor 작업 가이드](Docs/EDITOR_WORKFLOW.md)를 따릅니다.
+Main 씬을 열고 Play하면 개발용 저장 공간에서 Boot 초기화 후 Main에 진입합니다. 반복 진입과 저장소 분리는 복제본 자동 실행에서 확인했습니다. 직접 조작·기기별 품질 확인 범위는 배포 가이드에 구분합니다. Title 직접 Play는 Boot 실행을 안내합니다. 사용법과 검증 범위는 [Editor 작업 가이드](Docs/EDITOR_WORKFLOW.md)를 따릅니다.
 
 공통 코드는 장르에 독립적으로 설계하지만 현재 렌더링 구성은 **2D용**입니다.
 3D 프로젝트에서 사용하려면 렌더러, 카메라, 조명과 관련 패키지를 별도로 검토해야 합니다.
@@ -51,7 +51,8 @@ Main 씬을 열고 Play하면 개발용 저장 공간에서 Boot 초기화 후 M
 - [SOLID·패턴 점검](Docs/ARCHITECTURE_REVIEW.md): 공통 기반의 책임·의존 경계와 설정 저장 실패 보완
 - [프리셋 상세 Summary](Docs/PRESET_SUMMARY.md): 확인된 기능·검증·한계와 새 게임 제작 시 인계 기준
 - [새 게임 시작 가이드](Docs/NEW_GAME_SETUP.md): 복제 직후 식별자·씬 확인과 게임별 JSON 데이터 연결 절차
-- [변경 이력](Docs/CHANGELOG.md): 아직 배포 전인 템플릿의 주요 변경과 버전 상태
+- [v1.0.0 배포 가이드](Docs/RELEASE.md): 새 프로젝트 생성, 검증 기준과 지원 범위
+- [변경 이력](Docs/CHANGELOG.md): 템플릿의 주요 변경과 버전 상태
 - [제작 가능 범위 브리핑](Docs/GAME_CAPABILITY_BRIEF.md): 현재 프리셋으로 시작할 수 있는 게임과 추가 구현 영역, 캐릭터 에셋 애니메이션 인계 조건
 - [로그라이크·로그라이트 사전 조사](Docs/ROGUELIKE_PLAY_FLOW_RESEARCH.md): 실제 게임의 런·영구 성장·중단 저장 비교와 6단계 개발 진입 제안
 - [개발 로드맵](Docs/ROADMAP.md): 8단계 작업 순서와 완료 기준
@@ -65,4 +66,4 @@ Main 씬을 열고 Play하면 개발용 저장 공간에서 Boot 초기화 후 M
 `Assets`와 `.meta`, `Packages`, `ProjectSettings`, 문서를 함께 버전 관리합니다.
 `Library`, `Temp`, `Logs`, `UserSettings`, 자동 생성 IDE 파일은 제외합니다.
 사용하지 않는 Unity Version Control 협업, Multiplayer Center, Visual Scripting 패키지는 제거했습니다. 2D 애니메이션·스프라이트 가져오기 도구는 새 게임에서 프레임 에셋을 사용할 수 있도록 유지합니다.
-템플릿 배포와 버전 지정은 체크리스트의 검증을 마친 뒤 진행합니다.
+버전 태그의 소스 또는 GitHub Template으로 새 프로젝트를 만듭니다. 원본 작업 폴더의 개인 Editor 상태를 복사하지 않고, 배포 소스의 중립 식별자로 시작합니다.

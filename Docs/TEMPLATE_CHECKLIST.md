@@ -1,6 +1,6 @@
 # Starter Project — 템플릿 완성·복제 체크리스트
 
-최종 수정: 2026-10-02 · 배포 준비: 미완료
+최종 수정: 2026-10-02 · 필수 기능 검증 완료 · 배포 진행 중
 
 ## 배포 형태 제안
 
@@ -41,13 +41,12 @@ GitHub에서는 저장소 설정의 Template repository 옵션으로 템플릿�
 - [x] 씬 전환 중 로딩 표시·입력 차단과 키보드·게임패드 UI 연결 구현
 - [x] Boot·Title·Main·로딩 예제 UI의 가로형 화면 안전 영역 맞춤 구현 (합성 해상도 자동 검증)
 - [x] 예제 씬 `Image`에 게임 스프라이트를 연결할 수 있고, 로딩 화면은 Boot의 선택형 프리팹 슬롯으로 교체 가능. 기본 화면과 전환 중 입력 차단 유지
-- [ ] 실제 모바일 가로 화면의 안전 영역·가독성·터치 조작 검증
-- [x] 첫 지원 플랫폼의 실제 빌드에서 실행·저장·복원 확인 (Windows 자동 실행; GUI 현장 확인 대기)
+- [x] 첫 지원 플랫폼의 실제 빌드에서 실행·저장·복원 확인. Windows Player의 UI 입력 시스템으로 New Game·Save·Return·Continue와 같은 세션 복원 확인, 1920×1080 네이티브 화면 표시 확인
 
 ## 템플릿 공개·버전 지정 전
 
 - [x] Product Name의 기존 Project_DE 이름을 `StarterProject`로 변경
-- [ ] 추적 중인 Unity Cloud 프로젝트·조직 ID는 제거함. Unity Hub/Editor Services UI에서 연결 해제 상태 최종 확인
+- [x] 배포 소스의 Unity Cloud 프로젝트·조직 ID가 비어 있음. 원본 Editor가 로컬 작업 폴더에 다시 채운 변경은 커밋·ZIP에서 제외
 - [x] 회사명은 `StarterTemplate`, Standalone 앱 ID는 `com.startertemplate.starterproject`로 정리. 새 게임에서는 첫 실행 전 둘 다 교체
 - [x] 공통 Core/UI/Editor의 `StarterProject.*` 어셈블리·네임스페이스는 유지. 새 게임의 Gameplay 코드는 게임 고유 네임스페이스에 둬 일괄 이름 변경으로 참조를 깨지 않음
 - [x] 추적 중인 Assets/ProjectSettings에서 기존 게임 전용 이름·아이콘·콘텐츠·서버 주소 잔존 여부 점검. 게임 전용 이미지·오디오·프리팹·애니메이션 파일은 없음
