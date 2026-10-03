@@ -7,6 +7,7 @@
 - Canvas Render Mode: `Screen Space - Overlay`. 카메라 거리나 투영 방식과 독립적인 화면 UI다.
 - Canvas Scaler: `Scale With Screen Size`, 기준 `1920×1080`, `Match Width Or Height = 0.5`. 이것은 UI 좌표의 설계 기준이며 실제 화면 출력 해상도의 상한은 아니다.
 - 모바일 Player Settings: 자동 회전에서 세로·역세로를 제외하고 가로 좌·우만 허용한다. PC 창의 가로·세로 크기 변경에도 레이아웃을 다시 계산한다.
+- 2026-10-04 최신 main은 PC Player의 `Resizable Window`를 활성화한다. v1.0.0은 레이아웃이 크기 변경에 대응하지만 Player 창의 사용자 크기 조절 옵션은 꺼져 있었다. [Unity 창 크기 조절 설정](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/PlayerSettings-resizableWindow.html)
 - `StarterCanvasLayout`이 화면 전체 배경·입력 차단막은 Canvas에 두고, 버튼·문구·진행률은 `Safe Area/Content`에 넣는다. `UnityEngine.Device.Screen.safeArea`로 노치·둥근 모서리 등의 여백을 반영하며 Device Simulator의 화면 값도 사용할 수 있다.
 - 기존 예제 콘텐츠의 좌표·크기·글꼴을 1.5배로 옮겨 씬 자체를 1920×1080 디자인 좌표로 작성한다. 실행 중 별도로 확대하지 않으며 더 작은 화면이나 안전 영역에서는 들어갈 만큼 축소한다. 해상도·안전 영역·Canvas 배율이 바뀌면 다시 맞춘다.
 

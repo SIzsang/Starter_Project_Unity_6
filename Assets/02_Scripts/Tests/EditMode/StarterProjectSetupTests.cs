@@ -101,6 +101,47 @@ namespace StarterProject.Tests
             Assert.That(() => StarterProjectPlayMode.GetSessionPath("../StarterData"), Throws.ArgumentException);
         }
 
+        [Test]
+        public void SceneInputValidationRejectsMissingEventSystem()
+        {
+            Assert.That(() => StarterProjectSetup.ValidateSceneInput(SceneManager.GetActiveScene(), "Main"),
+                Throws.InvalidOperationException.With.Message.Contains("EventSystem"));
+        }
+
+        [TestCase("Disabled")]
+        [TestCase("Inactive")]
+        [TestCase("Duplicate")]
+        public void BootstrapValidationRejectsUnusableEntryPoint(string condition)
+        {
+            var config = AssetDatabase.LoadAssetAtPath<AppConfig>(StarterProjectSetup.ConfigPath);
+            var preview = EditorSceneManager.OpenPreviewScene(config.BootScene);
+            try
+            {
+                var bootstrap = preview.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<AppBootstrap>(true)).Single();
+                if (condition == "Disabled") bootstrap.enabled = false;
+                else if (condition == "Inactive") bootstrap.gameObject.SetActive(false);
+                else bootstrap.gameObject.AddComponent<AppBootstrap>();
+                Assert.That(() => StarterProjectSetup.ValidateSceneBootstrap(preview, config),
+                    Throws.InvalidOperationException.With.Message.Contains("one active AppBootstrap"));
+            }
+            finally { EditorSceneManager.ClosePreviewScene(preview); }
+        }
+
+        [TestCase("Point")]
+        [TestCase("Navigate")]
+        [TestCase("Click")]
+        public void SceneInputValidationRejectsMissingActions(string actionName)
+        {
+            StarterProjectSetup.ConfigureInput();
+            var module = Object.FindFirstObjectByType<InputSystemUIInputModule>();
+            if (actionName == "Point") module.point = null;
+            else if (actionName == "Navigate") module.move = null;
+            else module.leftClick = null;
+            Assert.That(() => StarterProjectSetup.ValidateSceneInput(SceneManager.GetActiveScene(), "Main"),
+                Throws.InvalidOperationException.With.Message.Contains(actionName));
+        }
+
         [TestCase("My Game", "My Game.exe")]
         [TestCase("Boss: Rush?", "Boss_ Rush_.exe")]
         [TestCase("CON", "Game_CON.exe")]

@@ -1,6 +1,6 @@
 # 새 게임 프로젝트 시작 가이드
 
-기준: Unity `6000.3.16f1`, Windows PC와 URP 2D 예제. 이 저장소는 Boot·설정·저장·기본 씬 흐름을 재사용하는 **프로젝트 템플릿**이다. 전투·캐릭터·스테이지·게임별 UI는 복제한 게임에서 만든다. 검증이 끝난 버전으로 새 저장소를 만들고, 사용한 커밋 또는 태그를 새 게임의 문서에 기록한다.
+기준: Unity `6000.3.16f1`, Windows PC와 URP 2D 예제. 이 저장소는 Boot·설정·저장·기본 씬 흐름을 재사용하는 **프로젝트 템플릿**이다. 전투·캐릭터·스테이지·게임별 UI는 복제한 게임에서 만든다. 사용한 커밋 또는 태그를 새 게임의 문서에 기록한다. 2026-10-04의 추가 Gameplay 씬 저장·PC 창 크기 조절 보완은 최신 main에 포함하며 기존 v1.0.0 ZIP은 이전 소스다. 이번 보완을 사용하는 새 게임은 최신 main에서 `Use this template`으로 만든다. [제작 시작 전 점검](GAME_START_AUDIT.md)
 
 ## 첫 Play 전에
 
@@ -17,6 +17,18 @@ Boot·Title·Main 씬의 `Starter UI`에서 배경과 버튼 `Image`의 `Source 
 ## 게임별 저장 데이터 연결
 
 Core는 게임 내용을 모르는 단일 슬롯 파일 저장을 제공한다. `Gameplay` 어셈블리에서 `GamePayloadPolicy` 파생 ScriptableObject를 만들고, **Boot 씬의 `AppBootstrap` 컴포넌트에 에셋을 연결**한다. 정책을 연결하지 않으면 현재 예제대로 payloadVersion 1과 빈 `{}` 객체를 사용한다. 정책은 새 게임과 Editor의 Main 직접 Play에도 같은 초기 JSON을 제공한다.
+
+JSON 패키지를 사용하는 게임 코드를 추가할 때 `Assets/02_Scripts/Gameplay/MyGame.Gameplay.asmdef`를 다음처럼 만든다. `StarterProject.Core`를 참조하고 `Newtonsoft.Json.dll`을 명시적으로 연결한다. 다른 패키지나 DLL을 사용하는 게임 코드는 해당 참조도 추가한다.
+
+```json
+{
+  "name": "MyGame.Gameplay",
+  "rootNamespace": "MyGame",
+  "references": ["StarterProject.Core", "Unity.InputSystem"],
+  "overrideReferences": true,
+  "precompiledReferences": ["Newtonsoft.Json.dll"]
+}
+```
 
 ```csharp
 using System.IO;
@@ -39,7 +51,7 @@ public sealed class MyGamePayloadPolicy : GamePayloadPolicy
 }
 ```
 
-실제 진행 상태를 저장할 때 게임별 코드가 JSON 객체를 만든 뒤 **Main 씬에서** `AppRoot.Instance.TrySaveGame(payloadJson)`을 호출한다. `Continue` 뒤에는 `AppRoot.Instance.Game.Current.PayloadJson`을 게임 모델로 역직렬화한다. 단일 슬롯에 이미 다른 세션이 있으면 교체 확인을 받은 뒤 `TrySaveGame(payloadJson, replaceExisting: true)`를 호출한다. 예제 Main의 `Save Game` 버튼은 현재 payload를 다시 저장할 뿐, 캐릭터나 스테이지 객체를 자동 수집하지 않는다. 게임별 저장 버튼·체크포인트에서 새 JSON을 전달하도록 연결한다.
+실제 진행 상태를 저장할 때 게임별 코드가 JSON 객체를 만든 뒤 `AppRoot.Instance.TrySaveGame(payloadJson)`을 호출한다. **활성 게임 세션이 있으면 Main과 추가 Gameplay 씬에서 저장할 수 있다.** Boot·Title·AppRoot의 씬 전환 중에는 저장하지 않는다. `Continue` 뒤에는 Main에서 `AppRoot.Instance.Game.Current.PayloadJson`을 게임 모델로 역직렬화한다. 단일 슬롯에 이미 다른 세션이 있으면 교체 확인을 받은 뒤 `TrySaveGame(payloadJson, replaceExisting: true)`를 호출한다. 예제 Main의 `Save Game` 버튼은 현재 payload를 다시 저장할 뿐, 캐릭터나 스테이지 객체를 자동 수집하지 않는다. 게임별 저장 버튼·체크포인트에서 새 JSON을 전달하도록 연결하고 실패 결과도 처리한다.
 
 정적 캐릭터 정의·스프라이트는 에셋으로 보관하고 저장 payload에는 캐릭터 ID, 달라진 능력치·성장 상태, 스테이지 진행처럼 **변하는 값**을 넣는다. 약 100명 규모도 필드 크기에 따라 1MiB 안에 들어갈 수 있지만 실제 UTF-8 JSON 파일 전체 크기를 측정해야 한다. 파일 크기 상한은 1MiB, JSON 깊이 상한은 32다. 저장은 동기식이며 단일 슬롯·단일 프로세스 소유를 전제로 한다. 게임 데이터 형식을 바꿀 때는 `PayloadVersion`을 올리고 이전 저장의 변환·보호 정책을 게임에서 설계한다. 버전만 올리면 이전 파일은 보호되지만 이어하기는 비활성화된다. [상세 저장 계약](SETTINGS_AND_SAVE.md)
 

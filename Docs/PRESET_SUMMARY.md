@@ -1,6 +1,6 @@
 # Starter Project 상세 Summary — 새 게임 제작용 인계 기록
 
-최종 점검: 2026-10-02 · 상태: **v1.0.0 프리셋 제작·필수 기능 검증·GitHub Template 배포 완료**
+최종 점검: 2026-10-04 · 상태: **v1.0.0 배포 완료, 최신 main의 범용 템플릿 사용 경계 보완**
 
 이 문서는 향후 새 프로젝트에서 이 프리셋을 사용할 때 다시 확인할 기준 기록이다. 대화나 모델의 임시 기억에 의존하지 않도록 프로젝트와 함께 버전 관리한다. 변경 후에는 검증 결과와 한계를 함께 갱신한다.
 
@@ -17,6 +17,7 @@
 | 범위 | 현재 결과 |
 | --- | --- |
 | 공통 프리셋 구현 | Boot·설정·단일 슬롯 저장·복구·씬 흐름·개발 저장소 격리·UI 에셋 연결 완료 |
+| 2026-10-04 공통 사용 점검 | 추가 Gameplay 씬의 저장 허용, PC 창 크기 조절, 세 씬의 UI 입력과 활성 Boot 진입점 검사 보완. PlayMode 15/15·EditMode 16/16 통과 |
 | 필수 회귀 | 깨끗한 복제본 EditMode 50/50, UI 확장 후 PlayMode 31/31, 입력 차단 보완의 해당 테스트 1/1 통과 |
 | 실제 Windows Player | 별도 프로세스 저장·재실행 복원, 합성 UI 입력의 새 게임·저장·이어하기, 네이티브 1920×1080 Title·Main 표시 확인 |
 | 배포 | 공개 GitHub Template, main, v1.0.0 태그와 Release의 ZIP·SHA-256·manifest 확인 |
@@ -27,6 +28,14 @@
 [Template](https://github.com/SIzsang/Starter_Project_Unity_6) · [Release](https://github.com/SIzsang/Starter_Project_Unity_6/releases/tag/v1.0.0). 배포 소스 기준은 `53db0d56dcb693b0c1a65088583de715d8b95038`이며 ZIP은 156개 파일, 243,977 bytes다. SHA-256은 `B32A4F070EAD6CC555C00722560F087B3B54A29C1890F54FE1C9D44B57F8D4FA`다. GitHub 업로드 파일의 digest가 로컬 해시와 같음을 확인했다. 배포 후 인계 문서 보완은 main에 기록하며 v1.0.0 태그와 ZIP을 바꾸지 않는다.
 
 새 프로젝트는 **식별자 변경 → Validate Setup → 게임별 payload·콘텐츠 연결 → 대상 플랫폼의 첫 실행·저장·재실행·빌드** 순서로 시작한다. 예제 배경·버튼에 스프라이트를 넣고 로딩 프리팹을 연결할 수 있다. 캐릭터 프레임 에셋의 Walk/Attack/Hurt Clip·Animator는 새 게임의 콘텐츠 작업에서 구성한다. 1920×1080은 UI 설계 좌표이며 최대 해상도가 아니다. 화면 크기와 안전 영역에 따른 비례 축소 기반은 구현·자동 검증했고, 최종 에셋의 가독성과 조작 크기는 대상 기기에서 확인한다.
+
+### 범용 템플릿 사용 점검 — 2026-10-04
+
+게임별 캐릭터·능력치·스테이지 진행·전투·자동 저장 규칙은 이번 점검에서 제외했다. 공통 기반에서 Main 이외의 씬으로 이동한 활성 세션의 저장을 허용하고 Boot·Title·전환 중 차단을 유지했다. PC 창 크기 조절을 활성화했으며 Validate Setup은 세 예제 씬의 단일 활성 EventSystem·필수 UI 액션과 Boot의 단일 활성 AppBootstrap을 확인한다.
+
+원본 프로젝트의 격리된 테스트 저장소로 관련 PlayMode **15/15**, EditMode **16/16**을 통과했다. 최신 main에서 사용할 수 있고 기존 v1.0.0 태그·ZIP에는 들어 있지 않으므로, 보완된 템플릿으로 새 프로젝트를 만들 때는 최신 main을 사용한다. 새 Player 빌드·직접 GUI 조작·모바일 실기기 검증은 이번 회차에 추가하지 않았다.
+
+사용 전에 회사명·제품명·앱 식별자를 지정하고 설정·씬 이동 시 경로와 빌드 목록을 갱신한다. 새 asmdef는 Core와 사용하는 DLL을 참조해야 한다. 현재 입력은 새 Input System, 예제 문구는 uGUI Text이며 TMP 전환은 표시 코드의 참조도 변경해야 한다. Main 이외의 씬은 Editor 직접 Play 초기화 대상이 아니다. 자세한 조건·검증 증거는 [제작 시작 전 점검](GAME_START_AUDIT.md)과 [새 게임 시작 가이드](NEW_GAME_SETUP.md)를 따른다.
 
 ### 재시작 후 GUI 검증 결과 — 2026-10-02
 
@@ -55,7 +64,7 @@
 
 정상 실행은 `Boot → 설정·씬 검증 → 사용자 설정/저장 읽기 → 음량·화면 적용 → Title → New Game 또는 Continue → Main`이다. 초기화 실패는 Boot에 남아 원인을 표시하고 게임 진입을 막는다. 이미 준비된 루트로 Boot에 재진입하면 루트를 재사용해 Title로 돌아간다. 씬 전환 중에는 추가 요청과 버튼 입력을 차단한다.
 
-`Tools > Starter Project > Validate Setup`은 현재 AppConfig·빌드 씬·입력 액션과 Boot의 AppBootstrap 참조, 활성 상태 표시 Canvas·Text, 단일 활성 EventSystem·UI 액션 및 세 씬의 Canvas 해상도 설정을 **씬을 변경하지 않고** 검사한다. Boot → Title → Main 왕복·중복 루트·실패 차단은 PlayMode 테스트에서 확인했다. 원본 Editor의 Validate Setup 메뉴와 Boot Play → Title → 정지 후 Boot 복귀를 확인했고, Windows Player의 네이티브 Title·Main 화면도 확인했다. Computer Use의 창 캡처·물리 입력 전달과 Main 직접 Play의 GUI 확인에는 제한이 남아 있다.
+`Tools > Starter Project > Validate Setup`은 현재 AppConfig·빌드 씬·입력 액션과 Boot의 단일 활성 AppBootstrap·설정 참조, 활성 상태 표시 Canvas·Text, 세 씬의 단일 활성 EventSystem·UI 액션 및 Canvas 해상도 설정을 **씬을 변경하지 않고** 검사한다. Boot → Title → Main 왕복·중복 루트·실패 차단은 PlayMode 테스트에서 확인했다. 원본 Editor의 Validate Setup 메뉴와 Boot Play → Title → 정지 후 Boot 복귀를 확인했고, Windows Player의 네이티브 Title·Main 화면도 확인했다. Computer Use의 창 캡처·물리 입력 전달과 Main 직접 Play의 GUI 확인에는 제한이 남아 있다.
 
 ## 데이터와 저장 계약
 
@@ -64,7 +73,7 @@
 - `JsonRepository<T>` / `JsonFileStore`: 임시 파일을 기록·검증한 뒤 교체하며 `.bak`을 남긴다. 파손 시 정상 백업을 표시하고 사용자의 명시적 복구 전에는 원본을 바꾸지 않는다. 미래 버전 파일은 덮어쓰지 않는다.
 - 저장 크기는 **파일 전체 최대 1MiB**다. 현재 저장은 동기식이므로 대량 월드 데이터나 긴 이력에는 저장 형식·성능 재검토가 필요하다.
 - 현재 기본 `Save Game` 버튼은 게임 오브젝트의 상태를 자동 수집하지 않고 `GameSessionService.Current.PayloadJson`을 저장한다. 새 게임의 `Gameplay`에서 실제 상태를 JSON 객체로 만들고 저장 버튼/체크포인트와 연결해야 한다. `Continue` 후에는 현재 payload를 새 게임의 타입 모델로 복원한다.
-- Boot의 `AppBootstrap`에 게임별 `GamePayloadPolicy` 에셋을 선택적으로 연결하면 Core 수정 없이 초기 JSON·payload 버전·유효성 검사 규칙을 지정할 수 있다. Main에서 `AppRoot.TrySaveGame(payloadJson)`으로 현재 게임 상태를 전달한다. 미연결 상태는 기존 빈 `{}`·버전 1 동작을 유지한다. 새 정책의 저장·거부·Continue 복원은 Unity PlayMode에서 확인했다. [새 게임 시작 가이드](NEW_GAME_SETUP.md)
+- Boot의 `AppBootstrap`에 게임별 `GamePayloadPolicy` 에셋을 선택적으로 연결하면 Core 수정 없이 초기 JSON·payload 버전·유효성 검사 규칙을 지정할 수 있다. 활성 세션의 Main·추가 Gameplay 씬에서 `AppRoot.TrySaveGame(payloadJson)`으로 현재 게임 상태를 전달한다. 미연결 상태는 기존 빈 `{}`·버전 1 동작을 유지한다. 새 정책의 저장·거부·Continue 복원은 Unity PlayMode에서 확인했다. [새 게임 시작 가이드](NEW_GAME_SETUP.md)
 
 **향후 계획된 약 100명의 캐릭터 능력치와 스테이지 진행:** 프리셋 Core에 고정 필드를 추가하지 않는다. 새 게임에서는 캐릭터 ID와 변화하는 능력치·성장 상태, 스테이지 ID와 진행 단계만 payload에 넣고 고정 캐릭터 정의는 게임 데이터에서 조회한다. 100명 × 1KiB면 약 100KiB, 5KiB면 약 500KiB로 현재 상한 안에 있지만, 실제 JSON 직렬화 크기를 측정한다. 인벤토리·전투 로그·월드 오브젝트 이력을 누적하면 1MiB에 가까워질 수 있다. 이 수치는 설계 예시이며 실제 게임 스키마가 확정된 것은 아니다.
 

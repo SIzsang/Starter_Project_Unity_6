@@ -25,7 +25,7 @@ Bootstrap·설정·저장·공통 기능·Editor 개발 경로와 UI 에셋 교�
 
 ## 새 게임용 프리셋 받기
 
-[GitHub Template](https://github.com/SIzsang/Starter_Project_Unity_6)의 `Use this template`으로 새 저장소를 만들거나 [v1.0.0 Release](https://github.com/SIzsang/Starter_Project_Unity_6/releases/tag/v1.0.0)의 `StarterProject-v1.0.0.zip`을 받습니다. Release에는 ZIP의 SHA-256과 소스 커밋·파일 수를 기록한 manifest도 있습니다. 복제 후 첫 Play 전에 게임의 Company/Product Name과 앱 식별자를 바꿉니다.
+[GitHub Template](https://github.com/SIzsang/Starter_Project_Unity_6)의 최신 main에서 `Use this template`으로 새 저장소를 만듭니다. 2026-10-04의 추가 씬 저장·PC 창 크기 조절·초기화와 UI 입력 검사 보완은 main에 포함됩니다. [v1.0.0 Release](https://github.com/SIzsang/Starter_Project_Unity_6/releases/tag/v1.0.0)의 ZIP은 이전 소스로 유지하며 SHA-256과 소스 커밋·파일 수를 기록한 manifest를 제공합니다. 복제 후 첫 Play 전에 게임의 Company/Product Name과 앱 식별자를 바꿉니다. [제작 시작 전 점검](Docs/GAME_START_AUDIT.md)
 
 ## 실행
 

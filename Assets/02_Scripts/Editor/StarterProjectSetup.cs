@@ -287,13 +287,7 @@ namespace StarterProject.Editor
             var preview = EditorSceneManager.OpenPreviewScene(config.BootScene);
             try
             {
-                var bootstrap = preview.GetRootGameObjects()
-                    .SelectMany(root => root.GetComponentsInChildren<AppBootstrap>(true)).FirstOrDefault();
-                if (bootstrap == null)
-                    throw new InvalidOperationException("Boot scene is missing AppBootstrap.");
-                var assigned = new SerializedObject(bootstrap).FindProperty("config").objectReferenceValue;
-                if (assigned != config)
-                    throw new InvalidOperationException("Boot AppBootstrap must reference the configured AppConfig asset.");
+                ValidateSceneBootstrap(preview, config);
 
                 var screens = preview.GetRootGameObjects()
                     .SelectMany(root => root.GetComponentsInChildren<StarterScreen>(true)).ToArray();
@@ -307,13 +301,7 @@ namespace StarterProject.Editor
 
                 ValidateResponsiveCanvas(screens[0], "Boot");
 
-                var events = preview.GetRootGameObjects()
-                    .SelectMany(root => root.GetComponentsInChildren<EventSystem>(true)).ToArray();
-                var module = events.Length == 1 ? events[0].GetComponent<InputSystemUIInputModule>() : null;
-                if (events.Length != 1 || !events[0].isActiveAndEnabled || module == null
-                    || !module.isActiveAndEnabled || module.actionsAsset == null
-                    || module.submit?.action == null || module.cancel?.action == null)
-                    throw new InvalidOperationException("Boot scene requires one active EventSystem with UI actions.");
+                ValidateSceneInput(preview, "Boot");
             }
             finally { EditorSceneManager.ClosePreviewScene(preview); }
 
@@ -327,8 +315,46 @@ namespace StarterProject.Editor
                     if (screens.Length != 1 || !screens[0].isActiveAndEnabled)
                         throw new InvalidOperationException($"{scenePath} requires one active StarterScreen.");
                     ValidateResponsiveCanvas(screens[0], scenePath);
+                    ValidateSceneInput(preview, scenePath);
                 }
                 finally { EditorSceneManager.ClosePreviewScene(preview); }
+            }
+        }
+
+        /// <summary>Boot 초기화를 시작할 단일 활성 진입점과 설정 참조를 검사합니다.</summary>
+        internal static void ValidateSceneBootstrap(Scene scene, AppConfig config)
+        {
+            var bootstraps = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<AppBootstrap>(true)).ToArray();
+            if (bootstraps.Length != 1 || !bootstraps[0].isActiveAndEnabled)
+                throw new InvalidOperationException("Boot scene requires one active AppBootstrap.");
+            var assigned = new SerializedObject(bootstraps[0]).FindProperty("config").objectReferenceValue;
+            if (assigned != config)
+                throw new InvalidOperationException("Boot AppBootstrap must reference the configured AppConfig asset.");
+        }
+
+        /// <summary>각 예제 씬의 단일 입력 모듈과 필수 포인터·선택 액션 연결을 검사합니다.</summary>
+        internal static void ValidateSceneInput(Scene scene, string sceneName)
+        {
+            var events = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<EventSystem>(true)).ToArray();
+            var module = events.Length == 1 ? events[0].GetComponent<InputSystemUIInputModule>() : null;
+            if (events.Length != 1 || !events[0].isActiveAndEnabled || module == null
+                || !module.isActiveAndEnabled || module.actionsAsset == null
+                || events[0].GetComponents<BaseInputModule>().Count(input => input.isActiveAndEnabled) != 1)
+                throw new InvalidOperationException($"{sceneName} requires one active EventSystem with one Input System UI module.");
+            ValidateAction(module.point, "Point");
+            ValidateAction(module.move, "Navigate");
+            ValidateAction(module.submit, "Submit");
+            ValidateAction(module.cancel, "Cancel");
+            ValidateAction(module.leftClick, "Click");
+
+            void ValidateAction(InputActionReference reference, string name)
+            {
+                var action = reference?.action;
+                if (action == null || action.name != name || action.actionMap?.name != "UI"
+                    || action.actionMap.asset != module.actionsAsset)
+                    throw new InvalidOperationException($"{sceneName} UI {name} action is missing or assigned to a different action asset.");
             }
         }
 

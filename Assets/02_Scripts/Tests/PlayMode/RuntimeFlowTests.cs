@@ -341,6 +341,39 @@ namespace StarterProject.Tests
         }
 
         [UnityTest]
+        public IEnumerator ActiveGameSessionCanSaveOutsideMainAndContinue()
+        {
+            yield return LoadBoot();
+            var root = AppRoot.Instance;
+            Assert.That(root.TryStartNewGame(), Is.True);
+            yield return WaitForScene(Main);
+            var sessionId = root.Game.Current.SessionId;
+            var gameplay = SceneManager.CreateScene("StarterTestGameplay-" + Guid.NewGuid().ToString("N"));
+            Assert.That(SceneManager.SetActiveScene(gameplay), Is.True);
+            yield return SceneManager.UnloadSceneAsync(Main);
+
+            Assert.That(root.TrySaveGame("{\"marker\":\"other-scene\"}"), Is.True, root.StorageMessage);
+            Assert.That(root.TryReturnToTitle(), Is.True);
+            Assert.That(root.TrySaveGame(), Is.False, "Scene transitions must block saves.");
+            yield return WaitForScene(Title);
+            Assert.That(root.TrySaveGame(), Is.False, "Title must not save an ended game.");
+            Assert.That(root.TryContinueGame(), Is.True);
+            yield return WaitForScene(Main);
+            Assert.That(root.Game.Current.SessionId, Is.EqualTo(sessionId));
+            Assert.That(JsonUtility.FromJson<TestPayload>(root.Game.Current.PayloadJson).marker, Is.EqualTo("other-scene"));
+        }
+
+        [UnityTest]
+        public IEnumerator TitleDoesNotSaveEvenWhenGameServiceHasSession()
+        {
+            yield return LoadBoot();
+            var root = AppRoot.Instance;
+            root.Game.StartNew();
+            Assert.That(root.TrySaveGame(), Is.False);
+            Assert.That(File.Exists(Path.Combine(testDirectory, GameSessionService.FileName)), Is.False);
+        }
+
+        [UnityTest]
         public IEnumerator EscapeCancelsSaveReplacementAndRestoresValidSelection()
         {
             yield return LoadBoot();
@@ -409,6 +442,12 @@ namespace StarterProject.Tests
             Assert.That(settings.masterVolume, Is.EqualTo(volume));
             Assert.That(settings.fullscreen, Is.EqualTo(fullscreen));
             Assert.That(settings.language, Is.EqualTo(language));
+        }
+
+        [Serializable]
+        private sealed class TestPayload
+        {
+            public string marker = "";
         }
 
         private sealed class RecordingRuntimeSettings : IRuntimeSettings

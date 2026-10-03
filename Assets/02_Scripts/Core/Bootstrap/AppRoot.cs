@@ -39,6 +39,7 @@ namespace StarterProject
         public string Failure { get; private set; } = string.Empty;
 
         private CancellationToken lifetimeToken;
+        private string bootScenePath;
         private string titleScenePath;
         private string mainScenePath;
         public SettingsService Settings { get; private set; }
@@ -142,6 +143,7 @@ namespace StarterProject
                     throw new InvalidOperationException("AppBootstrap requires an AppConfig asset.");
                 config.Validate();
                 // 검증과 복사 사이에 프레임을 넘기지 않아, 검증한 값만 실행에 사용합니다.
+                bootScenePath = config.BootScene;
                 titleScenePath = config.TitleScene;
                 mainScenePath = config.MainScene;
                 var defaultSettings = config.CreateDefaultSettings();
@@ -206,11 +208,13 @@ namespace StarterProject
 
         public bool TrySaveGame(bool replaceExisting = false) => TrySaveGame(null, replaceExisting);
 
-        /// <summary>게임별 JSON 객체를 현재 슬롯에 저장합니다. null이면 현재 payload를 다시 저장합니다.</summary>
+        /// <summary>활성 게임 세션의 JSON 객체를 저장합니다. 추가 Gameplay 씬에서도 사용할 수 있으며 null이면 현재 payload를 다시 저장합니다.</summary>
         public bool TrySaveGame(string payloadJson, bool replaceExisting = false)
         {
             if (Instance != this || State != AppState.Ready || IsTransitioning
-                || SceneManager.GetActiveScene().path != mainScenePath) return false;
+                || lifetimeToken.IsCancellationRequested || Game?.Current == null) return false;
+            var activeScenePath = SceneManager.GetActiveScene().path;
+            if (activeScenePath == bootScenePath || activeScenePath == titleScenePath) return false;
             var isSaved = Game.TrySave(payloadJson, replaceExisting);
             StorageMessage = Game.Message;
             return isSaved;

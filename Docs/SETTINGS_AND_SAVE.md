@@ -61,6 +61,8 @@
 
 `GameSessionService`는 게임 규칙을 모르는 저장 기반이다. `Gameplay`에서 `GamePayloadPolicy` 파생 ScriptableObject를 만들고 Boot의 `AppBootstrap`에 연결해 초기 JSON·`PayloadVersion`·검증 규칙을 지정한다. 검증기는 잘못된 데이터에 `JsonException` 또는 `InvalidDataException`을 던진다. 실제 게임 상태는 JSON 객체로 만들어 `AppRoot.TrySaveGame(payloadJson)`에 전달하고, `Continue` 뒤 `AppRoot.Game.Current.PayloadJson`을 게임 모델로 복원한다. Core 코드를 수정할 필요는 없다. [새 게임 시작 가이드](NEW_GAME_SETUP.md)
 
+2026-10-04 최신 main부터 저장은 활성 세션이 있는 Main·추가 Gameplay 씬에서 가능하다. Boot·Title·AppRoot 전환 중에는 차단한다. v1.0.0의 AppRoot 저장 진입점은 Main에서만 허용했다. Continue는 계속 Main으로 진입하며 실제 스테이지 재진입은 게임 코드가 payload를 읽어 결정한다. 저장 파일 형식·버전·백업·교체 확인 정책은 유지한다.
+
 현재는 단일 슬롯·단일 앱 소유권·메인 스레드 호출을 전제로 한다. 파일 읽기/쓰기는 동기이며 한 파일 최대 1 MiB, JSON 깊이 최대 32다. 동일 저장소/리포지토리 내부 작업은 잠금으로 직렬화하지만 여러 앱 프로세스가 같은 경로를 공유하는 동시 편집은 지원하지 않는다. 대규모 데이터·자동 저장·다중 슬롯·클라우드 저장은 요구가 생기면 추가한다.
 
 `ITextFileStore` 경계로 실패를 주입할 수 있고, `AppRoot.ConfigureStorage`는 Begin 전에 테스트 저장소를 전달할 때 사용한다. 테스트는 실제 사용자 저장 폴더를 사용하지 않는다.

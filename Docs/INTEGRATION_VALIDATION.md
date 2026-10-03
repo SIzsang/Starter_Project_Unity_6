@@ -1,6 +1,12 @@
 # 7단계 통합·Windows 빌드 검증
 
-최종 점검: 2026-10-02. **v1.0.0의 공통 프리셋 구현·필수 회귀·Windows Player 확인·배포는 완료했다.** 이 문서는 날짜별 실행 기록이며 과거의 대기·미완료 표현은 당시 상태다. 최신 지원 범위와 추가 Computer Use 제한은 [배포 기준](RELEASE.md)과 문서 마지막 절을 따른다.
+최종 점검: 2026-10-04. **v1.0.0의 공통 프리셋 구현·필수 회귀·Windows Player 확인·배포는 완료했다.** 이 문서는 날짜별 실행 기록이며 과거의 대기·미완료 표현은 당시 상태다. 최신 main의 추가 보완은 [제작 시작 전 점검](GAME_START_AUDIT.md), 플랫폼 지원 범위와 Computer Use 제한은 [배포 기준](RELEASE.md)을 따른다.
+
+## 2026-10-04 범용 템플릿 사용 경계 점검
+
+캐릭터 능력치·스테이지 진행·전투 등 게임별 구현은 제외하고 원본 프로젝트에서 관련 테스트만 실행했다. Main을 언로드한 추가 씬의 저장·Continue와 Title·전환 저장 차단을 포함한 `RuntimeFlowTests` **15/15**, 세 씬의 UI 입력과 Boot 초기화 진입점 누락·비활성·중복을 다루는 `StarterProjectSetupTests` **16/16**이 통과했다. 모두 실패·건너뜀 0개이며 테스트 저장소는 사용자 저장과 분리됐다.
+
+증거는 `Logs/GameStartAuditPlayMode.xml`·`.log`와 `Logs/GameStartAuditEditModeFinal.xml`·`.log`다. 새 검증 복제본·시험용 Player 빌드는 생성하지 않았다. PC `resizableWindow` 활성화는 설정으로 확인했으며 직접 창 조절·물리 입력·모바일 실기기 검증은 추가하지 않았다. 코드 보완은 최신 main에 기록하며 v1.0.0 태그·ZIP은 유지한다.
 
 ## 검증 환경
 
