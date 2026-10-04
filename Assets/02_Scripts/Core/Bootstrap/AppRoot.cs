@@ -200,7 +200,9 @@ namespace StarterProject
             if (!CanStartGame()) return false;
             var isLoaded = Game.TryContinue();
             StorageMessage = Game.Message;
-            return isLoaded && TryNavigate(mainScenePath);
+            if (isLoaded) return TryNavigate(mainScenePath);
+            StateChanged?.Invoke();
+            return false;
         }
 
         private bool CanStartGame() => Instance == this && State == AppState.Ready && !IsTransitioning
@@ -217,6 +219,7 @@ namespace StarterProject
             if (activeScenePath == bootScenePath || activeScenePath == titleScenePath) return false;
             var isSaved = Game.TrySave(payloadJson, replaceExisting);
             StorageMessage = Game.Message;
+            StateChanged?.Invoke();
             return isSaved;
         }
 

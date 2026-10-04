@@ -1,6 +1,6 @@
 # Starter Project 상세 Summary — 새 게임 제작용 인계 기록
 
-최종 점검: 2026-10-04 · 상태: **v1.0.0 배포 완료, 최신 main의 범용 템플릿 사용 경계 보완**
+최종 점검: 2026-10-04 · 상태: **v1.0.0 배포 완료, 최신 main의 범용성·사용성 후속 보완**
 
 이 문서는 향후 새 프로젝트에서 이 프리셋을 사용할 때 다시 확인할 기준 기록이다. 대화나 모델의 임시 기억에 의존하지 않도록 프로젝트와 함께 버전 관리한다. 변경 후에는 검증 결과와 한계를 함께 갱신한다.
 
@@ -17,7 +17,8 @@
 | 범위 | 현재 결과 |
 | --- | --- |
 | 공통 프리셋 구현 | Boot·설정·단일 슬롯 저장·복구·씬 흐름·개발 저장소 격리·UI 에셋 연결 완료 |
-| 2026-10-04 공통 사용 점검 | 추가 Gameplay 씬의 저장 허용, PC 창 크기 조절, 세 씬의 UI 입력과 활성 Boot 진입점 검사 보완. PlayMode 15/15·EditMode 16/16 통과 |
+| 2026-10-04 1차 공통 사용 점검 | 추가 Gameplay 씬의 저장 허용, PC 창 크기 조절, 세 씬의 UI 입력과 활성 Boot 진입점 검사 보완. PlayMode 15/15·EditMode 16/16 통과 |
+| 2026-10-04 후속 재사용성 검사 | 공통·예제 UI 검사 분리, 결과 알림, 사용자 진행률 Image·중첩 Panel 수정. EditMode 18개 항목(17개 통과 후 1개 재검사), PlayMode 27/27 통과 |
 | 필수 회귀 | 깨끗한 복제본 EditMode 50/50, UI 확장 후 PlayMode 31/31, 입력 차단 보완의 해당 테스트 1/1 통과 |
 | 실제 Windows Player | 별도 프로세스 저장·재실행 복원, 합성 UI 입력의 새 게임·저장·이어하기, 네이티브 1920×1080 Title·Main 표시 확인 |
 | 배포 | 공개 GitHub Template, main, v1.0.0 태그와 Release의 ZIP·SHA-256·manifest 확인 |
@@ -29,7 +30,15 @@
 
 새 프로젝트는 **식별자 변경 → Validate Setup → 게임별 payload·콘텐츠 연결 → 대상 플랫폼의 첫 실행·저장·재실행·빌드** 순서로 시작한다. 예제 배경·버튼에 스프라이트를 넣고 로딩 프리팹을 연결할 수 있다. 캐릭터 프레임 에셋의 Walk/Attack/Hurt Clip·Animator는 새 게임의 콘텐츠 작업에서 구성한다. 1920×1080은 UI 설계 좌표이며 최대 해상도가 아니다. 화면 크기와 안전 영역에 따른 비례 축소 기반은 구현·자동 검증했고, 최종 에셋의 가독성과 조작 크기는 대상 기기에서 확인한다.
 
-### 범용 템플릿 사용 점검 — 2026-10-04
+### 범용성·사용성 후속 재검토 — 2026-10-04
+
+SOL 6.1 작업의 기준 커밋 `8da41b6`을 검토해 사용자 UI 교체와 이벤트 기반 표시에서 생기는 네 가지 문제를 보완했다. `Validate Setup`은 공통 AppConfig·씬·Boot 진입점만 확인하고, 기본 화면은 별도 `Validate Example UI`로 확인한다. 사용자 UI를 사용하는 Main 직접 Play와 Windows Preview는 예제 Canvas·입력 에셋을 강제하지 않는다.
+
+저장 성공·실패와 이어하기 실패는 확정된 상태·메시지를 `StateChanged`로 알린다. 일반 로딩 Image는 Track 자식의 가로 막대로 정규화하고 Filled Image는 배치·방향을 유지하며 채움 값만 바꾼다. 전체 화면 조작 Panel은 자식과 함께 안전 영역에 들어가며, 장식 자식이 있는 배경은 Canvas의 `StarterCanvasLayout > Full Screen Roots`에 명시할 수 있다.
+
+검토 근거와 이번 필수 검증 결과는 [범용성·사용성 재검토](REUSABILITY_REVIEW.md)에 기록한다. 게임별 데이터·콘텐츠는 추가하지 않았다. 최신 main에 적용하며 v1.0.0 ZIP은 이전 소스로 유지한다.
+
+### 1차 범용 템플릿 사용 점검 — 2026-10-04
 
 게임별 캐릭터·능력치·스테이지 진행·전투·자동 저장 규칙은 이번 점검에서 제외했다. 공통 기반에서 Main 이외의 씬으로 이동한 활성 세션의 저장을 허용하고 Boot·Title·전환 중 차단을 유지했다. PC 창 크기 조절을 활성화했으며 Validate Setup은 세 예제 씬의 단일 활성 EventSystem·필수 UI 액션과 Boot의 단일 활성 AppBootstrap을 확인한다.
 
@@ -64,7 +73,7 @@
 
 정상 실행은 `Boot → 설정·씬 검증 → 사용자 설정/저장 읽기 → 음량·화면 적용 → Title → New Game 또는 Continue → Main`이다. 초기화 실패는 Boot에 남아 원인을 표시하고 게임 진입을 막는다. 이미 준비된 루트로 Boot에 재진입하면 루트를 재사용해 Title로 돌아간다. 씬 전환 중에는 추가 요청과 버튼 입력을 차단한다.
 
-`Tools > Starter Project > Validate Setup`은 현재 AppConfig·빌드 씬·입력 액션과 Boot의 단일 활성 AppBootstrap·설정 참조, 활성 상태 표시 Canvas·Text, 세 씬의 단일 활성 EventSystem·UI 액션 및 Canvas 해상도 설정을 **씬을 변경하지 않고** 검사한다. Boot → Title → Main 왕복·중복 루트·실패 차단은 PlayMode 테스트에서 확인했다. 원본 Editor의 Validate Setup 메뉴와 Boot Play → Title → 정지 후 Boot 복귀를 확인했고, Windows Player의 네이티브 Title·Main 화면도 확인했다. Computer Use의 창 캡처·물리 입력 전달과 Main 직접 Play의 GUI 확인에는 제한이 남아 있다.
+`Tools > Starter Project > Validate Setup`은 AppConfig·빌드 씬·Boot의 단일 활성 AppBootstrap·설정 참조를 **씬을 변경하지 않고** 검사한다. 기본 StarterScreen의 상태 표시 Canvas·Text, 세 씬의 EventSystem·UI 액션·Canvas 해상도는 별도 `Validate Example UI` 메뉴에서 검사한다. Boot → Title → Main 왕복·중복 루트·실패 차단은 PlayMode 테스트에서 확인했다. 원본 Editor의 Validate Setup 메뉴와 Boot Play → Title → 정지 후 Boot 복귀를 확인했고, Windows Player의 네이티브 Title·Main 화면도 확인했다. Computer Use의 창 캡처·물리 입력 전달과 Main 직접 Play의 GUI 확인에는 제한이 남아 있다.
 
 ## 데이터와 저장 계약
 

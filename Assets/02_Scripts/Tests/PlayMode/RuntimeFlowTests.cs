@@ -364,6 +364,71 @@ namespace StarterProject.Tests
         }
 
         [UnityTest]
+        public IEnumerator SaveNotifiesObserversWithCommittedOrRejectedResult()
+        {
+            yield return LoadBoot();
+            var root = AppRoot.Instance;
+            Assert.That(root.TryStartNewGame(), Is.True);
+            yield return WaitForScene(Main);
+            var observations = new List<(string Message, StorageStatus Status, GameSession Session, bool CanContinue)>();
+            root.StateChanged += () => observations.Add((root.StorageMessage, root.Game.Status, root.Game.Current, root.Game.CanContinue));
+
+            Assert.That(root.TrySaveGame("{\"marker\":\"saved\"}"), Is.True);
+            Assert.That(observations.Count, Is.EqualTo(1), "The save result must reach observers before the call returns.");
+            Assert.That(observations[0].Message, Is.EqualTo("Game saved."));
+            Assert.That(observations[0].Status, Is.EqualTo(StorageStatus.Loaded));
+            Assert.That(observations[0].CanContinue, Is.True);
+            Assert.That(observations[0].Session, Is.SameAs(root.Game.Current));
+            Assert.That(JsonUtility.FromJson<TestPayload>(observations[0].Session.PayloadJson).marker, Is.EqualTo("saved"));
+            Assert.That(observations[0].Session.SavedUtc, Is.Not.Empty);
+            var committedSession = root.Game.Current;
+            var savePath = Path.Combine(testDirectory, GameSessionService.FileName);
+            var committedFile = File.ReadAllText(savePath);
+
+            Assert.That(root.TrySaveGame("not-json"), Is.False);
+            Assert.That(observations.Count, Is.EqualTo(2));
+            Assert.That(observations[1].Message, Does.StartWith("Save failed."));
+            Assert.That(observations[1].Message, Is.EqualTo(root.StorageMessage));
+            Assert.That(observations[1].Status, Is.EqualTo(StorageStatus.Loaded));
+            Assert.That(observations[1].CanContinue, Is.True);
+            Assert.That(observations[1].Session, Is.SameAs(committedSession));
+            Assert.That(File.ReadAllText(savePath), Is.EqualTo(committedFile));
+        }
+
+        [UnityTest]
+        public IEnumerator FailedContinueNotifiesObserversWithRefreshedSaveState()
+        {
+            var savedGame = new GameSessionService(fileStore);
+            savedGame.StartNew("{\"marker\":\"saved\"}");
+            Assert.That(savedGame.TrySave(), Is.True);
+            yield return LoadBoot();
+            var root = AppRoot.Instance;
+            Assert.That(root.Game.CanContinue, Is.True);
+            File.Delete(Path.Combine(testDirectory, GameSessionService.FileName));
+            string observedMessage = null;
+            var observedStatus = StorageStatus.Loaded;
+            var observedCanContinue = true;
+            GameSession observedSession = savedGame.Current;
+            var observedIsTransitioning = true;
+            root.StateChanged += () =>
+            {
+                observedMessage = root.StorageMessage;
+                observedStatus = root.Game.Status;
+                observedCanContinue = root.Game.CanContinue;
+                observedSession = root.Game.Current;
+                observedIsTransitioning = root.IsTransitioning;
+            };
+
+            Assert.That(root.TryContinueGame(), Is.False);
+            Assert.That(observedMessage, Is.EqualTo("No saved game is available."));
+            Assert.That(observedStatus, Is.EqualTo(StorageStatus.Missing));
+            Assert.That(observedCanContinue, Is.False);
+            Assert.That(observedSession, Is.Null);
+            Assert.That(observedIsTransitioning, Is.False);
+            Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(Title));
+        }
+
+        [UnityTest]
         public IEnumerator TitleDoesNotSaveEvenWhenGameServiceHasSession()
         {
             yield return LoadBoot();

@@ -18,6 +18,8 @@ namespace StarterProject.UI
         public const int ReferenceWidth = 1920;
         public const int ReferenceHeight = 1080;
         private static readonly Vector2 ReferenceResolution = new Vector2(ReferenceWidth, ReferenceHeight);
+        [Tooltip("Canvas 바로 아래에 유지할 배경·입력 차단 루트입니다. 장식 자식이 있는 배경 컨테이너를 지정합니다.")]
+        [SerializeField] private RectTransform[] fullScreenRoots = new RectTransform[0];
         private RectTransform safeAreaRoot;
         private RectTransform contentRoot;
         private Canvas canvas;
@@ -80,15 +82,22 @@ namespace StarterProject.UI
             contentRoot.anchoredPosition = Vector2.zero;
             contentRoot.sizeDelta = ReferenceResolution;
 
-            // 화면 전체로 늘어난 배경·입력 차단막은 안전 영역 바깥까지 덮습니다.
+            // 명시한 배경 루트와 자식 없는 전체 화면 장식은 안전 영역 바깥까지 덮습니다.
             // 나머지는 기존 좌표와 직렬화된 버튼 참조를 보존하며 콘텐츠로 옮깁니다.
             for (var i = transform.childCount - 2; i >= 0; i--)
             {
                 var child = transform.GetChild(i) as RectTransform;
-                if (child == null || IsFullScreen(child)) continue;
+                if (child == null || IsCanvasBackdrop(child)) continue;
                 child.SetParent(contentRoot, false);
                 child.SetAsFirstSibling();
             }
+        }
+
+        private bool IsCanvasBackdrop(RectTransform rect)
+        {
+            if (fullScreenRoots != null && System.Array.IndexOf(fullScreenRoots, rect) >= 0) return true;
+            // Panel 아래 버튼·문구는 함께 안전 영역으로 옮깁니다. 전체 화면 버튼도 조작 UI입니다.
+            return IsFullScreen(rect) && rect.childCount == 0 && rect.GetComponent<Selectable>() == null;
         }
 
         private static bool IsFullScreen(RectTransform rect) => rect.anchorMin == Vector2.zero

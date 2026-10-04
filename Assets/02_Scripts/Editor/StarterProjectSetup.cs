@@ -272,53 +272,58 @@ namespace StarterProject.Editor
             return references;
         }
 
-        /// <summary>필수 설정, 씬 에셋, UI 입력과 Boot 화면 구성을 변경 없이 검사합니다.</summary>
-        internal static void ValidateConfiguration()
+        private static AppConfig LoadConfiguration()
         {
             var config = AssetDatabase.LoadAssetAtPath<AppConfig>(ConfigPath);
             if (config == null)
                 throw new InvalidOperationException($"AppConfig asset is missing: {ConfigPath}");
+            return config;
+        }
+
+        /// <summary>게임 UI 구현과 독립적인 설정·씬·Boot 진입점만 검사합니다.</summary>
+        internal static void ValidateConfiguration() => ValidateConfiguration(LoadConfiguration());
+
+        internal static void ValidateConfiguration(AppConfig config)
+        {
+            if (config == null) throw new ArgumentNullException(nameof(config));
             config.Validate();
             foreach (var path in new[] { config.BootScene, config.TitleScene, config.MainScene })
                 if (AssetDatabase.LoadAssetAtPath<SceneAsset>(path) == null)
                     throw new InvalidOperationException($"Scene asset is missing: {path}");
-            GetInputReferences();
-
             var preview = EditorSceneManager.OpenPreviewScene(config.BootScene);
-            try
-            {
-                ValidateSceneBootstrap(preview, config);
-
-                var screens = preview.GetRootGameObjects()
-                    .SelectMany(root => root.GetComponentsInChildren<StarterScreen>(true)).ToArray();
-                if (screens.Length != 1 || !screens[0].isActiveAndEnabled
-                    || screens[0].GetComponent<Canvas>()?.isActiveAndEnabled != true)
-                    throw new InvalidOperationException("Boot scene requires one active StarterScreen on a Canvas.");
-                var screen = new SerializedObject(screens[0]);
-                if (screen.FindProperty("screen").enumValueIndex != (int)StarterScreenKind.Boot
-                    || screen.FindProperty("status").objectReferenceValue == null)
-                    throw new InvalidOperationException("Boot StarterScreen must show the Boot status text.");
-
-                ValidateResponsiveCanvas(screens[0], "Boot");
-
-                ValidateSceneInput(preview, "Boot");
-            }
+            try { ValidateSceneBootstrap(preview, config); }
             finally { EditorSceneManager.ClosePreviewScene(preview); }
+        }
 
-            foreach (var scenePath in new[] { config.TitleScene, config.MainScene })
+        /// <summary>기본 StarterScreen을 사용하는 경우에만 예제 Canvas·입력 계약을 검사합니다.</summary>
+        internal static void ValidateExampleConfiguration()
+        {
+            var config = LoadConfiguration();
+            ValidateConfiguration(config);
+            var paths = new[] { config.BootScene, config.TitleScene, config.MainScene };
+            for (var i = 0; i < paths.Length; i++)
             {
-                preview = EditorSceneManager.OpenPreviewScene(scenePath);
-                try
-                {
-                    var screens = preview.GetRootGameObjects()
-                        .SelectMany(root => root.GetComponentsInChildren<StarterScreen>(true)).ToArray();
-                    if (screens.Length != 1 || !screens[0].isActiveAndEnabled)
-                        throw new InvalidOperationException($"{scenePath} requires one active StarterScreen.");
-                    ValidateResponsiveCanvas(screens[0], scenePath);
-                    ValidateSceneInput(preview, scenePath);
-                }
+                var preview = EditorSceneManager.OpenPreviewScene(paths[i]);
+                try { ValidateExampleScene(preview, (StarterScreenKind)i); }
                 finally { EditorSceneManager.ClosePreviewScene(preview); }
             }
+        }
+
+        internal static void ValidateExampleScene(Scene scene, StarterScreenKind kind)
+        {
+            var screens = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<StarterScreen>(true)).ToArray();
+            if (screens.Length != 1 || !screens[0].isActiveAndEnabled)
+                throw new InvalidOperationException($"{kind} scene requires one active StarterScreen for example UI validation.");
+            if (kind == StarterScreenKind.Boot)
+            {
+                var screen = new SerializedObject(screens[0]);
+                if (screen.FindProperty("screen").enumValueIndex != (int)kind
+                    || screen.FindProperty("status").objectReferenceValue == null)
+                    throw new InvalidOperationException("Boot StarterScreen must show the Boot status text.");
+            }
+            ValidateResponsiveCanvas(screens[0], kind.ToString());
+            ValidateSceneInput(scene, kind.ToString());
         }
 
         /// <summary>Boot 초기화를 시작할 단일 활성 진입점과 설정 참조를 검사합니다.</summary>
@@ -375,7 +380,14 @@ namespace StarterProject.Editor
         public static void ValidateSetup()
         {
             ValidateConfiguration();
-            Debug.Log("[Starter Project] Setup validation passed: AppConfig, build scenes, responsive Boot canvas and UI input.");
+            Debug.Log("[Starter Project] Setup validation passed: AppConfig, build scenes and active Boot entry point.");
+        }
+
+        [MenuItem("Tools/Starter Project/Validate Example UI")]
+        public static void ValidateExampleUI()
+        {
+            ValidateExampleConfiguration();
+            Debug.Log("[Starter Project] Example UI validation passed: responsive canvases and UI input in Boot, Title and Main.");
         }
 
         /// <summary>UI 계층 아래에 단색 Image 패널을 생성합니다.</summary>

@@ -16,11 +16,12 @@
 
 | 메뉴 | 동작 |
 | --- | --- |
-| `Tools > Starter Project > Validate Setup` | AppConfig와 기본 설정, 빌드 씬 순서·활성화, 세 씬 에셋, Input System UI 액션, Boot의 AppBootstrap 설정 참조·상태 표시 화면·EventSystem을 검사한다. 편집 중인 씬은 교체하지 않는다. |
+| `Tools > Starter Project > Validate Setup` | AppConfig와 기본 설정, 빌드 씬 순서·활성화, 세 씬 에셋과 Boot의 단일 활성 AppBootstrap·설정 참조를 검사한다. 편집 중인 씬은 교체하지 않으며 사용자 UI에 의존하지 않는다. |
+| `Tools > Starter Project > Validate Example UI` | 기본 StarterScreen을 사용하는 경우 Boot·Title·Main의 예제 화면, 1920×1080 Overlay Canvas와 UI 입력 연결을 추가로 검사한다. Main 직접 Play·Windows Preview의 필수 조건은 아니다. |
 | `Tools > Starter Project > Open Test Data Folder` | 마지막 Main 직접 Play의 개발용 저장 폴더를 연다. 마지막 세션이 없다면 개발용 세션 루트를 연다. |
 | `Tools > Starter Project > Reset Test Data` | Play가 꺼진 상태에서 대상 경로와 백업 경로를 표시하고 확인받는다. 기존 `PlaySessions` 폴더를 같은 프로젝트의 `UserSettings/StarterProject/TestDataBackups` 아래로 이동한다. 원본이 이동하지 못하면 삭제로 우회하지 않는다. 백업은 Library 캐시를 지워도 남는다. |
 
-Main 직접 Play가 시작될 때 기존 `EditorSceneManager.playModeStartScene` 값을 기억해 두고 Play 종료 시 복원한다. 저장된 씬 에셋이나 빌드 씬 목록은 변경하지 않는다. 필수 설정 검사에 실패하면 Play 진입을 중단하고 오류를 Console에 남긴다. 입력 연결이나 AppConfig를 고치려면 기존 예제 생성 도구를 사용하고, 사용 전 미저장 씬 보호 안내를 따른다.
+Main 직접 Play가 시작될 때 기존 `EditorSceneManager.playModeStartScene` 값을 기억해 두고 Play 종료 시 복원한다. 저장된 씬 에셋이나 빌드 씬 목록은 변경하지 않는다. 필수 설정 검사에 실패하면 Play 진입을 중단하고 오류를 Console에 남긴다. AppConfig·씬 목록은 공통 검사 결과에 맞춰 수정한다. 기본 화면의 입력 연결은 Validate Example UI로 확인한다. 예제 생성 도구는 초기 예제 구성용이므로 사용자 UI를 교체한 뒤 일괄 보정용으로 실행하지 않는다.
 
 ## 범용성 경계
 

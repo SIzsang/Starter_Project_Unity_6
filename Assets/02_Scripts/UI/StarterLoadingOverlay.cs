@@ -18,6 +18,7 @@ namespace StarterProject.UI
         private CanvasGroup canvasGroup;
         private GraphicRaycaster raycaster;
         [SerializeField] private Image progressTrack;
+        [Tooltip("Filled 이미지는 작성한 배치를 유지합니다. 그 외 이미지는 Progress Track의 자식으로 두며 왼쪽부터 채워지는 막대로 배치합니다.")]
         [SerializeField] private Image progressFill;
         [SerializeField] private Text messageText;
         [SerializeField] private Text progressText;
@@ -121,7 +122,7 @@ namespace StarterProject.UI
             progressText.gameObject.SetActive(showProgress);
             if (showProgress)
             {
-                progressFill.rectTransform.anchorMax = new Vector2(Progress, 1);
+                UpdateProgressFill(progressFill, Progress);
                 var percent = Mathf.RoundToInt(Progress * 100);
                 if (displayedPercent != percent)
                 {
@@ -140,6 +141,25 @@ namespace StarterProject.UI
         private void OnDisable()
         {
             if (appRoot != null) appRoot.StateChanged -= Refresh;
+        }
+
+        /// <summary>
+        /// Filled는 프리팹의 방향·형태·배치를 유지하고 채움 비율만 갱신합니다.
+        /// 일반 이미지는 부모 Track 전체 높이를 쓰는 왼쪽 정렬 막대로 정규화합니다.
+        /// </summary>
+        internal static void UpdateProgressFill(Image fill, float progress)
+        {
+            progress = Mathf.Clamp01(progress);
+            if (fill.type == Image.Type.Filled)
+            {
+                fill.fillAmount = progress;
+                return;
+            }
+
+            var rect = fill.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = new Vector2(progress, 1);
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
 
         private static Image CreateImage(Transform parent, string objectName, Color color)

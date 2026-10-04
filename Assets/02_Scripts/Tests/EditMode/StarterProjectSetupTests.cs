@@ -1,6 +1,7 @@
 using System.Linq;
 using NUnit.Framework;
 using StarterProject.Editor;
+using StarterProject.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -89,6 +90,65 @@ namespace StarterProject.Tests
             StarterProjectSetup.ValidateConfiguration();
             Assert.That(SceneManager.GetActiveScene(), Is.EqualTo(active));
             Assert.That(active.isDirty, Is.False);
+        }
+
+        [Test]
+        public void ExampleValidationPreservesOpenScene()
+        {
+            var active = SceneManager.GetActiveScene();
+            StarterProjectSetup.ValidateExampleConfiguration();
+            Assert.That(SceneManager.GetActiveScene(), Is.EqualTo(active));
+            Assert.That(active.isDirty, Is.False);
+        }
+
+        [Test]
+        public void CoreValidationAcceptsScenesWithoutExampleUi()
+        {
+            var originalBuildScenes = EditorBuildSettings.scenes;
+            var folder = "Assets/__StarterValidation_" + System.Guid.NewGuid().ToString("N");
+            AssetDatabase.CreateFolder("Assets", folder.Substring("Assets/".Length));
+            try
+            {
+                var config = ScriptableObject.CreateInstance<AppConfig>();
+                AssetDatabase.CreateAsset(config, folder + "/Config.asset");
+                var paths = new[] { folder + "/Boot.unity", folder + "/Title.unity", folder + "/Main.unity" };
+                var data = new SerializedObject(config);
+                data.FindProperty("bootScene").stringValue = paths[0];
+                data.FindProperty("titleScene").stringValue = paths[1];
+                data.FindProperty("mainScene").stringValue = paths[2];
+                data.ApplyModifiedPropertiesWithoutUndo();
+                AssetDatabase.SaveAssets();
+                for (var i = 0; i < paths.Length; i++)
+                {
+                    var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                    if (i == 0)
+                    {
+                        config = AssetDatabase.LoadAssetAtPath<AppConfig>(folder + "/Config.asset");
+                        var bootstrap = new GameObject("Bootstrap").AddComponent<AppBootstrap>();
+                        var bootstrapData = new SerializedObject(bootstrap);
+                        bootstrapData.FindProperty("config").objectReferenceValue = config;
+                        bootstrapData.ApplyModifiedPropertiesWithoutUndo();
+                    }
+                    Assert.That(EditorSceneManager.SaveScene(scene, paths[i]), Is.True);
+                }
+                config = AssetDatabase.LoadAssetAtPath<AppConfig>(folder + "/Config.asset");
+                EditorBuildSettings.scenes = paths.Select(path => new EditorBuildSettingsScene(path, true)).ToArray();
+                var active = SceneManager.GetActiveScene();
+
+                Assert.DoesNotThrow(() => StarterProjectSetup.ValidateConfiguration(config),
+                    "Custom UI must not block Main Play or the preview build's common validation.");
+                Assert.That(SceneManager.GetActiveScene(), Is.EqualTo(active));
+                Assert.That(active.isDirty, Is.False);
+                Assert.That(() => StarterProjectSetup.ValidateExampleScene(active, StarterScreenKind.Main),
+                    Throws.InvalidOperationException.With.Message.Contains("StarterScreen"),
+                    "The separate example UI validator must still detect an absent example screen.");
+            }
+            finally
+            {
+                EditorBuildSettings.scenes = originalBuildScenes;
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                AssetDatabase.DeleteAsset(folder);
+            }
         }
 
         [Test]

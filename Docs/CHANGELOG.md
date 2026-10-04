@@ -2,6 +2,8 @@
 
 ## 미배포 보완 — 2026-10-04
 
+후속 범용성·사용성 검토에서는 예제 UI 교체가 Main 직접 Play·미리보기 빌드를 막던 결합을 해소했다. 공통 `Validate Setup`과 `Validate Example UI`를 분리하고 저장 결과·이어하기 실패의 상태 알림, 사용자 로딩 Image의 진행률, 전체 화면 조작 Panel의 안전 영역을 보완했다. [재검토 결과](REUSABILITY_REVIEW.md)
+
 - 활성 게임 세션의 저장을 Main 이외의 Gameplay 씬에서도 허용했다. Boot·Title·전환 중 저장 차단과 기존 저장 보호는 유지한다.
 - PC 창의 크기 조절을 허용하고 JSON 코드를 위한 어셈블리 참조 안내를 추가했다.
 - Validate Setup이 Boot뿐 아니라 Title·Main의 단일 EventSystem과 필수 포인터·선택 액션을 검사하도록 보완했다.

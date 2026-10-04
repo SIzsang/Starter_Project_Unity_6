@@ -7,7 +7,7 @@
 1. `Assets`, 각 `.meta`, `Packages`, `ProjectSettings`가 포함된 새 저장소를 Unity Hub에 추가하고 지정된 Editor 버전으로 연다. `Library`, `Temp`, `Logs`, `Builds`, `UserSettings`는 복사하지 않는다.
 2. **Project Settings > Player**에서 Company Name, Product Name, 플랫폼별 Application Identifier, 아이콘을 게임 고유 값으로 바꾼다. 기본 `StarterTemplate` / `StarterProject`로 여러 게임을 실행하면 `Application.persistentDataPath`가 겹칠 수 있다.
 3. Unity Cloud가 필요하다면 새 게임의 프로젝트를 연결한다. 이 템플릿에 추적된 Cloud 프로젝트·조직 ID는 비어 있다. Editor Services와 Unity Hub의 실제 연결 표시도 확인한다.
-4. `Tools > Starter Project > Validate Setup`을 실행한다. `00_StartScene` → `01_Title` → `02_MainScene`이 빌드 씬 앞에 있고 `SO_AppConfig`가 세 씬을 가리키는지 확인한다. 처음에는 Boot에서 Play한다.
+4. `Tools > Starter Project > Validate Setup`을 실행한다. `00_StartScene` → `01_Title` → `02_MainScene`이 빌드 씬 앞에 있고 `SO_AppConfig`가 세 씬을 가리키는지 확인한다. 기본 StarterScreen UI를 유지한다면 `Tools > Starter Project > Validate Example UI`도 실행한다. 사용자 UI로 교체해도 Main 직접 Play와 Windows Preview는 공통 초기화 검사만 사용한다. 처음에는 Boot에서 Play한다.
 5. 예제 UI는 **Screen Space Overlay + Scale With Screen Size, 1920×1080, Match 0.5**를 사용한다. 1920×1080은 최대 해상도가 아니라 디자인 기준이다. 현재 모바일 방향은 가로이며 실제 기기·터치·노치 확인은 새 게임에서도 필요하다.
 
 ## 예제 UI에 게임 에셋 적용
