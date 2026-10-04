@@ -62,6 +62,9 @@ namespace StarterProject.Tests
             Assert.That(EventSystem.current, Is.Not.Null);
             Assert.That(EventSystem.current.currentInputModule, Is.Not.Null);
             ExecuteEvents.Execute(button.gameObject, new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left }, ExecuteEvents.pointerClickHandler);
+            Assert.That(root.IsTransitioning, Is.False, "New Game must first ask for an empty slot.");
+            Assert.That(Object.FindFirstObjectByType<StarterTitleMenu>().CurrentPage, Is.EqualTo(StarterTitlePage.NewGame));
+            GameObject.Find("Slot 1").GetComponent<Button>().onClick.Invoke();
             Assert.That(root.IsTransitioning, Is.True);
             Assert.That(root.TryEnterMain(), Is.False);
             Assert.That(root.TryReturnToTitle(), Is.False);
@@ -285,7 +288,7 @@ namespace StarterProject.Tests
             Assert.That(root.TryReturnToTitle(), Is.True);
             yield return WaitForScene(Title);
             Assert.That(root.Game.Current, Is.Null);
-            Assert.That(GameObject.Find("Secondary Action").GetComponent<Button>().interactable, Is.True);
+            Assert.That(GameObject.Find("Continue").GetComponent<Button>().interactable, Is.True);
             Object.Destroy(root.gameObject);
             yield return null;
             yield return LoadBoot();
@@ -294,7 +297,9 @@ namespace StarterProject.Tests
             Assert.That(root.Settings.Current.masterVolume, Is.Zero);
             Assert.That(root.Settings.Current.fullscreen, Is.False);
             Assert.That(root.Settings.Current.language, Is.EqualTo("ko"));
-            GameObject.Find("Secondary Action").GetComponent<Button>().onClick.Invoke();
+            GameObject.Find("Continue").GetComponent<Button>().onClick.Invoke();
+            Assert.That(root.IsTransitioning, Is.False);
+            GameObject.Find("Slot 1").GetComponent<Button>().onClick.Invoke();
             Assert.That(root.TryContinueGame(), Is.False);
             yield return WaitForScene(Main);
             Assert.That(root.Game.Current.SessionId, Is.EqualTo(session));
@@ -338,7 +343,7 @@ namespace StarterProject.Tests
             Assert.That(root.State, Is.EqualTo(AppState.Ready));
             Assert.That(root.Settings.Status, Is.EqualTo(StorageStatus.Invalid));
             Assert.That(root.Game.Status, Is.EqualTo(StorageStatus.UnsupportedVersion));
-            Assert.That(GameObject.Find("Secondary Action").GetComponent<Button>().interactable, Is.False);
+            Assert.That(GameObject.Find("Continue").GetComponent<Button>().interactable, Is.False);
             Assert.That(root.TryContinueGame(), Is.False);
             root.TryStartNewGame();
             yield return WaitForScene(Main);
@@ -351,6 +356,7 @@ namespace StarterProject.Tests
         {
             yield return LoadBoot();
             yield return WaitForScene(Title);
+            Object.FindFirstObjectByType<StarterTitleMenu>().OpenOptions();
             GameObject.Find("Volume").GetComponent<Button>().onClick.Invoke();
             GameObject.Find("Fullscreen").GetComponent<Button>().onClick.Invoke();
             Assert.That(AppRoot.Instance.Settings.Current.masterVolume, Is.Zero);
@@ -381,7 +387,7 @@ namespace StarterProject.Tests
         }
 
         private static Button FindActionButton() => Object.FindObjectsByType<Button>(FindObjectsSortMode.None)
-            .Single(b => b.name == "Start Game" || b.name == "Back to Title");
+            .Single(b => b.name == "New Game" || b.name == "Back to Title");
 
         /// <summary>대상 씬이 활성화되고 AppRoot의 전환 잠금이 풀릴 때까지 기다립니다.</summary>
         /// <param name="path">기다릴 씬의 프로젝트 상대 경로입니다.</param>

@@ -83,10 +83,19 @@ namespace StarterProject.Editor
                 throw new InvalidOperationException("AppConfig could not be loaded after opening the scene.");
             if (scene.GetRootGameObjects().Any(go => go.GetComponentInChildren<StarterScreen>(true) != null))
             {
-                ConfigurePersistenceScreen(UnityEngine.Object.FindFirstObjectByType<StarterScreen>(), kind);
+                var existingScreen = UnityEngine.Object.FindFirstObjectByType<StarterScreen>();
+                if (kind != StarterScreenKind.Title || existingScreen.GetComponent<StarterTitleMenu>() == null)
+                    ConfigurePersistenceScreen(existingScreen, kind);
                 ConfigureInput();
                 if (kind == StarterScreenKind.Boot)
                     ConfigureBootstrap(config);
+                EditorSceneManager.SaveScene(scene);
+                return;
+            }
+
+            if (kind == StarterScreenKind.Title)
+            {
+                CreateTitleMenu(scene);
                 EditorSceneManager.SaveScene(scene);
                 return;
             }
@@ -150,6 +159,195 @@ namespace StarterProject.Editor
             if (kind == StarterScreenKind.Boot)
                 ConfigureBootstrap(config);
             EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>Title 예제 UI만 다시 작성합니다. 씬 에셋과 메타 GUID, Boot/Main 씬은 보존합니다.</summary>
+        [MenuItem("Tools/Starter Project/Rebuild Title Menu")]
+        public static void RebuildTitleMenu()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                throw new InvalidOperationException("Stop Play Mode before rebuilding the Title menu.");
+            for (var i = 0; i < SceneManager.sceneCount; i++)
+                if (SceneManager.GetSceneAt(i).isDirty)
+                    throw new InvalidOperationException("Save all modified scenes before rebuilding the Title menu.");
+            GetInputReferences();
+            var titlePath = LoadConfiguration().TitleScene;
+            var scene = EditorSceneManager.OpenScene(titlePath);
+            var existingScreens = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<StarterScreen>(true)).ToArray();
+            UnityEngine.Object overlayPrefab = null;
+            foreach (var existing in existingScreens)
+            {
+                overlayPrefab = new SerializedObject(existing).FindProperty("loadingOverlayPrefab").objectReferenceValue;
+                UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            }
+            var menu = CreateTitleMenu(scene);
+            var screenData = new SerializedObject(menu.GetComponent<StarterScreen>());
+            screenData.FindProperty("loadingOverlayPrefab").objectReferenceValue = overlayPrefab;
+            screenData.ApplyModifiedPropertiesWithoutUndo();
+            ValidateExampleScene(scene, StarterScreenKind.Title);
+            if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("Could not save the Title scene.");
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Starter Project] Title menu rebuilt with three save slots and authored UI panels.");
+        }
+
+        /// <summary>에디터에서 편집할 수 있는 로고·아트 영역·메뉴·각 패널을 생성합니다.</summary>
+        internal static StarterTitleMenu CreateTitleMenu(Scene scene)
+        {
+            SceneManager.SetActiveScene(scene);
+            var canvasObject = new GameObject("Starter UI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            var canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            var scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(StarterCanvasLayout.ReferenceWidth, StarterCanvasLayout.ReferenceHeight);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+            var background = Panel(canvasObject.transform, "Background", Background);
+            Stretch(background.rectTransform);
+            background.raycastTarget = false;
+
+            var left = Container(canvasObject.transform, "Logo and Menu", new Vector2(-420, 0), new Vector2(310, 660));
+            var logo = Label(left, "Logo", "STARTER\nPROJECT", 44, Color.white, new Vector2(0, 228), new Vector2(310, 116));
+            logo.alignment = TextAnchor.MiddleLeft;
+            var subtitle = Label(left, "Edition", "UNITY 6", 13, Accent, new Vector2(0, 150), new Vector2(310, 28));
+            subtitle.alignment = TextAnchor.MiddleLeft;
+            var newGame = TitleButton(left, "New Game", "New Game", new Vector2(0, 75), new Vector2(300, 49));
+            var continueGame = TitleButton(left, "Continue", "Continue", new Vector2(0, 13), new Vector2(300, 49));
+            var options = TitleButton(left, "Options", "Options", new Vector2(0, -49), new Vector2(300, 49));
+            var credits = TitleButton(left, "Credits", "Credits", new Vector2(0, -111), new Vector2(300, 49));
+            var quit = TitleButton(left, "Quit", "Quit", new Vector2(0, -173), new Vector2(300, 49));
+            var status = Label(left, "Status", "", 12, Muted, new Vector2(0, -265), new Vector2(310, 112));
+            status.alignment = TextAnchor.UpperLeft;
+            status.resizeTextForBestFit = true;
+            status.resizeTextMinSize = 14;
+            status.resizeTextMaxSize = 18;
+
+            // 이 Image와 자식 장식은 게임 아트·애니메이션·Prefab으로 자유롭게 교체할 수 있습니다.
+            var artwork = Panel(canvasObject.transform, "Asset Showcase", new Color32(28, 43, 55, 255));
+            Position(artwork.rectTransform, new Vector2(205, 0), new Vector2(690, 570));
+            artwork.raycastTarget = false;
+            var horizon = Panel(artwork.transform, "Horizon", new Color32(46, 84, 86, 255));
+            Position(horizon.rectTransform, new Vector2(0, -190), new Vector2(690, 190));
+            horizon.raycastTarget = false;
+            var line = Panel(artwork.transform, "Accent", Accent);
+            Position(line.rectTransform, new Vector2(-231, 173), new Vector2(100, 4));
+            line.raycastTarget = false;
+            var artHeading = Label(artwork.transform, "Art Heading", "A world of\nyour making.", 47, Color.white,
+                new Vector2(0, 56), new Vector2(560, 200));
+            artHeading.alignment = TextAnchor.MiddleLeft;
+            var artCaption = Label(artwork.transform, "Art Caption", "YOUR JOURNEY STARTS HERE", 14, Accent,
+                new Vector2(0, -92), new Vector2(560, 42));
+            artCaption.alignment = TextAnchor.MiddleLeft;
+
+            var detail = Panel(canvasObject.transform, "Detail Panel", new Color32(24, 34, 48, 255));
+            Position(detail.rectTransform, new Vector2(205, 0), new Vector2(690, 570));
+            detail.raycastTarget = false;
+            var heading = Label(detail.transform, "Page Heading", "New Game", 31, Color.white, new Vector2(0, 232), new Vector2(620, 54));
+            heading.alignment = TextAnchor.MiddleLeft;
+            var description = Label(detail.transform, "Page Description", "Choose an empty slot to begin.", 15, Muted,
+                new Vector2(0, 180), new Vector2(620, 55));
+            description.alignment = TextAnchor.UpperLeft;
+            var slots = Container(detail.transform, "Slots", Vector2.zero, new Vector2(650, 570));
+            var slotButtons = new Button[3];
+            var deleteButtons = new Button[3];
+            var recoverButtons = new Button[3];
+            for (var i = 0; i < 3; i++)
+            {
+                var y = 91 - 108 * i;
+                slotButtons[i] = TitleButton(slots, "Slot " + (i + 1), "Slot " + (i + 1) + "\nEmpty",
+                    new Vector2(-85, y), new Vector2(450, 88));
+                slotButtons[i].GetComponentInChildren<Text>().fontSize = 24;
+                deleteButtons[i] = TitleButton(slots, "Delete Slot " + (i + 1), "Delete", new Vector2(235, y + 23), new Vector2(140, 38));
+                deleteButtons[i].GetComponent<Image>().color = new Color32(219, 147, 146, 255);
+                recoverButtons[i] = TitleButton(slots, "Recover Slot " + (i + 1), "Recover", new Vector2(235, y - 23), new Vector2(140, 38));
+                deleteButtons[i].gameObject.SetActive(false);
+                recoverButtons[i].gameObject.SetActive(false);
+            }
+            var manage = TitleButton(detail.transform, "Manage Slots", "Slot Management", new Vector2(112, -237), new Vector2(390, 42));
+            var back = TitleButton(detail.transform, "Back", "Back", new Vector2(-225, -237), new Vector2(170, 42));
+            var optionsPanel = Container(detail.transform, "Options Panel", Vector2.zero, new Vector2(650, 400));
+            var volume = TitleButton(optionsPanel, "Volume", "Volume: 100%", new Vector2(0, 80), new Vector2(580, 53));
+            var fullscreen = TitleButton(optionsPanel, "Fullscreen", "Fullscreen: On", new Vector2(0, 10), new Vector2(580, 53));
+            var language = TitleButton(optionsPanel, "Language", "Language: en", new Vector2(0, -60), new Vector2(580, 53));
+            var recoverSettings = TitleButton(optionsPanel, "Recover Settings", "Recover Settings Backup", new Vector2(0, -140), new Vector2(580, 45));
+            recoverSettings.gameObject.SetActive(false);
+            var creditsPanel = Container(detail.transform, "Credits Panel", Vector2.zero, new Vector2(650, 390));
+            Label(creditsPanel, "Credits Text", "STARTER PROJECT\n\nBuilt with Unity 6\n\nThank you for playing.", 24, Color.white, Vector2.zero, new Vector2(580, 330));
+
+            var confirmation = Panel(canvasObject.transform, "Delete Confirmation", new Color(0.025f, 0.04f, 0.065f, 0.96f));
+            Stretch(confirmation.rectTransform);
+            var prompt = Label(confirmation.transform, "Delete Prompt", "Delete this slot?", 24, Color.white, new Vector2(0, 65), new Vector2(940, 180));
+            var cancelDelete = TitleButton(confirmation.transform, "Cancel Delete", "Cancel", new Vector2(-180, -105), new Vector2(290, 54));
+            var confirmDelete = TitleButton(confirmation.transform, "Confirm Delete", "Delete Save", new Vector2(180, -105), new Vector2(290, 54));
+            confirmDelete.GetComponent<Image>().color = new Color32(219, 147, 146, 255);
+            var footer = Label(canvasObject.transform, "Footer", "ARROWS / WASD / GAMEPAD  ·  ENTER / A TO SELECT  ·  ESC / B TO GO BACK",
+                12, Muted, new Vector2(0, -337), new Vector2(1180, 25));
+            footer.raycastTarget = false;
+
+            var menu = canvasObject.AddComponent<StarterTitleMenu>();
+            var data = new SerializedObject(menu);
+            Assign("newGameButton", newGame); Assign("continueButton", continueGame); Assign("optionsButton", options);
+            Assign("creditsButton", credits); Assign("quitButton", quit); Assign("statusText", status);
+            Assign("artworkPanel", artwork.gameObject); Assign("detailPanel", detail.gameObject);
+            Assign("pageHeading", heading); Assign("pageDescription", description); Assign("slotsPanel", slots.gameObject);
+            AssignArray("slotButtons", slotButtons); AssignArray("deleteSlotButtons", deleteButtons); AssignArray("recoverSlotButtons", recoverButtons);
+            Assign("manageSlotsButton", manage); Assign("backButton", back); Assign("optionsPanel", optionsPanel.gameObject);
+            Assign("volumeButton", volume); Assign("fullscreenButton", fullscreen); Assign("languageButton", language);
+            Assign("recoverSettingsButton", recoverSettings); Assign("creditsPanel", creditsPanel.gameObject);
+            Assign("deleteConfirmationPanel", confirmation.gameObject); Assign("deleteConfirmationText", prompt);
+            Assign("confirmDeleteButton", confirmDelete); Assign("cancelDeleteButton", cancelDelete);
+            data.ApplyModifiedPropertiesWithoutUndo();
+            var screen = canvasObject.AddComponent<StarterScreen>();
+            var screenData = new SerializedObject(screen);
+            screenData.FindProperty("screen").enumValueIndex = (int)StarterScreenKind.Title;
+            screenData.FindProperty("titleMenu").objectReferenceValue = menu;
+            screenData.FindProperty("status").objectReferenceValue = status;
+            screenData.FindProperty("actionButton").objectReferenceValue = newGame;
+            screenData.FindProperty("secondaryButton").objectReferenceValue = continueGame;
+            screenData.ApplyModifiedPropertiesWithoutUndo();
+            detail.gameObject.SetActive(false);
+            optionsPanel.gameObject.SetActive(false);
+            creditsPanel.gameObject.SetActive(false);
+            confirmation.gameObject.SetActive(false);
+            ConfigureInput();
+            UnityEngine.Object.FindFirstObjectByType<EventSystem>().firstSelectedGameObject = newGame.gameObject;
+            return menu;
+
+            void Assign(string name, UnityEngine.Object value) => data.FindProperty(name).objectReferenceValue = value;
+            void AssignArray(string name, Button[] buttons)
+            {
+                var property = data.FindProperty(name);
+                property.arraySize = buttons.Length;
+                for (var i = 0; i < buttons.Length; i++) property.GetArrayElementAtIndex(i).objectReferenceValue = buttons[i];
+            }
+        }
+
+        private static RectTransform Container(Transform parent, string name, Vector2 position, Vector2 size)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var rect = go.GetComponent<RectTransform>();
+            Position(rect, position, size);
+            return rect;
+        }
+
+        private static Button TitleButton(Transform parent, string name, string labelText, Vector2 position, Vector2 size)
+        {
+            var image = Panel(parent, name, Accent);
+            Position(image.rectTransform, position, size);
+            var button = image.gameObject.AddComponent<Button>();
+            button.targetGraphic = image;
+            var colors = button.colors;
+            colors.highlightedColor = Color.white;
+            colors.normalColor = new Color(0.74f, 0.82f, 0.8f);
+            colors.selectedColor = Color.white;
+            colors.pressedColor = new Color(0.65f, 0.85f, 0.78f);
+            colors.disabledColor = new Color(0.38f, 0.43f, 0.45f);
+            button.colors = colors;
+            var label = Label(image.transform, "Label", labelText, 20, Background, Vector2.zero, size);
+            Stretch(label.rectTransform);
+            return button;
         }
 
         /// <summary>기존 예제 화면에 설정·저장 버튼을 중복 없이 연결합니다.</summary>
@@ -322,8 +520,37 @@ namespace StarterProject.Editor
                     || screen.FindProperty("status").objectReferenceValue == null)
                     throw new InvalidOperationException("Boot StarterScreen must show the Boot status text.");
             }
+            if (kind == StarterScreenKind.Title) ValidateTitleMenu(screens[0]);
             ValidateResponsiveCanvas(screens[0], kind.ToString());
             ValidateSceneInput(scene, kind.ToString());
+        }
+
+        private static void ValidateTitleMenu(StarterScreen screen)
+        {
+            var menu = screen.GetComponent<StarterTitleMenu>();
+            if (menu == null || !menu.isActiveAndEnabled)
+                throw new InvalidOperationException("Title scene requires one active StarterTitleMenu.");
+            var screenData = new SerializedObject(screen);
+            if (screenData.FindProperty("titleMenu").objectReferenceValue != menu)
+                throw new InvalidOperationException("Title StarterScreen must delegate to its StarterTitleMenu.");
+            var data = new SerializedObject(menu);
+            var references = new[] { "newGameButton", "continueButton", "optionsButton", "creditsButton", "quitButton", "statusText",
+                "artworkPanel", "detailPanel", "pageHeading", "pageDescription", "slotsPanel", "manageSlotsButton", "backButton",
+                "optionsPanel", "volumeButton", "fullscreenButton", "languageButton", "recoverSettingsButton", "creditsPanel",
+                "deleteConfirmationPanel", "deleteConfirmationText", "confirmDeleteButton", "cancelDeleteButton" };
+            foreach (var reference in references)
+                if (data.FindProperty(reference).objectReferenceValue == null)
+                    throw new InvalidOperationException($"Title menu reference is missing: {reference}.");
+            foreach (var arrayName in new[] { "slotButtons", "deleteSlotButtons", "recoverSlotButtons" })
+            {
+                var array = data.FindProperty(arrayName);
+                if (array.arraySize != 3)
+                    throw new InvalidOperationException($"Title menu {arrayName} must show all three save slots.");
+                var buttons = Enumerable.Range(0, array.arraySize)
+                    .Select(index => array.GetArrayElementAtIndex(index).objectReferenceValue).ToArray();
+                if (buttons.Any(button => button == null) || buttons.Distinct().Count() != 3)
+                    throw new InvalidOperationException($"Title menu {arrayName} needs three separate assigned buttons.");
+            }
         }
 
         /// <summary>Boot 초기화를 시작할 단일 활성 진입점과 설정 참조를 검사합니다.</summary>

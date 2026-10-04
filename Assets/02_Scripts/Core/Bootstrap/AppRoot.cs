@@ -196,13 +196,71 @@ namespace StarterProject
             return TryNavigate(mainScenePath);
         }
 
+        /// <summary>Title에서 비어 있는 슬롯을 골라 새 진행을 시작합니다.</summary>
+        public bool TryStartNewGame(int slotId)
+        {
+            if (!CanStartGame() || !CheckSlotId(slotId)) return false;
+            Game.RefreshSave();
+            if (!Game.GetSlot(slotId).IsEmpty)
+                return RejectSlotRequest("Choose an empty slot or delete an existing save in Slot Management.");
+            try { Game.StartNew(slotId, CreateInitialPayload()); }
+            catch (Exception exception) { Fail(exception); return false; }
+            StorageMessage = Game.Message;
+            return TryNavigate(mainScenePath);
+        }
+
+        private bool CheckSlotId(int slotId)
+        {
+            if (Game == null) return false;
+            return slotId >= 1 && slotId <= Game.SlotCount || RejectSlotRequest("Choose a valid save slot.");
+        }
+        private bool RejectSlotRequest(string message)
+        {
+            StorageMessage = message;
+            StateChanged?.Invoke();
+            return false;
+        }
+
+        /// <summary>Title 메뉴에서 선택할 슬롯 상태를 다시 읽습니다.</summary>
+        public bool TryRefreshGameSlots()
+        {
+            if (!CanStartGame()) return false;
+            Game.RefreshSave();
+            StorageMessage = Game.Message;
+            StateChanged?.Invoke();
+            return true;
+        }
+
+        /// <summary>Title에서만 삭제를 허용합니다. 진행 중인 세션이 있으면 먼저 종료해야 합니다.</summary>
+        public bool TryDeleteGameSlot(int slotId)
+        {
+            if (!CanStartGame() || !CheckSlotId(slotId)) return false;
+            if (Game.Current != null) return RejectSlotRequest("Return to the main menu before deleting a save slot.");
+            var deleted = Game.TryDelete(slotId);
+            StorageMessage = Game.Message;
+            StateChanged?.Invoke();
+            return deleted;
+        }
+
+        public bool TryRecoverGameBackup(int slotId)
+        {
+            if (!CanStartGame() || !CheckSlotId(slotId)) return false;
+            if (Game.Current != null) return RejectSlotRequest("End the current game before recovering a slot.");
+            var recovered = Game.TryRecoverBackup(slotId);
+            StorageMessage = Game.Message;
+            StateChanged?.Invoke();
+            return recovered;
+        }
+
         private string CreateInitialPayload() => gamePayloadPolicy != null
             ? gamePayloadPolicy.CreateInitialPayload() : "{}";
 
-        public bool TryContinueGame()
+        /// <summary>기존 단일 슬롯 호출은 슬롯 1을 이어갑니다. 새 메뉴는 슬롯 인자를 사용합니다.</summary>
+        public bool TryContinueGame() => TryContinueGame(1);
+        public bool TryContinueGame(int slotId)
         {
-            if (!CanStartGame()) return false;
-            var isLoaded = Game.TryContinue();
+            if (!CanStartGame() || !CheckSlotId(slotId)) return false;
+            var isLoaded = Game.TryContinue(slotId);
             StorageMessage = Game.Message;
             if (isLoaded) return TryNavigate(mainScenePath);
             StateChanged?.Invoke();

@@ -2,12 +2,13 @@
 
 ## 실행과 적용 범위
 
-`00_StartScene`에서 Play한다. Boot가 사용자 설정을 읽은 뒤 음량·화면에 적용하고 Title로 이동한다. Title/Main의 설정 버튼은 새 값을 검증·시스템 적용한 뒤 저장한다. 저장 실패 시 이전 시스템 값을 다시 적용하며, 백업 복구나 `SettingsService.Reload()`로 확정된 설정도 반영한다.
+`00_StartScene`에서 Play한다. Boot가 사용자 설정을 읽은 뒤 음량·화면에 적용하고 Title로 이동한다. Title의 Options 화면과 Main의 설정 버튼은 새 값을 검증·시스템 적용한 뒤 저장한다. 설정은 기본 3개 슬롯 전체가 공유한다. 저장 실패 시 이전 시스템 값을 다시 적용하며, 백업 복구나 `SettingsService.Reload()`로 확정된 설정도 반영한다.
 
 - `Volume`: 전체 음량 0~100%. `AudioListener.volume`을 사용하므로 일반 AudioSource의 소리에 적용한다. 예제에 배경음이나 효과음 콘텐츠를 추가하지는 않는다. 실제 청취 확인은 AudioSource에 클립을 연결해 수행한다.
 - `Fullscreen`: 켜짐은 테두리 없는 전체화면(`FullScreenWindow`), 꺼짐은 창 모드(`Windowed`). 해상도·주사율·품질 설정은 변경하지 않는다. Editor의 Game View로는 실제 Windows 창 전환을 검증할 수 없으므로 빌드 검증 항목으로 남긴다.
 - `Language`: 예제 버튼은 `en`/`ko`를 전환한다. Core는 공백·제어 문자가 없는 1~64자의 언어 식별자를 저장하므로 게임별 언어를 추가할 수 있다. 번역 테이블·글꼴·지원 언어 선택은 개별 게임에서 연결한다. 현재 예제 UI는 영어다.
-- 방향키/WASD·게임패드로 버튼을 선택하고 Enter/A로 실행한다. 덮어쓰기 확인 중 Escape/B는 확인을 취소한다. 씬 전환·실패 중에는 버튼 입력을 차단한다.
+- Title의 좌측 New Game / Continue는 각각 빈 슬롯과 저장 슬롯 선택 화면을 연다. 슬롯 관리에서 삭제·백업 복구를 수행하며 삭제 확인의 기본 포커스는 Cancel이다. Options / Credits는 별도 화면이고 Quit는 PC에 표시한다.
+- 방향키/WASD·게임패드로 버튼을 선택하고 Enter/A로 실행한다. Escape/B는 확인창을 취소하거나 이전 화면으로 돌아간다. 씬 전환·실패·삭제 확인 뒤쪽에는 버튼 입력을 차단한다.
 
 기존 Input System 액션 에셋의 `UI` 맵과 `InputSystemUIInputModule`을 사용한다. 조작키 재설정·게임별 Player 맵 활성화·입력 감도는 이번 최소 UI 입력 범위에 포함하지 않는다.
 
@@ -25,9 +26,11 @@
 
 `StarterLoadingOverlay`는 AppRoot 아래 단 하나의 Canvas로 생성되어 씬 전환 중에도 유지된다. 화면 위에 로딩 문구·진행률을 표시하고 포인터 입력을 막는다. 새 씬의 준비가 끝나면 숨기고 UI 선택을 복원한다. 실패 시에는 로딩 화면을 숨겨 기존 오류 안내를 볼 수 있게 한다.
 
-`StarterScreen`은 활성화 시 구독하고 비활성화 시 해제한다. 첫 진입 또는 선택 항목 소실 시 유효한 버튼을 선택해 마우스 없이도 사용할 수 있게 한다. 런타임 Canvas는 루트와 함께 제거되며 씬·프리팹에 별도로 복제할 필요가 없다.
+Boot/Main의 `StarterScreen`과 Title의 `StarterTitleMenu`는 활성화 시 구독하고 비활성화 시 해제한다. 첫 진입 또는 선택 항목 소실 시 유효한 버튼을 선택해 마우스 없이도 사용할 수 있게 한다. 런타임 Canvas는 루트와 함께 제거되며 씬·프리팹에 별도로 복제할 필요가 없다.
 
 ## 검증
+
+2026-10-05 기본 3슬롯·좌측 Title 메뉴: **구현 완료, 검증 결과 기록 예정**. 화면 흐름·삭제·저장 계약은 [설정·저장 가이드](SETTINGS_AND_SAVE.md)를 따른다. 아래 결과는 각 날짜의 이전 구현 검증이다.
 
 2026-09-22, Unity 6000.3.16f1: **EditMode 44개 + PlayMode 25개 통과, 실패·건너뜀 0개**. 기존 설정·저장·Bootstrap 테스트를 포함한다. 열려 있는 원본 Editor를 유지하기 위해 최신 소스를 반영한 `Logs/Stage34Validation` 복제 프로젝트에서 실행했다. 결과는 `Logs/Stage5EditMode.xml`, `Logs/Stage5PlayModeFinal.xml`이다.
 

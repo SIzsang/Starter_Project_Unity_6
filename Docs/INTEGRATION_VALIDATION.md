@@ -1,6 +1,21 @@
 # 7단계 통합·Windows 빌드 검증
 
-최종 점검: 2026-10-04. **v1.0.0의 공통 프리셋 구현·필수 회귀·Windows Player 확인·배포는 완료했다.** 이 문서는 날짜별 실행 기록이며 과거의 대기·미완료 표현은 당시 상태다. 최신 main의 추가 보완은 [제작 시작 전 점검](GAME_START_AUDIT.md), 플랫폼 지원 범위와 Computer Use 제한은 [배포 기준](RELEASE.md)을 따른다.
+최종 점검: 2026-10-05. **v1.0.0의 공통 프리셋 구현·필수 회귀·Windows Player 확인·배포는 완료했다.** 이 문서는 날짜별 실행 기록이며 과거의 대기·미완료 표현은 당시 상태다. 최신 main의 추가 보완은 [제작 시작 전 점검](GAME_START_AUDIT.md), 플랫폼 지원 범위와 Computer Use 제한은 [배포 기준](RELEASE.md)을 따른다.
+
+## 2026-10-05 독립 슬롯 3개·메인 메뉴 구현 검증
+
+기준 소스 `5ac93ac` 이후 기본 3개 독립 슬롯, 활성 슬롯 저장, Title의 좌측 메인 메뉴·목적별 슬롯 선택·별도 삭제 확인을 구현했다. Unity **6000.3.16f1**에서 원본 프로젝트로 실행했으며 테스트 저장소는 임시 디렉터리와 대체 실행 설정을 사용해 사용자 저장을 건드리지 않았다.
+
+- `StarterProject.Editor.StarterProjectSetup.RebuildTitleMenu` 성공. Title UI만 갱신하고 기존 씬 메타 GUID와 Boot/Main을 유지했다. 생성 단계의 예제 UI 구성 검사도 통과했다(`Logs/ThreeSlotTitleSetup.log`).
+- 관련 EditMode **77/77 통과, 실패·건너뜀 0개**: `PersistenceTests` 49개, `SaveSlotTests` 8개, `StarterProjectSetupTests` 20개. 결과는 `Logs/ThreeSlotEditMode.xml`·`.log`에 있다.
+- 관련 PlayMode **39개 항목**: `BootstrapFlowTests` 16개, `RuntimeFlowTests` 20개, `SaveSlotFlowTests` 3개. 최초 실행은 **35개 통과·4개 실패·건너뜀 0개**였다(`Logs/ThreeSlotPlayMode.xml`·`.log`). 실패 원인은 StarterScreen이 Title 메뉴의 OnEnable 순서에 따라 기존 즉시 진입 리스너를 함께 등록하는 문제였다.
+- 메뉴 참조 존재로 입력 소유권을 정하고 기존 핸들러의 우회 진입도 차단했다. 실패 4개와 영향받는 메뉴 4개만 다시 실행해 **8/8 통과, 실패·건너뜀 0개**를 확인했다(`Logs/ThreeSlotInputPlayModeFinal.xml`·`.log`). 현재 미해결 실패는 없으며 이 8개를 신규 고유 테스트로 중복 집계하지 않는다.
+
+검사한 범위는 슬롯별 세션·payload 격리와 재생성 후 복원, 기존 슬롯 1 파일·무인자 API 호환, 활성 슬롯 저장/삭제 차단, 삭제 capability 미지원, 잘못된 번호, 손상·미래 버전 슬롯 격리, 백업 복구, 정확한 백업·보존·임시 파일 삭제 및 다른 슬롯·설정 보존이다. 잠긴 주 파일·백업의 삭제 실패도 확인했다. 삭제는 여러 파일에 걸친 원자적 트랜잭션은 아니며 실패 시 일부 보조 파일이 이미 삭제되었을 수 있다.
+
+UI에서는 New Game 클릭은 빈 슬롯 선택 화면까지만 열고 Continue는 선택한 저장 슬롯을 이어가는지, 모두 빈 상태의 Continue 잠금·이유 안내와 모두 찬 상태의 관리 연결, 확인 대상·마지막 저장 시각, Cancel 기본 선택과 취소/성공 뒤 같은 카드 복귀, 메인 메뉴 선택 복귀, 키보드·게임패드 Submit의 두 단계와 전환 중 잠금을 확인했다. 배치·Image·패널·버튼은 씬에서 교체할 수 있고 프레임마다 저장 파일을 읽지 않는다.
+
+이 회차에는 새 검증 복제본·Player 빌드·Computer Use·실제 창 표시·모바일 실기기 검사를 추가하지 않았다. UI 구성과 합성 입력의 결과를 실제 기기 검증으로 간주하지 않는다. 기존 v1.0.0 태그·ZIP은 단일 슬롯 소스 그대로 유지하며 최신 사용법은 [설정·저장 가이드](SETTINGS_AND_SAVE.md)와 [Summary](PRESET_SUMMARY.md)에 기록했다.
 
 ## 2026-10-04 코드 재사용·SOLID·확장 계약 점검
 

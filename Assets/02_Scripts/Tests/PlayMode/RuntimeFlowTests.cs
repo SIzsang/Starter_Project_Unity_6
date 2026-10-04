@@ -289,7 +289,11 @@ namespace StarterProject.Tests
             var root = AppRoot.Instance;
             var overlay = Object.FindObjectsByType<StarterLoadingOverlay>(FindObjectsInactive.Include, FindObjectsSortMode.None).Single();
             Assert.That(overlay.IsVisible, Is.False);
-            var startButton = GameObject.Find("Start Game").GetComponent<Button>();
+            var startButton = GameObject.Find("New Game").GetComponent<Button>();
+            startButton.onClick.Invoke();
+            Assert.That(root.IsTransitioning, Is.False, "Opening New Game must only show the slot picker.");
+            Assert.That(root.Game.Current, Is.Null, "A session starts only after choosing an empty slot.");
+            Assert.That(Object.FindFirstObjectByType<StarterTitleMenu>().CurrentPage, Is.EqualTo(StarterTitlePage.NewGame));
             var progressSamples = new List<float>();
             root.StateChanged += () => progressSamples.Add(root.LoadingProgress);
             Assert.That(root.TryStartNewGame(), Is.True);
@@ -319,7 +323,16 @@ namespace StarterProject.Tests
             yield return null;
             var selected = EventSystem.current.currentSelectedGameObject;
             Assert.That(selected, Is.Not.Null);
-            Assert.That(selected.name, Is.EqualTo("Start Game"));
+            Assert.That(selected.name, Is.EqualTo("New Game"));
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Enter));
+            yield return null;
+            yield return null;
+            Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(Title));
+            Assert.That(AppRoot.Instance.Game.Current, Is.Null);
+            Assert.That(Object.FindFirstObjectByType<StarterTitleMenu>().CurrentPage, Is.EqualTo(StarterTitlePage.NewGame));
+            Assert.That(EventSystem.current.currentSelectedGameObject?.name, Is.EqualTo("Slot 1"));
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            yield return null;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Enter));
             yield return WaitForScene(Main);
             InputSystem.QueueStateEvent(keyboard, new KeyboardState());
@@ -333,7 +346,15 @@ namespace StarterProject.Tests
             var gamepad = InputSystem.AddDevice<Gamepad>();
             testDevices.Add(gamepad);
             yield return null;
-            Assert.That(EventSystem.current.currentSelectedGameObject?.name, Is.EqualTo("Start Game"));
+            Assert.That(EventSystem.current.currentSelectedGameObject?.name, Is.EqualTo("New Game"));
+            InputSystem.QueueStateEvent(gamepad, new GamepadState().WithButton(GamepadButton.South));
+            yield return null;
+            yield return null;
+            Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(Title));
+            Assert.That(AppRoot.Instance.Game.Current, Is.Null);
+            Assert.That(Object.FindFirstObjectByType<StarterTitleMenu>().CurrentPage, Is.EqualTo(StarterTitlePage.NewGame));
+            InputSystem.QueueStateEvent(gamepad, new GamepadState());
+            yield return null;
             InputSystem.QueueStateEvent(gamepad, new GamepadState().WithButton(GamepadButton.South));
             yield return WaitForScene(Main);
             InputSystem.QueueStateEvent(gamepad, new GamepadState());
@@ -375,7 +396,7 @@ namespace StarterProject.Tests
 
             Assert.That(root.TrySaveGame("{\"marker\":\"saved\"}"), Is.True);
             Assert.That(observations.Count, Is.EqualTo(1), "The save result must reach observers before the call returns.");
-            Assert.That(observations[0].Message, Is.EqualTo("Game saved."));
+            Assert.That(observations[0].Message, Is.EqualTo(root.StorageMessage));
             Assert.That(observations[0].Status, Is.EqualTo(StorageStatus.Loaded));
             Assert.That(observations[0].CanContinue, Is.True);
             Assert.That(observations[0].Session, Is.SameAs(root.Game.Current));
@@ -420,7 +441,7 @@ namespace StarterProject.Tests
             };
 
             Assert.That(root.TryContinueGame(), Is.False);
-            Assert.That(observedMessage, Is.EqualTo("No saved game is available."));
+            Assert.That(observedMessage, Is.EqualTo("No saved game is available in this slot."));
             Assert.That(observedStatus, Is.EqualTo(StorageStatus.Missing));
             Assert.That(observedCanContinue, Is.False);
             Assert.That(observedSession, Is.Null);
@@ -474,6 +495,94 @@ namespace StarterProject.Tests
             EventSystem.current.SetSelectedGameObject(null);
             yield return null;
             Assert.That(EventSystem.current.currentSelectedGameObject, Is.SameAs(restoredSelection));
+        }
+
+        [UnityTest]
+        public IEnumerator ContinueOpensAllSlotsAndLoadsOnlyTheChosenSavedGame()
+        {
+            var savedGame = new GameSessionService(fileStore);
+            savedGame.StartNew(3, "{\"marker\":\"slot-three\"}");
+            Assert.That(savedGame.TrySave(), Is.True);
+            var savedSession = savedGame.Current.SessionId;
+            yield return LoadBoot();
+            GameObject.Find("Continue").GetComponent<Button>().onClick.Invoke();
+            Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(Title));
+            Assert.That(AppRoot.Instance.Game.Current, Is.Null);
+            Assert.That(AppRoot.Instance.IsTransitioning, Is.False);
+            Assert.That(GameObject.Find("Slot 1").GetComponent<Button>().interactable, Is.False);
+            Assert.That(GameObject.Find("Slot 2").GetComponent<Button>().interactable, Is.False);
+            var third = GameObject.Find("Slot 3").GetComponent<Button>();
+            Assert.That(third.interactable, Is.True);
+            Assert.That(EventSystem.current.currentSelectedGameObject, Is.SameAs(third.gameObject));
+            var menu = Object.FindFirstObjectByType<StarterTitleMenu>();
+            menu.GoBack();
+            Assert.That(EventSystem.current.currentSelectedGameObject?.name, Is.EqualTo("Continue"));
+            menu.OpenContinue();
+            third.onClick.Invoke();
+            yield return WaitForScene(Main);
+            Assert.That(AppRoot.Instance.Game.CurrentSlotId, Is.EqualTo(3));
+            Assert.That(AppRoot.Instance.Game.Current.SessionId, Is.EqualTo(savedSession));
+        }
+
+        [UnityTest]
+        public IEnumerator FullSlotsUseSeparateManagementAndDeleteDefaultsToCancel()
+        {
+            var savedGame = new GameSessionService(fileStore);
+            for (var slot = 1; slot <= 3; slot++)
+            {
+                savedGame.StartNew(slot);
+                Assert.That(savedGame.TrySave(), Is.True);
+            }
+            var secondSavePath = Path.Combine(testDirectory, "save-slot-2.json");
+            var secondSave = File.ReadAllText(secondSavePath);
+            var secondSavedAt = DateTimeOffset.Parse(savedGame.Slots[1].SavedUtc).ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+            yield return LoadBoot();
+            var menu = Object.FindFirstObjectByType<StarterTitleMenu>();
+            menu.OpenNewGame();
+            for (var slot = 1; slot <= 3; slot++)
+                Assert.That(GameObject.Find("Slot " + slot).GetComponent<Button>().interactable, Is.False);
+            menu.GoBack();
+            Assert.That(EventSystem.current.currentSelectedGameObject?.name, Is.EqualTo("New Game"));
+            menu.OpenNewGame();
+            GameObject.Find("Manage Slots").GetComponent<Button>().onClick.Invoke();
+            Assert.That(menu.CurrentPage, Is.EqualTo(StarterTitlePage.SlotManagement));
+            GameObject.Find("Delete Slot 2").GetComponent<Button>().onClick.Invoke();
+            Assert.That(menu.CurrentPage, Is.EqualTo(StarterTitlePage.DeleteConfirmation));
+            Assert.That(EventSystem.current.currentSelectedGameObject?.name, Is.EqualTo("Cancel Delete"));
+            Assert.That(GameObject.Find("Delete Prompt").GetComponent<Text>().text, Does.Contain(secondSavedAt));
+            Assert.That(GameObject.Find("New Game").GetComponent<Button>().interactable, Is.False);
+            menu.GoBack();
+            Assert.That(menu.CurrentPage, Is.EqualTo(StarterTitlePage.SlotManagement));
+            Assert.That(File.ReadAllText(secondSavePath), Is.EqualTo(secondSave));
+            Assert.That(EventSystem.current.currentSelectedGameObject?.name, Is.EqualTo("Slot 2"));
+            menu.RequestDeleteSlot(2);
+            menu.ConfirmDelete();
+            Assert.That(menu.CurrentPage, Is.EqualTo(StarterTitlePage.SlotManagement));
+            Assert.That(File.Exists(secondSavePath), Is.False);
+            Assert.That(EventSystem.current.currentSelectedGameObject?.name, Is.EqualTo("Slot 2"));
+            Assert.That(AppRoot.Instance.Game.Current, Is.Null);
+            menu.GoBack();
+            Assert.That(menu.CurrentPage, Is.EqualTo(StarterTitlePage.NewGame));
+            var secondSlot = GameObject.Find("Slot 2").GetComponent<Button>();
+            Assert.That(secondSlot.interactable, Is.True);
+            Assert.That(EventSystem.current.currentSelectedGameObject, Is.SameAs(secondSlot.gameObject));
+            secondSlot.onClick.Invoke();
+            yield return WaitForScene(Main);
+            Assert.That(AppRoot.Instance.Game.CurrentSlotId, Is.EqualTo(2));
+        }
+
+        [UnityTest]
+        public IEnumerator TitleOptionsRefreshAfterExternalSettingsSavesWithTheSameMessage()
+        {
+            yield return LoadBoot();
+            Assert.That(GameObject.Find("Status").GetComponent<Text>().text, Does.Contain("No saved games available."));
+            Object.FindFirstObjectByType<StarterTitleMenu>().OpenOptions();
+            var root = AppRoot.Instance;
+            Assert.That(root.TrySaveSettings(new UserSettings { masterVolume = 0.25f }), Is.True);
+            var message = root.StorageMessage;
+            Assert.That(root.TrySaveSettings(new UserSettings { masterVolume = 0.75f }), Is.True);
+            Assert.That(root.StorageMessage, Is.EqualTo(message));
+            Assert.That(GameObject.Find("Volume").GetComponentInChildren<Text>().text, Is.EqualTo($"Volume: {0.75f:P0}"));
         }
 
         private AppRoot CreateRoot(ITextFileStore storage = null)

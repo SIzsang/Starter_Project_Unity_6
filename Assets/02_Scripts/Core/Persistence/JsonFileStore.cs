@@ -44,8 +44,20 @@ namespace StarterProject
         void WriteAllText(string fileName, string contents, Func<string, bool> validateContents, bool preserveOriginal);
     }
 
+    /// <summary>한 저장 파일과 해당 구현이 생성한 복구·임시 파일을 함께 삭제하는 선택적 기능입니다.</summary>
+    public interface IDeleteSaveFileStore
+    {
+        /// <summary>보조 파일을 먼저 삭제하고 주 파일을 마지막에 삭제합니다. 모든 대상이 이미 없으면 성공합니다.</summary>
+        /// <remarks>실패 시 예외를 전달하며 일부 보조 파일은 이미 삭제되었을 수 있습니다. 다른 파일·디렉터리는 삭제하지 않습니다.</remarks>
+        /// <param name="fileName">삭제할 주 파일명입니다. 디렉터리 부분은 허용하지 않습니다.</param>
+        /// <exception cref="ArgumentException">허용하지 않는 파일명입니다.</exception>
+        /// <exception cref="IOException">파일 접근·삭제에 실패했습니다.</exception>
+        /// <exception cref="UnauthorizedAccessException">파일 삭제 권한이 없습니다.</exception>
+        void DeleteSaveFiles(string fileName);
+    }
+
     /// <summary>작은 로컬 JSON용 동기 저장소. 같은 디렉터리의 임시 파일을 검증 후 교체합니다.</summary>
-    public sealed class JsonFileStore : ITextFileStore
+    public sealed class JsonFileStore : ITextFileStore, IDeleteSaveFileStore
     {
         public const int MaxFileSizeBytes = 1024 * 1024;
         private readonly string directoryPath;
@@ -87,6 +99,41 @@ namespace StarterProject
                     return null;
                 }
             }
+        }
+
+        /// <summary>이 저장소가 만든 정확한 보조 파일만 지워 백업에 의한 저장 재등장을 막습니다.</summary>
+        public void DeleteSaveFiles(string fileName)
+        {
+            lock (syncRoot)
+            {
+                var filePath = GetFilePath(fileName);
+                string[] candidates;
+                try { candidates = Directory.GetFiles(directoryPath); }
+                catch (DirectoryNotFoundException)
+                {
+                    if (File.Exists(directoryPath)) throw new IOException("Storage directory is a file.");
+                    return;
+                }
+
+                // 복구 후보를 먼저 지웁니다. 접근 실패를 숨기거나 주 파일 삭제를 계속하지 않습니다.
+                File.Delete(filePath + ".bak");
+                foreach (var candidate in candidates)
+                {
+                    var candidateName = Path.GetFileName(candidate);
+                    if (HasGeneratedFileName(candidateName, fileName + ".preserved-", "")
+                        || HasGeneratedFileName(candidateName, fileName + ".", ".tmp"))
+                        File.Delete(candidate);
+                }
+                File.Delete(filePath);
+            }
+        }
+
+        private static bool HasGeneratedFileName(string candidate, string prefix, string suffix)
+        {
+            return candidate.Length == prefix.Length + 32 + suffix.Length
+                && candidate.StartsWith(prefix, StringComparison.Ordinal)
+                && candidate.EndsWith(suffix, StringComparison.Ordinal)
+                && Guid.TryParseExact(candidate.Substring(prefix.Length, 32), "N", out _);
         }
 
         public void WriteAllText(string fileName, string contents, Func<string, bool> validateContents, bool preserveOriginal)

@@ -319,6 +319,82 @@ namespace StarterProject.Tests
         }
 
         [Test]
+        public void DeleteSaveRemovesOnlyItsGeneratedFileFamily()
+        {
+            const string target = "save-slot-1.json";
+            var generatedId = Guid.NewGuid().ToString("N");
+            var deletedNames = new[] { target, target + ".bak", target + ".preserved-" + generatedId,
+                target + "." + generatedId + ".tmp" };
+            var retainedNames = new[] { "save-slot-2.json", "save-slot-2.json.bak", "save-slot-10.json",
+                SettingsService.FileName, SettingsService.FileName + ".bak", target + ".bak.notes",
+                target + ".preserved-not-a-guid", target + ".not-a-guid.tmp",
+                target + ".preserved-" + generatedId + ".notes", target + "." + Guid.NewGuid().ToString("D") + ".tmp" };
+            foreach (var name in deletedNames.Concat(retainedNames)) File.WriteAllText(GetTestFilePath(name), name);
+            var nestedDirectory = Path.Combine(testDirectoryPath, "other-owner");
+            Directory.CreateDirectory(nestedDirectory);
+            var nestedSave = Path.Combine(nestedDirectory, target);
+            File.WriteAllText(nestedSave, "nested save");
+
+            ((IDeleteSaveFileStore)fileStore).DeleteSaveFiles(target);
+
+            foreach (var name in deletedNames) Assert.That(File.Exists(GetTestFilePath(name)), Is.False, name);
+            foreach (var name in retainedNames) Assert.That(File.ReadAllText(GetTestFilePath(name)), Is.EqualTo(name));
+            Assert.That(File.ReadAllText(nestedSave), Is.EqualTo("nested save"));
+            Assert.DoesNotThrow(() => fileStore.DeleteSaveFiles(target));
+        }
+
+        [Test, Platform("Win")]
+        public void DeleteLockedPrimaryReportsFailureAndKeepsPrimary()
+        {
+            const string target = "save-slot-1.json";
+            var primaryPath = GetTestFilePath(target);
+            File.WriteAllText(primaryPath, "primary");
+            File.WriteAllText(primaryPath + ".bak", "backup");
+            using (var locked = new FileStream(primaryPath, FileMode.Open, FileAccess.Read, FileShare.None))
+                Assert.That(() => fileStore.DeleteSaveFiles(target), Throws.InstanceOf<IOException>());
+            Assert.That(File.ReadAllText(primaryPath), Is.EqualTo("primary"));
+        }
+
+        [Test, Platform("Win")]
+        public void DeleteLockedBackupDoesNotDeletePrimary()
+        {
+            const string target = "save-slot-1.json";
+            var primaryPath = GetTestFilePath(target);
+            File.WriteAllText(primaryPath, "primary");
+            File.WriteAllText(primaryPath + ".bak", "backup");
+            using (var locked = new FileStream(primaryPath + ".bak", FileMode.Open, FileAccess.Read, FileShare.None))
+                Assert.That(() => fileStore.DeleteSaveFiles(target), Throws.InstanceOf<IOException>());
+            Assert.That(File.ReadAllText(primaryPath), Is.EqualTo("primary"));
+            Assert.That(File.ReadAllText(primaryPath + ".bak"), Is.EqualTo("backup"));
+        }
+
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase("../outside.json")]
+        [TestCase("..\\outside.json")]
+        public void DeleteSaveRejectsInvalidNamesWithoutChangingFiles(string fileName)
+        {
+            var sentinel = GetTestFilePath("sentinel.json");
+            File.WriteAllText(sentinel, "unchanged");
+            Assert.Throws<ArgumentException>(() => fileStore.DeleteSaveFiles(fileName));
+            Assert.That(File.ReadAllText(sentinel), Is.EqualTo("unchanged"));
+        }
+
+        [Test]
+        public void DeleteMissingSaveSucceedsWithoutCreatingStorageAndReportsDirectoryConflict()
+        {
+            const string target = "save-slot-1.json";
+            Assert.DoesNotThrow(() => fileStore.DeleteSaveFiles(target));
+            var missingDirectory = Path.Combine(testDirectoryPath, "missing-storage");
+            var missingStore = new JsonFileStore(missingDirectory);
+            Assert.DoesNotThrow(() => missingStore.DeleteSaveFiles(target));
+            Assert.That(Directory.Exists(missingDirectory), Is.False);
+            File.WriteAllText(missingDirectory, "directory blocked by file");
+            Assert.That(() => missingStore.DeleteSaveFiles(target), Throws.InstanceOf<IOException>());
+            Assert.That(File.ReadAllText(missingDirectory), Is.EqualTo("directory blocked by file"));
+        }
+
+        [Test]
         public void FileStoreRejectsDirectoryTraversal()
         {
             Assert.That(() => fileStore.ReadAllText("../outside.json"), Throws.ArgumentException);

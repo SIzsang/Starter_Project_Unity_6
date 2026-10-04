@@ -2,21 +2,23 @@
 
 기준: Unity `6000.3.16f1`, Windows PC와 URP 2D 예제. 이 저장소는 Boot·설정·저장·기본 씬 흐름을 재사용하는 **프로젝트 템플릿**이다. 전투·캐릭터·스테이지·게임별 UI는 복제한 게임에서 만든다. 사용한 커밋 또는 태그를 새 게임의 문서에 기록한다. 2026-10-04의 추가 Gameplay 씬 저장·PC 창 크기 조절 보완은 최신 main에 포함하며 기존 v1.0.0 ZIP은 이전 소스다. 이번 보완을 사용하는 새 게임은 최신 main에서 `Use this template`으로 만든다. [제작 시작 전 점검](GAME_START_AUDIT.md)
 
+2026-10-05 후속 소스는 좌측 New Game / Continue 메뉴와 기본 독립 슬롯 3개·삭제를 제공한다. **구현 완료, 검증 결과 기록 예정**이며 기존 v1.0.0 ZIP에는 포함되지 않는다. [현재 저장·메뉴 사용법](SETTINGS_AND_SAVE.md)
+
 ## 첫 Play 전에
 
 1. `Assets`, 각 `.meta`, `Packages`, `ProjectSettings`가 포함된 새 저장소를 Unity Hub에 추가하고 지정된 Editor 버전으로 연다. `Library`, `Temp`, `Logs`, `Builds`, `UserSettings`는 복사하지 않는다.
 2. **Project Settings > Player**에서 Company Name, Product Name, 플랫폼별 Application Identifier, 아이콘을 게임 고유 값으로 바꾼다. 기본 `StarterTemplate` / `StarterProject`로 여러 게임을 실행하면 `Application.persistentDataPath`가 겹칠 수 있다.
 3. Unity Cloud가 필요하다면 새 게임의 프로젝트를 연결한다. 이 템플릿에 추적된 Cloud 프로젝트·조직 ID는 비어 있다. Editor Services와 Unity Hub의 실제 연결 표시도 확인한다.
-4. `Tools > Starter Project > Validate Setup`을 실행한다. `00_StartScene` → `01_Title` → `02_MainScene`이 빌드 씬 앞에 있고 `SO_AppConfig`가 세 씬을 가리키는지 확인한다. 기본 StarterScreen UI를 유지한다면 `Tools > Starter Project > Validate Example UI`도 실행한다. 사용자 UI로 교체해도 Main 직접 Play와 Windows Preview는 공통 초기화 검사만 사용한다. 처음에는 Boot에서 Play한다.
+4. `Tools > Starter Project > Validate Setup`을 실행한다. `00_StartScene` → `01_Title` → `02_MainScene`이 빌드 씬 앞에 있고 `SO_AppConfig`가 세 씬을 가리키는지 확인한다. 기본 StarterScreen·StarterTitleMenu UI를 유지한다면 `Tools > Starter Project > Validate Example UI`도 실행한다. 사용자 UI로 교체해도 Main 직접 Play와 Windows Preview는 공통 초기화 검사만 사용한다. 처음에는 Boot에서 Play한다.
 5. 예제 UI는 **Screen Space Overlay + Scale With Screen Size, 1920×1080, Match 0.5**를 사용한다. 1920×1080은 최대 해상도가 아니라 디자인 기준이다. 현재 모바일 방향은 가로이며 실제 기기·터치·노치 확인은 새 게임에서도 필요하다.
 
 ## 예제 UI에 게임 에셋 적용
 
-Boot·Title·Main 씬의 `Starter UI`에서 배경과 버튼 `Image`의 `Source Image`를 게임 스프라이트로 교체한다. `StarterScreen`의 버튼·상태 `Text` 참조와 `EventSystem`·Input System UI 모듈은 유지한다. 로딩 화면도 바꿀 경우 `StarterLoadingOverlay` 프리팹의 문구·진행률 참조를 연결하고 Boot의 `StarterScreen > Loading Overlay Prefab` 슬롯에 넣는다. 프리팹을 지정하지 않으면 기본 로딩 UI가 유지된다. 화면 전체 배경과 조작 콘텐츠의 안전 영역 위치, 글꼴과 버튼 터치 크기는 [UI 기준](RESPONSIVE_UI.md)을 따른다.
+Boot·Title·Main 씬의 `Starter UI`에서 배경과 버튼 `Image`의 `Source Image`를 게임 스프라이트로 교체한다. Boot/Main의 `StarterScreen`, Title의 `StarterTitleMenu`에 연결된 버튼·상태 `Text`와 `EventSystem`·Input System UI 모듈은 유지한다. Title은 좌측 메뉴와 페이지별 슬롯·관리·설정·제작진·삭제 확인 참조를 씬에 보관한다. 로딩 화면도 바꿀 경우 `StarterLoadingOverlay` 프리팹의 문구·진행률 참조를 연결하고 Boot의 `StarterScreen > Loading Overlay Prefab` 슬롯에 넣는다. 프리팹을 지정하지 않으면 기본 로딩 UI가 유지된다. 화면 전체 배경과 조작 콘텐츠의 안전 영역 위치, 글꼴과 버튼 터치 크기는 [UI 기준](RESPONSIVE_UI.md)을 따른다.
 
 ## 게임별 저장 데이터 연결
 
-Core는 게임 내용을 모르는 단일 슬롯 파일 저장을 제공한다. `Gameplay` 어셈블리에서 `GamePayloadPolicy` 파생 ScriptableObject를 만들고, **Boot 씬의 `AppBootstrap` 컴포넌트에 에셋을 연결**한다. 정책을 연결하지 않으면 현재 예제대로 payloadVersion 1과 빈 `{}` 객체를 사용한다. 정책은 새 게임과 Editor의 Main 직접 Play에도 같은 초기 JSON을 제공한다.
+Core는 게임 내용을 모르는 기본 3개 독립 슬롯 파일 저장과 하나의 활성 세션을 제공한다. `Gameplay` 어셈블리에서 `GamePayloadPolicy` 파생 ScriptableObject를 만들고, **Boot 씬의 `AppBootstrap` 컴포넌트에 에셋을 연결**한다. 정책을 연결하지 않으면 현재 예제대로 payloadVersion 1과 빈 `{}` 객체를 사용한다. 정책은 새 게임과 Editor의 Main 직접 Play에도 같은 초기 JSON을 제공한다.
 
 JSON 패키지를 사용하는 게임 코드를 추가할 때 `Assets/02_Scripts/Gameplay/MyGame.Gameplay.asmdef`를 다음처럼 만든다. `StarterProject.Core`를 참조하고 `Newtonsoft.Json.dll`을 명시적으로 연결한다. 다른 패키지나 DLL을 사용하는 게임 코드는 해당 참조도 추가한다.
 
@@ -51,9 +53,13 @@ public sealed class MyGamePayloadPolicy : GamePayloadPolicy
 }
 ```
 
-실제 진행 상태를 저장할 때 게임별 코드가 JSON 객체를 만든 뒤 `AppRoot.Instance.TrySaveGame(payloadJson)`을 호출한다. **활성 게임 세션이 있으면 Main과 추가 Gameplay 씬에서 저장할 수 있다.** Boot·Title·AppRoot의 씬 전환 중에는 저장하지 않는다. `Continue` 뒤에는 Main에서 `AppRoot.Instance.Game.Current.PayloadJson`을 게임 모델로 역직렬화한다. 단일 슬롯에 이미 다른 세션이 있으면 교체 확인을 받은 뒤 `TrySaveGame(payloadJson, replaceExisting: true)`를 호출한다. 예제 Main의 `Save Game` 버튼은 현재 payload를 다시 저장할 뿐, 캐릭터나 스테이지 객체를 자동 수집하지 않는다. 게임별 저장 버튼·체크포인트에서 새 JSON을 전달하도록 연결하고 실패 결과도 처리한다.
+실제 진행 상태를 저장할 때 게임별 코드가 JSON 객체를 만든 뒤 `AppRoot.Instance.TrySaveGame(payloadJson)`을 호출한다. **활성 게임 세션이 있으면 Main과 추가 Gameplay 씬에서 저장할 수 있다.** Boot·Title·AppRoot의 씬 전환 중에는 저장하지 않는다. `Continue` 뒤에는 Main에서 `AppRoot.Instance.Game.Current.PayloadJson`을 게임 모델로 역직렬화한다. 저장은 `Game.CurrentSlotId`의 활성 슬롯으로 제한한다. 새 Title 메뉴는 `TryStartNewGame(slotId)`로 빈 슬롯만 시작한다. 기존 호환 API로 만든 새 세션이 활성 슬롯의 다른 저장을 대체해야 한다면 확인을 받은 뒤 `TrySaveGame(payloadJson, replaceExisting: true)`를 호출한다. 예제 Main의 `Save Game` 버튼은 현재 payload를 다시 저장할 뿐, 캐릭터나 스테이지 객체를 자동 수집하지 않는다. 게임별 저장 버튼·체크포인트에서 새 JSON을 전달하도록 연결하고 실패 결과도 처리한다.
 
-정적 캐릭터 정의·스프라이트는 에셋으로 보관하고 저장 payload에는 캐릭터 ID, 달라진 능력치·성장 상태, 스테이지 진행처럼 **변하는 값**을 넣는다. 약 100명 규모도 필드 크기에 따라 1MiB 안에 들어갈 수 있지만 실제 UTF-8 JSON 파일 전체 크기를 측정해야 한다. 파일 크기 상한은 1MiB, JSON 깊이 상한은 32다. 저장은 동기식이며 단일 슬롯·단일 프로세스 소유를 전제로 한다. 게임 데이터 형식을 바꿀 때는 `PayloadVersion`을 올리고 이전 저장의 변환·보호 정책을 게임에서 설계한다. 버전만 올리면 이전 파일은 보호되지만 이어하기는 비활성화된다. [상세 저장 계약](SETTINGS_AND_SAVE.md)
+정적 캐릭터 정의·스프라이트는 에셋으로 보관하고 저장 payload에는 캐릭터 ID, 달라진 능력치·성장 상태, 스테이지 진행처럼 **변하는 값**을 넣는다. 약 100명 규모도 필드 크기에 따라 1MiB 안에 들어갈 수 있지만 실제 UTF-8 JSON 파일 전체 크기를 측정해야 한다. 파일 크기 상한은 1MiB, JSON 깊이 상한은 32다. 저장은 동기식이며 하나의 활성 세션·단일 프로세스 소유를 전제로 한다. 슬롯별 파일 전체에 각각 1MiB 상한을 적용한다. 게임 데이터 형식을 바꿀 때는 `PayloadVersion`을 올리고 이전 저장의 변환·보호 정책을 게임에서 설계한다. 버전만 올리면 이전 파일은 보호되지만 이어하기는 비활성화된다. [상세 저장 계약](SETTINGS_AND_SAVE.md)
+
+## 슬롯·메뉴 교체 시
+
+기존 `save-slot-1.json`은 그대로 슬롯 1로 읽고 슬롯 2·3은 독립 파일로 쓴다. `Game.Slots`/`GetSlot(id)`의 불변 정보로 사용자 UI를 표시하고 새 게임·이어하기·삭제·복구는 AppRoot의 슬롯 인자 API로 요청한다. 삭제를 지원하는 저장소는 `IDeleteSaveFileStore`도 구현해야 하며, 지원하지 않으면 메뉴의 삭제를 사용하지 않는다. 서비스 생성자의 slotCount는 1~10이지만 AppRoot 기본 구성과 예제 UI는 3개이므로 개수를 바꾸면 조립·화면 참조·검사도 함께 맞춘다. 상태·소유권·하위 호환 API의 정확한 의미는 [저장 계약](SETTINGS_AND_SAVE.md)을 따른다.
 
 ## 게임 제작 시작점
 

@@ -36,6 +36,7 @@ namespace StarterProject.UI
         [SerializeField] private Button recoverGameButton;
         [SerializeField] private Button recoverSettingsButton;
         [SerializeField] private StarterLoadingOverlay loadingOverlayPrefab;
+        [SerializeField] private StarterTitleMenu titleMenu;
         private bool isAwaitingOverwriteConfirmation;
         private AppRoot subscribedRoot;
         private InputAction cancelAction;
@@ -48,12 +49,20 @@ namespace StarterProject.UI
         private string displayedStep;
         private string displayedFailure;
         private string displayedStorageMessage;
+        // 씬 활성화 순서와 무관하게 메뉴 소유권을 결정합니다. 비활성 메뉴도 기존 즉시 진입 경로로 우회하지 않습니다.
+        private bool UsesTitleMenu => screen == StarterScreenKind.Title && titleMenu != null;
 
         /// <summary>버튼 리스너를 등록하고 현재 앱 상태를 즉시 반영합니다.</summary>
         private void OnEnable()
         {
             StarterCanvasLayout.EnsureConfigured(GetComponent<Canvas>());
+            if (screen == StarterScreenKind.Title && titleMenu == null) titleMenu = GetComponent<StarterTitleMenu>();
             hasDisplayedState = false;
+            if (UsesTitleMenu)
+            {
+                BindRoot(AppRoot.Instance);
+                return;
+            }
             if (actionButton != null)
                 actionButton.onClick.AddListener(OnActionButtonClicked);
             if (secondaryButton != null) secondaryButton.onClick.AddListener(OnSecondaryButtonClicked);
@@ -64,6 +73,7 @@ namespace StarterProject.UI
             if (recoverGameButton != null) recoverGameButton.onClick.AddListener(OnRecoverGameButtonClicked);
             if (recoverSettingsButton != null) recoverSettingsButton.onClick.AddListener(OnRecoverSettingsButtonClicked);
             Refresh();
+            if (UsesTitleMenu) return;
             BindCancelAction();
         }
 
@@ -71,6 +81,7 @@ namespace StarterProject.UI
         private void Update()
         {
             Refresh();
+            if (UsesTitleMenu) return;
             BindCancelAction();
             RestoreSelection();
         }
@@ -100,6 +111,7 @@ namespace StarterProject.UI
         {
             var appRoot = AppRoot.Instance;
             BindRoot(appRoot);
+            if (UsesTitleMenu) return;
             var state = appRoot != null ? appRoot.State : AppState.NotStarted;
             var isTransitioning = appRoot != null && appRoot.IsTransitioning;
             var step = appRoot != null ? appRoot.CurrentStep : null;
@@ -234,6 +246,7 @@ namespace StarterProject.UI
 
         private void OnSecondaryButtonClicked()
         {
+            if (UsesTitleMenu) return;
             var appRoot = AppRoot.Instance;
             if (!CanInteract(appRoot)) return;
             if (screen == StarterScreenKind.Title) appRoot.TryContinueGame();
@@ -282,6 +295,7 @@ namespace StarterProject.UI
         /// <summary>Title에서는 Main 진입을, Main에서는 Title 복귀를 앱 루트에 요청합니다.</summary>
         private void OnActionButtonClicked()
         {
+            if (UsesTitleMenu) return;
             var appRoot = AppRoot.Instance;
             if (!CanInteract(appRoot))
                 return;

@@ -202,6 +202,35 @@ namespace StarterProject.Tests
                 Throws.InvalidOperationException.With.Message.Contains(actionName));
         }
 
+        [Test]
+        public void TitleBuilderAssignsThreeSlotsAndSeparateConfirmationPanel()
+        {
+            var scene = SceneManager.GetActiveScene();
+            var menu = StarterProjectSetup.CreateTitleMenu(scene);
+            Assert.DoesNotThrow(() => StarterProjectSetup.ValidateExampleScene(scene, StarterScreenKind.Title));
+            var data = new SerializedObject(menu);
+            var slots = data.FindProperty("slotButtons");
+            Assert.That(slots.arraySize, Is.EqualTo(3));
+            var modal = data.FindProperty("deleteConfirmationPanel").objectReferenceValue as GameObject;
+            var cancel = data.FindProperty("cancelDeleteButton").objectReferenceValue as UnityEngine.UI.Button;
+            Assert.That(modal.activeSelf, Is.False);
+            Assert.That(cancel.transform.IsChildOf(modal.transform), Is.True);
+            Assert.That(Object.FindFirstObjectByType<EventSystem>().firstSelectedGameObject.name, Is.EqualTo("New Game"));
+            Assert.That(menu.transform.Find("Asset Showcase"), Is.Not.Null, "Artwork must remain editable in the authored scene.");
+        }
+
+        [Test]
+        public void TitleValidationRejectsMissingSlotButton()
+        {
+            var scene = SceneManager.GetActiveScene();
+            var menu = StarterProjectSetup.CreateTitleMenu(scene);
+            var data = new SerializedObject(menu);
+            data.FindProperty("slotButtons").GetArrayElementAtIndex(1).objectReferenceValue = null;
+            data.ApplyModifiedPropertiesWithoutUndo();
+            Assert.That(() => StarterProjectSetup.ValidateExampleScene(scene, StarterScreenKind.Title),
+                Throws.InvalidOperationException.With.Message.Contains("slotButtons"));
+        }
+
         [TestCase("My Game", "My Game.exe")]
         [TestCase("Boss: Rush?", "Boss_ Rush_.exe")]
         [TestCase("CON", "Game_CON.exe")]

@@ -5,7 +5,9 @@
 1. Unity 6000.3.16f1에서 프로젝트를 연다.
 2. `Assets/01_Scenes/Boot/00_StartScene.unity`를 연다.
 3. Play하면 설정 검증 후 Title로 이동한다.
-4. `New Game`으로 Main에 진입하고 `Back to Title`로 돌아온다. 설정·저장·Continue는 [3·4단계 가이드](SETTINGS_AND_SAVE.md)를 따른다.
+4. Title의 `New Game` → 빈 슬롯을 선택하면 Main에 진입한다. `Back to Title`로 돌아온 뒤 `Continue` → 저장 슬롯을 선택해 이어간다. 옵션·슬롯 관리·삭제·복구는 [설정·저장 가이드](SETTINGS_AND_SAVE.md)를 따른다.
+
+2026-10-05 기본 3개 독립 슬롯·좌측 Title 메뉴는 구현 완료이며 검증 결과 기록 예정이다. 아래 과거 검증을 이번 기능의 통과 결과로 재사용하지 않는다.
 
 첫 검증 대상은 Windows PC이며 화면은 uGUI로 구성한다. UI 입력은 기존 `Assets/13_Input/InputSystem_Actions.inputactions`의 UI 맵을 사용한다.
 
@@ -14,7 +16,8 @@
 - **Boot / AppBootstrap**: AppRoot를 확보하고 초기화를 요청한다. 씬을 떠나면 파괴된다.
 - **AppRoot**: 유일한 공통 실행 루트. 초기화 상태, 오류와 씬 전환을 소유하고 `DontDestroyOnLoad`로 유지한다.
 - **AppConfig**: Boot·Title·Main의 전체 씬 경로. 검증 후 실행용 경로를 복사하므로 원본 에셋을 실행 상태로 수정하지 않는다.
-- **StarterScreen**: 씬별 상태·버튼 표시. 상태가 바뀔 때만 문자열과 UI를 갱신한다. 실행 정책은 Core에 요청하며 버튼 이벤트 구독은 화면 비활성화 시 해제한다.
+- **StarterTitleMenu**: Title의 좌측 메뉴·시작/이어하기 슬롯 선택·관리·옵션·제작진·삭제 확인 표시. 저장·삭제는 AppRoot에 요청한다.
+- **StarterScreen**: Boot/Main의 상태·버튼 표시. 상태가 바뀔 때만 문자열과 UI를 갱신한다. 실행 정책은 Core에 요청하며 버튼 이벤트 구독은 화면 비활성화 시 해제한다.
 - **EventSystem·Camera·UI**: 각 씬 소유이며 전환 시 교체된다. 공통 루트에 누적되지 않는다.
 
 설정 에셋: `Assets/04_Data/Config/SO_AppConfig.asset`
