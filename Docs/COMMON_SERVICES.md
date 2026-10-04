@@ -30,7 +30,7 @@ Boot/Main의 `StarterScreen`과 Title의 `StarterTitleMenu`는 활성화 시 구
 
 ## 검증
 
-2026-10-05 기본 3슬롯·좌측 Title 메뉴: **구현 완료, 검증 결과 기록 예정**. 화면 흐름·삭제·저장 계약은 [설정·저장 가이드](SETTINGS_AND_SAVE.md)를 따른다. 아래 결과는 각 날짜의 이전 구현 검증이다.
+2026-10-05 기본 3슬롯·좌측 Title 메뉴: **구현·관련 필수 자동 검증 완료**. 화면 흐름·삭제·저장 계약은 [설정·저장 가이드](SETTINGS_AND_SAVE.md)를 따른다. 아래 결과는 각 날짜의 이전 구현 검증이다.
 
 2026-09-22, Unity 6000.3.16f1: **EditMode 44개 + PlayMode 25개 통과, 실패·건너뜀 0개**. 기존 설정·저장·Bootstrap 테스트를 포함한다. 열려 있는 원본 Editor를 유지하기 위해 최신 소스를 반영한 `Logs/Stage34Validation` 복제 프로젝트에서 실행했다. 결과는 `Logs/Stage5EditMode.xml`, `Logs/Stage5PlayModeFinal.xml`이다.
 

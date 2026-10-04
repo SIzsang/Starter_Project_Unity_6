@@ -7,7 +7,7 @@
 3. Play하면 설정 검증 후 Title로 이동한다.
 4. Title의 `New Game` → 빈 슬롯을 선택하면 Main에 진입한다. `Back to Title`로 돌아온 뒤 `Continue` → 저장 슬롯을 선택해 이어간다. 옵션·슬롯 관리·삭제·복구는 [설정·저장 가이드](SETTINGS_AND_SAVE.md)를 따른다.
 
-2026-10-05 기본 3개 독립 슬롯·좌측 Title 메뉴는 구현 완료이며 검증 결과 기록 예정이다. 아래 과거 검증을 이번 기능의 통과 결과로 재사용하지 않는다.
+2026-10-05 기본 3개 독립 슬롯·좌측 Title 메뉴는 구현·관련 필수 자동 검증을 완료했다. 실행 범위와 최초 입력 오류 수정·재검사 결과는 [통합 검증 기록](INTEGRATION_VALIDATION.md)을 따른다. 아래 과거 검증을 이번 기능의 통과 결과로 재사용하지 않는다.
 
 첫 검증 대상은 Windows PC이며 화면은 uGUI로 구성한다. UI 입력은 기존 `Assets/13_Input/InputSystem_Actions.inputactions`의 UI 맵을 사용한다.
 

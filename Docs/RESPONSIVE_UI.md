@@ -19,7 +19,7 @@
 
 Title은 좌측 New Game / Continue / Options / Credits / PC Quit와 별도 슬롯 선택·관리·삭제 확인 화면을 씬에 작성하고 `StarterTitleMenu`의 참조로 연결한다. 새 게임은 빈 슬롯, 이어하기는 저장 슬롯을 선택한다. Core가 저장·삭제를 처리하므로 배경·버튼·문구 에셋을 바꿔도 파일 접근 코드를 UI에 넣지 않는다. Canvas의 1920×1080 기준과 가로형 안전 영역 계약을 유지하며 게임별 초상화·진행률·플레이 시간을 필수 데이터로 요구하지 않는다.
 
-**구현 완료, 검증 결과 기록 예정.** 기존 해상도 테스트는 아래 날짜별 근거로 보존하며 새 Title 슬롯 화면의 실기기 가독성을 검증한 것으로 재사용하지 않는다. [현재 메뉴·저장 사용법](SETTINGS_AND_SAVE.md) · [초기 배치 비교](MAIN_MENU_AND_SAVE_SLOTS_DRAFT.md)
+**구현·관련 필수 자동 검증 완료.** 새 Title은 UI 구성·메뉴 흐름·합성 입력을 확인했으며 [실행 근거](INTEGRATION_VALIDATION.md)를 따른다. 기존 해상도 테스트는 아래 날짜별 근거로 보존하며 새 Title 슬롯 화면의 실기기 가독성을 검증한 것으로 재사용하지 않는다. [현재 메뉴·저장 사용법](SETTINGS_AND_SAVE.md) · [초기 배치 비교](MAIN_MENU_AND_SAVE_SLOTS_DRAFT.md)
 
 ## 새 게임 에셋으로 화면 교체
 
