@@ -6,7 +6,7 @@
 
 - `Volume`: 전체 음량 0~100%. `AudioListener.volume`을 사용하므로 일반 AudioSource의 소리에 적용한다. 예제에 배경음이나 효과음 콘텐츠를 추가하지는 않는다. 실제 청취 확인은 AudioSource에 클립을 연결해 수행한다.
 - `Fullscreen`: 켜짐은 테두리 없는 전체화면(`FullScreenWindow`), 꺼짐은 창 모드(`Windowed`). 해상도·주사율·품질 설정은 변경하지 않는다. Editor의 Game View로는 실제 Windows 창 전환을 검증할 수 없으므로 빌드 검증 항목으로 남긴다.
-- `Language`: `en`/`ko` 코드 저장. 번역 테이블·글꼴·콘텐츠 연결은 개별 게임에서 추가한다. 이 단계의 UI는 영어다.
+- `Language`: 예제 버튼은 `en`/`ko`를 전환한다. Core는 공백·제어 문자가 없는 1~64자의 언어 식별자를 저장하므로 게임별 언어를 추가할 수 있다. 번역 테이블·글꼴·지원 언어 선택은 개별 게임에서 연결한다. 현재 예제 UI는 영어다.
 - 방향키/WASD·게임패드로 버튼을 선택하고 Enter/A로 실행한다. 덮어쓰기 확인 중 Escape/B는 확인을 취소한다. 씬 전환·실패 중에는 버튼 입력을 차단한다.
 
 기존 Input System 액션 에셋의 `UI` 맵과 `InputSystemUIInputModule`을 사용한다. 조작키 재설정·게임별 Player 맵 활성화·입력 감도는 이번 최소 UI 입력 범위에 포함하지 않는다.

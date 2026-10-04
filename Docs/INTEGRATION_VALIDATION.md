@@ -2,6 +2,18 @@
 
 최종 점검: 2026-10-04. **v1.0.0의 공통 프리셋 구현·필수 회귀·Windows Player 확인·배포는 완료했다.** 이 문서는 날짜별 실행 기록이며 과거의 대기·미완료 표현은 당시 상태다. 최신 main의 추가 보완은 [제작 시작 전 점검](GAME_START_AUDIT.md), 플랫폼 지원 범위와 Computer Use 제한은 [배포 기준](RELEASE.md)을 따른다.
 
+## 2026-10-04 코드 재사용·SOLID·확장 계약 점검
+
+`bfd1929` 기준 검토 후 언어 식별자의 en/ko 고정과 쓰기 검증 예외 처리의 불일치를 수정했다. 원본 프로젝트에서 Unity 6000.3.16f1의 `PersistenceTests`·`RuntimeSettingsTests`만 실행해 **57/57 통과, 실패·건너뜀 0개**를 확인했다. 신규 16개 사례와 해당 경계의 기존 회귀를 포함한다.
+
+- 게임별 언어 식별자의 기본값·저장·재생성 후 복원, 빈 값·공백·제어 문자 거부와 파일 로드 시 기본값 복구, 최대 64자 경계
+- 새 언어 식별자가 음량·화면 설정 적용을 막지 않는지 확인
+- payload 검증의 FormatException·OverflowException은 false로 반환하고 기존 세션·주 파일을 보존하는지 확인
+- 예상 데이터 오류가 아닌 InvalidOperationException은 숨기지 않는지 확인
+- 기존 백업·버전 보호·파일 실패·실행 설정 복원 관련 회귀
+
+결과는 `Logs/SolidContractsEditMode.xml`·`Logs/SolidContractsEditMode.log`에 기록했다. 테스트는 임시 저장소와 대체 실행 설정을 사용한다. 추가 검증 복제본·Player 빌드·GUI·모바일 실기기 검증은 수행하지 않았다. 수정하지 않은 씬 전환·UI 흐름의 PlayMode 검사를 반복하지 않았다. 코드의 책임·소유권·의도된 확장 한계는 [설계 검토](ARCHITECTURE_REVIEW.md)와 [Summary](PRESET_SUMMARY.md)에 반영했다.
+
 ## 2026-10-04 범용성·사용성 후속 재검토
 
 기준 커밋 `8da41b6`의 공통 검사와 예제 화면 결합, 저장 결과 알림 누락, 사용자 로딩 Image의 진행률, 전체 화면 Panel의 안전 영역 적용을 보완했다. 관련 EditMode·PlayMode 검사와 범위는 [재검토 보고서](REUSABILITY_REVIEW.md)를 따른다. 새 Player 빌드와 Computer Use·실기기 검증은 추가하지 않았다.

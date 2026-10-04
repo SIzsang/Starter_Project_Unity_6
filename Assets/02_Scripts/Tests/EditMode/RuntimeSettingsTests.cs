@@ -44,9 +44,22 @@ namespace StarterProject.Tests
             using (var runtime = new UnityRuntimeSettings(backend))
             {
                 Assert.Throws<ArgumentNullException>(() => runtime.Apply(null));
-                Assert.Throws<ArgumentException>(() => runtime.Apply(new UserSettings { masterVolume = 0, language = "invalid" }));
+                Assert.Throws<ArgumentException>(() => runtime.Apply(new UserSettings { masterVolume = 0, language = " " }));
                 Assert.That(backend.VolumeWrites, Is.Zero);
                 Assert.That(backend.ScreenRequests, Is.Empty);
+            }
+        }
+
+        [TestCase("ja")]
+        [TestCase("game:pirate")]
+        public void GameLanguageIdentifierDoesNotBlockAudioAndDisplaySettings(string language)
+        {
+            var backend = new FakeBackend();
+            using (var runtime = new UnityRuntimeSettings(backend))
+            {
+                runtime.Apply(new UserSettings { masterVolume = 0, fullscreen = false, language = language });
+                Assert.That(backend.MasterVolume, Is.Zero);
+                Assert.That(backend.ScreenRequests, Is.EqualTo(new[] { FullScreenMode.Windowed }));
             }
         }
 

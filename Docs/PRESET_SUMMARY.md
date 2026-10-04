@@ -1,6 +1,6 @@
 # Starter Project 상세 Summary — 새 게임 제작용 인계 기록
 
-최종 점검: 2026-10-04 · 상태: **v1.0.0 배포 완료, 최신 main의 범용성·사용성 후속 보완**
+최종 점검: 2026-10-04 · 상태: **v1.0.0 배포 완료, 최신 main의 범용성·사용성·설계 계약 보완**
 
 이 문서는 향후 새 프로젝트에서 이 프리셋을 사용할 때 다시 확인할 기준 기록이다. 대화나 모델의 임시 기억에 의존하지 않도록 프로젝트와 함께 버전 관리한다. 변경 후에는 검증 결과와 한계를 함께 갱신한다.
 
@@ -19,6 +19,7 @@
 | 공통 프리셋 구현 | Boot·설정·단일 슬롯 저장·복구·씬 흐름·개발 저장소 격리·UI 에셋 연결 완료 |
 | 2026-10-04 1차 공통 사용 점검 | 추가 Gameplay 씬의 저장 허용, PC 창 크기 조절, 세 씬의 UI 입력과 활성 Boot 진입점 검사 보완. PlayMode 15/15·EditMode 16/16 통과 |
 | 2026-10-04 후속 재사용성 검사 | 공통·예제 UI 검사 분리, 결과 알림, 사용자 진행률 Image·중첩 Panel 수정. EditMode 18개 항목(17개 통과 후 1개 재검사), PlayMode 27/27 통과 |
+| 2026-10-04 코드 설계 점검 | 언어 식별자 일반화, 저장 검증 오류 계약 일치, SOLID·패턴·확장 계약 문서 보강. 관련 EditMode 57/57 통과 |
 | 필수 회귀 | 깨끗한 복제본 EditMode 50/50, UI 확장 후 PlayMode 31/31, 입력 차단 보완의 해당 테스트 1/1 통과 |
 | 실제 Windows Player | 별도 프로세스 저장·재실행 복원, 합성 UI 입력의 새 게임·저장·이어하기, 네이티브 1920×1080 Title·Main 표시 확인 |
 | 배포 | 공개 GitHub Template, main, v1.0.0 태그와 Release의 ZIP·SHA-256·manifest 확인 |
@@ -75,6 +76,54 @@ SOL 6.1 작업의 기준 커밋 `8da41b6`을 검토해 사용자 UI 교체와 �
 
 `Tools > Starter Project > Validate Setup`은 AppConfig·빌드 씬·Boot의 단일 활성 AppBootstrap·설정 참조를 **씬을 변경하지 않고** 검사한다. 기본 StarterScreen의 상태 표시 Canvas·Text, 세 씬의 EventSystem·UI 액션·Canvas 해상도는 별도 `Validate Example UI` 메뉴에서 검사한다. Boot → Title → Main 왕복·중복 루트·실패 차단은 PlayMode 테스트에서 확인했다. 원본 Editor의 Validate Setup 메뉴와 Boot Play → Title → 정지 후 Boot 복귀를 확인했고, Windows Player의 네이티브 Title·Main 화면도 확인했다. Computer Use의 창 캡처·물리 입력 전달과 Main 직접 Play의 GUI 확인에는 제한이 남아 있다.
 
+## 코드 재사용 구조·SOLID·디자인 패턴 — 2026-10-04
+
+검토 기준은 `bfd1929`와 이번 보완이다. 공통 초기화·설정·저장·씬 전환을 재사용하기에 책임 분리는 적절하다. 실제 확장 장애였던 Core의 en/ko 제한과 저장 검증 예외 처리의 불일치를 수정했다. 모든 장르 요구를 수정 없이 수용한다는 뜻은 아니며, 현재 확장 계약 밖의 기능은 아래 경계를 기준으로 설계한다. [상세 SOLID·패턴 검토](ARCHITECTURE_REVIEW.md)
+
+### 의존 방향과 책임
+
+`새 게임 Gameplay / UI → Core`, `Editor → Core / UI` 방향이다. Core는 프로젝트의 UI·Editor를 참조하지 않으며, Unity API와 Newtonsoft.Json에는 의존한다. Unity 밖에서 그대로 쓰는 순수 .NET 라이브러리는 아니다. 예제 UI 어셈블리 자체를 삭제하면 Editor의 예제 생성 코드 참조도 함께 정리해야 한다.
+
+| 구성요소 | 맡는 일 | 새 게임에서 넣을 것 |
+| --- | --- | --- |
+| AppBootstrap / AppConfig | Boot 진입·씬 경로·기본 설정 | 새 게임의 씬과 기본값 |
+| AppRoot | 서비스 조립·수명·준비 상태·씬 요청·설정 적용/저장 조정 | 공통 진입점으로 사용. 전투·성장 규칙은 넣지 않음 |
+| SettingsService / UserSettings | 옵션 스냅샷·검증·JSON 형식 | 기존 필드 값. 새 옵션 필드는 복사·검증·직렬화·버전 정책까지 함께 확장 |
+| GameSessionService / GamePayloadPolicy | 공통 세션 메타데이터·payload 규칙 | 별도 Gameplay 모델과 파생 정책 |
+| JsonRepository / JsonFileStore | 보호·백업 선택·명시적 복구 / 실제 파일 교체 | 필요할 때 계약에 맞는 ITextFileStore 구현 |
+| StarterScreen / LoadingOverlay / CanvasLayout | 예제 입력·상태 표시·전환 화면·안전 영역 | 게임 에셋과 자체 UI. 화면 타입을 Core에 추가하지 않음 |
+
+### 원칙과 실제 적용 패턴
+
+- **S:** 진입·요청 조정·데이터 정책·파일 IO·표시의 변경 이유를 분리했다. AppRoot는 앱 흐름의 조정자이며 게임 규칙의 저장소로 확대하지 않는다.
+- **O:** 저장소·실행 설정·payload 정책을 교체할 수 있다. 언어도 Core 변경 없이 게임별 식별자를 저장한다. 새 옵션 스키마·다중 슬롯까지 자동 확장되는 구조는 아니다.
+- **L:** 대체 구현은 원본 파일 보호, 실행 설정 복원·해제, 순수 검증 계약을 지켜야 한다. 기본 구현과 테스트 대체 구현을 확인했으며 임의의 외부 구현까지 보증하지 않는다.
+- **I:** ITextFileStore와 IRuntimeSettings는 현재 소비자에게 필요한 작은 경계다. 현재 요구에 추가 인터페이스 분할은 필요하지 않다.
+- **D:** 서비스는 저장소 추상화에 의존하고, AppRoot가 기본 구현을 조립한다. UI·Editor 의존이 Core로 역류하지 않는다.
+
+적용 구조는 AppRoot의 **Composition Root·Application Controller**, payload/변환 delegate의 **Strategy**, 플랫폼·파일 경계의 **Adapter**, 보호·복구를 묶은 제한된 **Repository**, 상태 이벤트의 **Observer**다. AppRoot.Instance는 중복을 제거하는 단일 Unity 실행 인스턴스다. AppState enum은 상태 모델이며 GoF State 구현은 아니다. 불변 세션·방어적 복사는 소유권 규칙이며 Memento·Prototype으로 분류하지 않는다. 현재 규모에서는 별도 DI 컨테이너·이벤트 버스·상태 클래스 계층을 추가하지 않는다.
+
+### 교체 시점·소유권·호출 규칙
+
+| 확장 경로 | 연결 시점·수명 | 지켜야 할 계약 |
+| --- | --- | --- |
+| ConfigureStorage | Begin 전 교체 가능. 외부 자원의 정리는 주입자 책임 | 없는 파일만 null. 검증·쓰기 실패 시 기존 주 파일 보호. 정상 교체는 .bak, 복구 교체는 기존 .bak과 원본 별도 보존 |
+| ConfigureRuntimeSettings | Begin 전 1회. AppRoot가 Dispose | 실패 시 직전 실행 상태 복원 시도, Dispose 시 최초 상태 복원·중복 해제 안전성 |
+| GamePayloadPolicy | Boot Inspector 또는 Begin 전 ConfigureGamePayload | Inspector 또는 수동 연결 중 한 경로만 사용. 양수 payload 버전·JSON 객체 초기값·순수 검증. 실행 중 정책 에셋 변경 금지 |
+| 사용자 UI / Gameplay | AppRoot가 준비된 뒤 Try* API 사용 | Settings.Current는 복사본, Game.Current는 읽기 전용. 저수준 서비스 호출은 씬 차단·설정 적용 조정을 우회할 수 있음 |
+
+일반 Player의 주입은 Boot의 단일 활성 연결 컴포넌트 Awake에서 AppRoot를 확보하고 Configure*를 호출하는 방식으로 구성한다. AppBootstrap.Start가 Begin을 호출한다. 기존 루트가 NotStarted일 때만 구성하고, Boot 재진입의 Ready 루트에는 Configure*를 다시 호출하지 않는다. 여러 Awake의 상대 순서에 의존하지 않는다. Editor의 Main 직접 Play는 저장소를 개발용 격리 경로로 교체하므로 일반 Player의 사용자 저장소 동작을 확인하는 경로로 사용하지 않는다.
+
+모든 앱 API는 Unity 메인 스레드에서 사용한다. StateChanged·Changed는 동기 호출이며 구독자는 해제와 자체 예외 처리를 책임진다. 씬 이동 Try*의 true는 요청 접수다. 실제 준비는 Ready·!IsTransitioning·목적 씬을 함께 확인한다. 저장 Try*는 동기 결과를 반환하며 성공 여부는 bool로 판단한다. StorageStatus는 파일을 읽어 판정한 상태다. Loaded 상태에서도 새 payload 저장은 실패할 수 있으므로 마지막 작업의 성공 여부와 구분한다. 안내 문자열을 프로그램 분기 조건으로 해석하지 않는다.
+
+검증기는 읽기·저장 과정에서 반복 호출될 수 있다. JSON 데이터 오류는 JsonException·InvalidDataException·FormatException·OverflowException으로 알릴 수 있으며, 나머지 코드 결함까지 저장 실패로 숨기지 않는다. 재화 차감이나 상태 갱신은 검증기 밖의 Gameplay가 담당한다.
+
+### 이번 보완의 범위
+
+언어는 1~64자이며 공백·제어 문자를 포함하지 않는 식별자로 저장한다. `ja`, `fr`, `zh-Hans`, `pt-BR`, 게임 전용 식별자를 지원하며 등록된 언어 목록·번역 존재 여부는 게임이 결정한다. 기본 UI는 en/ko 토글을 유지한다. 기존 settings schemaVersion 1은 호환되며 번역 기능을 구현한 것은 아니다.
+
+현재 전제는 단일 앱·세션·저장 슬롯, Boot/Title/Main 흐름, 동기 저장, 파일당 1MiB·JSON 깊이 32다. 다중 프로필·클라우드·Addressables·payload 마이그레이션은 요구가 정해질 때 확장한다. 관련 저장·설정 EditMode **57/57 통과, 실패·건너뜀 0개**를 확인했다. 새 언어의 기본값·저장·복원과 잘못된 식별자, 길이 경계, 변환 예외의 저장 실패·원본 보호를 검사했다. GUI·추가 Player 빌드·모바일 실기기는 이번 변경의 검증 범위에 포함하지 않았다. 로그와 상세 범위는 [통합 검증 기록](INTEGRATION_VALIDATION.md)에 남긴다.
+
 ## 데이터와 저장 계약
 
 - `UserSettings`: SO 기본값에서 복사하고 사용자 JSON에 음량·전체화면·언어 코드를 저장한다. 저장 시 플랫폼 적용을 먼저 확인하고 JSON 저장 실패에는 이전 실행 설정으로 복원한다.
@@ -120,6 +169,6 @@ SOL 6.1 작업의 기준 커밋 `8da41b6`을 검토해 사용자 UI 교체와 �
 
 ## 새 프로젝트 인계 기준
 
-v1.0.0 태그 또는 GitHub Template을 기준으로 새 저장소를 만든다. 복제 직후 Product Name·Company Name·앱 식별자와 저장 경로 충돌 여부, Cloud 연결, 플랫폼·렌더러·입력 요구사항을 새 게임에 맞춘다. `SO_AppConfig`와 씬 구성을 검사하고 Unity Test Runner·첫 실행·저장·재실행·Windows 빌드를 다시 확인한다. 어떤 프리셋 버전에서 출발했는지 새 게임의 기록에 남긴다. 향후 게임에서 바꾼 Core를 이 원본 프리셋에 자동으로 역반영하지 않는다.
+후속 범용성·설계 보완을 포함하려면 최신 main의 GitHub Template을 기준으로 새 저장소를 만든다. v1.0.0 태그·ZIP은 이전 배포 소스이며 이번 수정은 포함하지 않는다. 복제 직후 Product Name·Company Name·앱 식별자와 저장 경로 충돌 여부, Cloud 연결, 플랫폼·렌더러·입력 요구사항을 새 게임에 맞춘다. `SO_AppConfig`와 씬 구성을 검사하고 Unity Test Runner·첫 실행·저장·재실행·Windows 빌드를 다시 확인한다. 어떤 프리셋 버전에서 출발했는지 새 게임의 기록에 남긴다. 향후 게임에서 바꾼 Core를 이 원본 프리셋에 자동으로 역반영하지 않는다.
 
 세부 기록: [새 게임 시작 가이드](NEW_GAME_SETUP.md), [제작 가능 범위](GAME_CAPABILITY_BRIEF.md), [Bootstrap 사용 가이드](BOOTSTRAP.md), [설정·저장](SETTINGS_AND_SAVE.md), [공통 기능](COMMON_SERVICES.md), [Editor 개발 경로](EDITOR_WORKFLOW.md), [SOLID 점검](ARCHITECTURE_REVIEW.md), [통합 검증](INTEGRATION_VALIDATION.md), [로드맵](ROADMAP.md), [템플릿 체크리스트](TEMPLATE_CHECKLIST.md), [변경 이력](CHANGELOG.md).

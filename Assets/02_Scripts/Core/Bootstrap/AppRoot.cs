@@ -71,6 +71,10 @@ namespace StarterProject
         }
 
         /// <summary>초기화 전에 저장소를 주입합니다. 테스트는 실제 사용자 파일과 분리된 경로를 사용합니다.</summary>
+        /// <remarks>
+        /// Begin 전에는 저장소를 교체할 수 있으며 Editor Main 직접 Play도 이 경로로 격리 저장소를 설정합니다.
+        /// ITextFileStore는 해제 계약이 없으므로 외부 자원을 가진 저장소의 수명은 주입자가 관리합니다.
+        /// </remarks>
         public void ConfigureStorage(ITextFileStore fileStore)
         {
             if (State != AppState.NotStarted) throw new InvalidOperationException("Configure storage before Begin.");

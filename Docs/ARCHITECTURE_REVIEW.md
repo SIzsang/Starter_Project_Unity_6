@@ -1,26 +1,81 @@
 # 공통 기반 설계 점검 — SOLID와 적용 패턴
 
-2026-09-23 기준. 이 프로젝트의 목적은 장르 규칙을 정하지 않은 Unity 게임 제작용 스타터다. 설계 패턴 하나를 전체에 강제하지 않고 변경 이유가 다른 경계에만 작은 추상화를 둔다.
+최종 점검: 2026-10-04. 검토 기준은 `bfd1929`이며 이번 후속 보완을 함께 기록한다. 목적은 장르 규칙을 강제하지 않는 Unity 스타터다. 캐릭터·스테이지·전투 등의 게임별 구현은 이번 범위에 포함하지 않는다.
 
-| 원칙 | 현재 판단과 적용 |
-| --- | --- |
-| 단일 책임 | `AppBootstrap`은 진입, `AppRoot`는 앱 흐름 조정, `SettingsService`와 `GameSessionService`는 각 데이터 정책, `JsonFileStore`는 파일 교체, UI 컴포넌트는 표시·입력을 맡는다. `AppRoot`는 여러 서비스를 **조정**하므로 저장 형식이나 화면 구현을 직접 소유하지 않는다. |
-| 개방·폐쇄 | `ITextFileStore`, `IRuntimeSettings`, 게임 payload 검증 함수를 바꿔 저장 위치·플랫폼 적용·게임별 데이터 규칙을 교체할 수 있다. 단일 슬롯과 `en`/`ko` 예제 UI는 시작 구현이며 모든 게임의 저장·현지화 정책으로 간주하지 않는다. |
-| 리스코프 치환 | 대체 저장소는 읽기·쓰기 실패를 보고하고 기존 파일을 보존해야 한다. 대체 실행 설정 구현은 실패 시 직전 적용 상태의 복원을 시도하고 복구 실패도 예외로 알려야 한다. 이 계약을 실패 주입 테스트로 확인한다. |
-| 인터페이스 분리 | `ITextFileStore`는 텍스트 읽기·원자적 쓰기, `IRuntimeSettings`는 설정 적용·수명 해제만 노출한다. 게임별 큰 서비스 인터페이스나 범용 이벤트 버스는 두지 않는다. |
-| 의존성 역전 | Core의 저장·플랫폼 적용 정책은 작은 인터페이스에 의존한다. `AppRoot`는 기본 구현을 조립하는 진입점이고, UI는 Core 상태를 구독한다. Core에서 UI·Editor 어셈블리를 참조하지 않는다. |
+## 판단
 
-## 선택한 패턴과 변경 이유
+현재 규모에서는 책임과 의존 방향이 대체로 적절하다. 저장 위치·실행 설정·게임 payload·화면을 바꾸는 경로가 있고, 예제 화면 검사는 공통 초기화에서 분리됐다. 다만 Core의 언어 제한과 저장 검증 예외 처리에 실제 확장 장애가 있어 보완했다. SOLID를 모든 요구에 대한 완전한 확장성 보장으로 해석하지 않는다.
 
-- **Composition Root / Application Controller:** `AppRoot`에서 공통 서비스의 생성·수명·씬 전환을 조정한다. Unity 씬 수명 경계가 한곳에 있어 추가 DI 컨테이너 없이도 교체와 테스트가 가능하다.
-- **Repository + Adapter:** `JsonRepository<T>`가 버전·복구 정책을 담당하고 `ITextFileStore`가 디스크 접근을 격리한다. `IRuntimeSettings`가 Unity 전역 음량·화면 API를 격리한다. 실제 저장 형식과 게임 payload는 별개로 확장한다.
-- **Observer:** `SettingsService.Changed`와 `AppRoot.StateChanged`로 설정 적용과 화면 갱신을 연결한다. 해제 시 구독을 제거한다.
-- **보상 가능한 설정 변경:** 이전에는 JSON 저장 후 플랫폼 적용이 실패하면 새 설정 파일만 남았다. 이제 `AppRoot.TrySaveSettings`가 값을 검증하고 플랫폼에 먼저 적용한 뒤 저장한다. 저장이 실패하면 이전 실행 설정을 다시 적용하며, 플랫폼 적용이 실패하면 새 JSON을 쓰지 않고 앱을 실패 상태로 전환한다. `SettingsService.Reload()`·백업 복구의 변경 알림은 기존처럼 실행 설정에 반영된다. 파일 저장과 화면 장치는 단일 원자적 트랜잭션이 아니므로 보상 적용마저 실패하면 앱을 실패 상태로 전환한다.
+| 원칙 | 코드 근거 | 판단과 한계 |
+| --- | --- | --- |
+| S — 단일 책임 | AppBootstrap은 진입, AppRoot는 서비스 조립·수명·요청 조정, SettingsService/GameSessionService는 데이터 정책, JsonRepository는 보호·복구, JsonFileStore는 파일 교체, UI는 표시·입력 | 현재 책임 구분은 적절하다. 서비스가 자기 DTO의 JSON 변환을 소유하는 것은 같은 저장 형식의 변경 이유에 속한다. 같은 파일에 여러 타입이 있는 것 자체를 위반으로 보지 않는다. |
+| O — 개방·폐쇄 | ITextFileStore·IRuntimeSettings·GamePayloadPolicy 및 변환/검증 delegate | 언어의 en/ko 고정을 제거해 공통 코드 수정 없이 다른 식별자를 저장한다. 새 옵션 필드·다중 슬롯·다른 시작 흐름은 기존 확장점의 범위를 넘으므로 별도 설계가 필요하다. |
+| L — 리스코프 치환 | 저장소의 원본 보호, 실행 설정의 실패 시 복원 시도·Dispose, 반복 가능한 payload 검증 | 기본 구현과 테스트 대체 구현의 계약을 확인한다. 인터페이스를 구현했다는 사실만으로 모든 외부 구현의 대체 가능성이 보장되지는 않는다. 저장 시 FormatException/OverflowException도 데이터 오류 결과로 처리하도록 읽기와 일치시켰다. |
+| I — 인터페이스 분리 | ITextFileStore의 읽기/안전 쓰기, IRuntimeSettings의 Apply/Dispose | 소비자에게 필요한 작은 경계다. 현재 소비자가 함께 쓰는 기능을 추가 인터페이스로 나눌 필요는 없다. |
+| D — 의존성 역전 | UI → Core, Editor → Core/UI, Core의 UI·Editor 참조 없음. 서비스는 ITextFileStore에 의존 | AppRoot에서 기본 구현을 생성하는 것은 조립 지점의 역할이다. Core에는 Unity·Newtonsoft 의존성이 남으므로 Unity 밖에서 그대로 쓰는 순수 .NET 라이브러리는 아니다. |
 
-장르별 런·사망·영구 성장·자동 저장, 다중 슬롯, 번역 콘텐츠와 Player 입력 맵은 게임별 확장 영역이다. 이를 공통 Core의 전략 인터페이스로 미리 만들면 사용하지 않는 추상화와 설정 비용이 늘어난다.
+## 책임과 의존 관계
 
-## 검증과 다음 단계
+```mermaid
+flowchart LR
+    Gameplay["새 게임 Gameplay"] --> Core["StarterProject.Core"]
+    UI["StarterProject.UI"] --> Core
+    Editor["StarterProject.Editor / Editor 전용"] --> Core
+    Editor --> UI
+    Core --> Platform["Unity API / Newtonsoft.Json"]
+```
 
-Unity 6000.3.16f1 격리 복제본에서 EditMode 46개·PlayMode 27개가 모두 통과했다. 플랫폼 적용 실패 시 이전 JSON 불변, 디스크 쓰기 실패 시 이전 실행 값 복원을 포함한다. 변경된 Core로 Windows x64 Development 빌드가 성공했고, 별도 Player 프로세스에서 첫 실행 저장과 재실행 이어하기가 통과했다. 로그는 Git 제외 `Logs/SolidEditMode.xml`, `Logs/SolidPlayMode.xml`, `Logs/SolidWindowsBuild.log`, 복제본 `Builds/Windows/SolidPlayerCreate.log`·`SolidPlayerResume.log`에 있다.
+UI 어셈블리는 uGUI·Input System, Editor 어셈블리는 예제 구성용 UI·Input System·URP도 참조한다. 사용자 화면으로 교체해도 Core에 해당 화면 타입을 추가하지 않는다. 프로젝트 템플릿이므로 예제 UI 코드 어셈블리 자체를 삭제할 때에는 Editor 생성 도구의 참조도 정리해야 한다.
 
-7단계의 남은 확인은 원본 Editor GUI 직접 Play·메뉴와 Windows의 실제 화면·오디오·물리 입력이다. 저장 중 강제 종료 실험에서 남은 `.tmp`는 이후 정리 정책을 검토한다. 자동 검증이나 빌드 성공만으로 이 현장 확인을 완료 처리하지 않는다.
+| 구성요소 | 소유 책임 | 확장할 때의 기준 |
+| --- | --- | --- |
+| AppBootstrap / AppConfig | 시작 요청, 세 역할 씬·기본 설정 | Boot·Title·Main은 현재 앱 흐름의 전제. 설정 에셋은 실행 중 상태 저장소로 사용하지 않는다. |
+| AppRoot | 서비스 생성·해제, 준비 상태, 씬 전환 차단, 설정 저장과 플랫폼 적용 조정 | 게임 규칙을 추가하지 않는다. 사용자 UI의 요청은 Try* API로 연결한다. |
+| SettingsService / UserSettings | 옵션 스냅샷·검증·저장 형식 | 현재 세 필드다. 새 필드는 Copy·검증·JSON 읽기/쓰기·기본값·버전 호환을 함께 다룬다. |
+| GameSessionService / GamePayloadPolicy | 공통 세션 메타데이터와 게임 데이터 검증 정책 | 게임별 필드는 payload와 파생 정책에 둔다. payload 버전이 다르면 자동 변환하지 않고 보호한다. |
+| JsonRepository<T> | 주 파일/백업 선택, 덮어쓰기 보호, 명시적 복구 | 실제 버전 해석은 서비스의 deserialize 함수가 담당한다. Repository는 해석 결과를 받아 보호·복구한다. |
+| JsonFileStore | 파일 크기·경로·임시 쓰기·검증·교체 | 다른 저장소도 아래 계약을 충족해야 한다. 동기 호출을 장시간 네트워크 작업으로 치환하면 사용성이 유지되지 않는다. |
+| StarterScreen / LoadingOverlay / CanvasLayout | 예제 입력·상태 표시, 로딩, 해상도·안전 영역 | 자체 화면은 Core API로 연결한다. 예제에 남는 언어 토글·버튼 배치는 게임 요구에 맞게 교체한다. |
+
+## 적용한 디자인 패턴
+
+| 패턴/구조 | 실제 적용 | 사용 이유와 범위 |
+| --- | --- | --- |
+| Composition Root + Application Controller | AppRoot | 기본 구현을 조립하고 앱 단위 수명·명령·전환을 조정한다. 전역 서비스 등록소를 제공하는 DI 컨테이너는 아니다. |
+| Strategy 형태의 정책 | GamePayloadPolicy, serialize/deserialize/validator delegate | 저장 데이터 규칙을 Core 변경 없이 교체한다. ScriptableObject는 정책 연결 수단이며 실행 세션 상태를 넣지 않는다. |
+| Adapter | UnityRuntimeSettings, ITextFileStore의 구현 | Unity 전역 설정과 파일 접근을 별도 경계로 감싸 테스트와 구현 교체를 허용한다. |
+| 제한된 Repository 형태 | JsonRepository<T> | 파일 영속화·보호·복구를 공통화한다. 도메인 컬렉션·쿼리·작업 단위까지 제공하는 일반 Repository 전체 구현은 아니다. |
+| Observer | AppRoot.StateChanged, SettingsService.Changed | 확정된 상태를 화면·플랫폼에 전달한다. 구독 해제와 콜백 실패 처리는 사용자가 지켜야 할 계약이다. |
+| 단일 Unity 실행 인스턴스 | AppRoot.Instance·중복 제거·DontDestroyOnLoad | 한 앱의 한 세션을 조정한다. 모든 클래스를 전역 접근으로 연결하는 근거로 확대하지 않는다. |
+
+AppState enum과 분기는 상태 모델이며 별도 상태 객체를 사용하는 GoF State 패턴은 아니다. GameSession 불변 스냅샷과 UserSettings 방어적 복사는 데이터 소유권 규칙이다. 이를 Memento·Prototype 구현이라고 부르지 않는다. 현재 요구에는 추가 DI 컨테이너·범용 이벤트 버스·상태 클래스 계층을 도입할 근거가 없다.
+
+## 확장 계약과 연결 시점
+
+| 확장 지점 | 연결 시점·수명 | 필수 계약 |
+| --- | --- | --- |
+| ConfigureStorage(ITextFileStore) | Begin 전 NotStarted에서 교체 가능. 저장소 자원은 주입자 소유 | 없는 파일은 null, IO/권한 오류는 예외. 검증·쓰기 실패 시 기존 주 파일 보존. 정상 교체의 .bak 및 명시적 복구의 원본 별도 보존 지원. AppRoot가 Dispose하지 않음. |
+| ConfigureRuntimeSettings(IRuntimeSettings) | Begin 전 1회. AppRoot가 해제 책임 소유 | Apply 실패 시 직전 실행 상태 복원을 시도하고 실패를 예외로 알림. Dispose는 최초 상태 복원·중복 해제 안전성을 제공. |
+| GamePayloadPolicy | Boot AppBootstrap Inspector 또는 Begin 전 ConfigureGamePayload | Inspector 또는 수동 연결 중 한 경로만 사용. JSON 객체 초기값, 양수 버전, 부작용 없이 반복 가능한 검증. 플레이 도중 정책 에셋을 변경하지 않음. |
+| 사용자 UI | 준비 상태를 확인한 뒤 AppRoot.Try* 사용 | Settings.Current는 복사본, Game.Current는 읽기 전용 스냅샷. Game/Settings의 저수준 메서드를 직접 호출하면 앱의 씬 차단·플랫폼 적용 조정을 우회할 수 있음. |
+
+일반 Player에서 저장소나 실행 설정을 교체하려면 Boot 씬의 활성 오브젝트에 단일 연결 컴포넌트를 두고 Awake에서 AppRoot를 찾거나 생성해 Configure*를 호출한다. AppBootstrap.Start가 Begin을 담당한다. 기존 루트의 State가 NotStarted일 때만 Configure*를 호출하며, Boot 재진입의 Ready 루트는 다시 구성하지 않는다. 여러 컴포넌트의 Awake 순서에 의존하지 않도록 조립을 한곳에 모은다. 이는 활성 씬 오브젝트의 Awake가 Start보다 앞서는 Unity 수명 주기를 사용한다. [Unity Awake 실행 순서](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/MonoBehaviour.Awake.html)
+
+Editor의 Main 직접 Play는 Boot 시작 전에 저장소를 개발용 격리 경로로 바꾼다. 따라서 일반 Player용 저장소를 주입하더라도 이 개발 경로가 해당 저장소의 동작을 검증하는 것은 아니다.
+
+payload의 예상 가능한 데이터 오류는 JsonException·InvalidDataException·FormatException·OverflowException으로 알린다. 검증기는 읽기와 저장 중 여러 번 실행되므로 재화 차감·상태 갱신·로그인 요청 같은 부작용을 넣지 않는다. 나머지 코드 결함 예외까지 일반적인 저장 실패로 숨기지 않는다.
+
+StateChanged와 Changed는 호출 스레드에서 동기 실행되며 앱 API는 Unity 메인 스레드에서 사용한다. 구독자는 OnDisable/OnDestroy에서 해제하고 자체 작업의 예외를 처리한다. 구독자 예외는 자동 격리하지 않는다. 비동기 씬 이동의 Try*가 true이면 요청을 접수했다는 뜻이며, 화면 준비는 Ready와 !IsTransitioning 및 실제 목적 씬을 함께 확인한다. 저장 Try*는 동기 결과이며 성공 여부는 반환 bool로 판단한다. StorageStatus는 저장 파일을 읽어 판정한 상태로, 유효 파일을 가진 Loaded 상태에서도 새 payload 저장이 실패할 수 있다. 안내 문자열 자체를 프로그램 계약으로 파싱하지 않는다.
+
+## 이번 보완과 검증
+
+- 언어 식별자를 최대 64자, 비어 있지 않고 공백·제어 문자가 없는 값으로 통일했다. Core는 지원 언어 목록·번역 유무를 판단하지 않는다. 기본 예제의 en/ko 토글은 유지한다. settings schemaVersion 1과 기존 en/ko 저장은 호환된다.
+- 쓰기 검증기의 FormatException·OverflowException은 실패 결과로 반환하고 기존 저장·세션을 유지한다. 읽기의 Invalid 처리와 일치한다.
+- 공개 저장소·payload 정책의 반복성·오류·수명 계약을 보강했다.
+- Unity 6000.3.16f1에서 PersistenceTests·RuntimeSettingsTests **57/57 통과, 실패·건너뜀 0개**. 새 언어·잘못된 값·길이 경계·변환 예외·원본 보호·코드 결함 예외 전파를 포함한다. 결과는 `Logs/SolidContractsEditMode.xml`·`.log`다. 저장소는 임시 경로로 격리했다. GUI·새 Player 빌드·모바일 실기기 범위는 늘리지 않았다.
+
+## 의도된 범위와 과거 근거
+
+현재 구현은 단일 AppRoot·세션·저장 슬롯, Boot/Title/Main 앱 흐름, 동기 메인 스레드 저장, 파일당 1MiB·JSON 깊이 32, uGUI 예제·새 Input System이다. 다중 슬롯·프로필·비동기 클라우드·Addressables 씬·새 설정 스키마·payload 마이그레이션은 해당 게임의 실제 요구가 정해질 때 설계한다.
+
+2026-09-23 당시 EditMode 46개·PlayMode 27개, Windows 빌드·별도 프로세스 저장/이어하기가 통과했다. 2026-10-04 직전 UI 재사용 보완은 EditMode 18개 항목과 PlayMode 27개를 확인했다. 이 수치를 이번 변경의 새 실행 결과로 재사용하지 않는다. 상세 기록은 [통합 검증](INTEGRATION_VALIDATION.md), [이전 재사용성 검토](REUSABILITY_REVIEW.md), [Summary](PRESET_SUMMARY.md)를 따른다.

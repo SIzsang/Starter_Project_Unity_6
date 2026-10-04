@@ -10,7 +10,7 @@
 
 새 게임을 시작하거나 Title로 돌아가는 것만으로는 저장하지 않는다. Title로 돌아가면 저장하지 않은 세션 변경은 폐기된다. 예제 진행 데이터는 세션 ID·생성/저장 시각과 빈 JSON payload이며, 실제 게임 규칙은 포함하지 않는다.
 
-5단계에서 음량·전체화면 값을 실제 시스템에 연결했다. 저장 성공과 설정 복구 후 즉시 적용하고, 저장 실패 시 기존 적용 값을 유지한다. 지원 언어 코드는 `en`, `ko`이며 번역 콘텐츠는 아직 연결하지 않아 UI 자체는 영어다. 자세한 내용은 [공통 기능 가이드](COMMON_SERVICES.md)를 따른다.
+5단계에서 음량·전체화면 값을 실제 시스템에 연결했다. 저장 성공과 설정 복구 후 즉시 적용하고, 저장 실패 시 기존 적용 값을 유지한다. 기본 UI는 `en`/`ko`를 전환하지만 Core는 1~64자이며 공백·제어 문자가 없는 언어 식별자를 저장한다. `ja`, `zh-Hans` 또는 게임 전용 식별자도 사용할 수 있다. 지원 언어 목록·번역 콘텐츠는 게임이 정하며 현재 예제 UI는 영어다. 자세한 내용은 [공통 기능 가이드](COMMON_SERVICES.md)를 따른다.
 
 ## 기본값과 소유권
 
@@ -59,13 +59,13 @@
 
 ## 게임별 확장
 
-`GameSessionService`는 게임 규칙을 모르는 저장 기반이다. `Gameplay`에서 `GamePayloadPolicy` 파생 ScriptableObject를 만들고 Boot의 `AppBootstrap`에 연결해 초기 JSON·`PayloadVersion`·검증 규칙을 지정한다. 검증기는 잘못된 데이터에 `JsonException` 또는 `InvalidDataException`을 던진다. 실제 게임 상태는 JSON 객체로 만들어 `AppRoot.TrySaveGame(payloadJson)`에 전달하고, `Continue` 뒤 `AppRoot.Game.Current.PayloadJson`을 게임 모델로 복원한다. Core 코드를 수정할 필요는 없다. [새 게임 시작 가이드](NEW_GAME_SETUP.md)
+`GameSessionService`는 게임 규칙을 모르는 저장 기반이다. `Gameplay`에서 `GamePayloadPolicy` 파생 ScriptableObject를 만들고 Boot의 `AppBootstrap`에 연결해 초기 JSON·`PayloadVersion`·검증 규칙을 지정한다. 검증기는 읽기·저장 과정에서 반복 호출되어도 상태를 바꾸지 않아야 한다. 잘못된 데이터에 `JsonException`·`InvalidDataException`·`FormatException`·`OverflowException`을 던지면 실패 결과로 처리하고 기존 저장을 보호한다. 다른 코드 결함 예외까지 일반 실패로 숨기지는 않는다. 실제 게임 상태는 JSON 객체로 만들어 `AppRoot.TrySaveGame(payloadJson)`에 전달하고, `Continue` 뒤 `AppRoot.Game.Current.PayloadJson`을 게임 모델로 복원한다. Core 코드를 수정할 필요는 없다. [새 게임 시작 가이드](NEW_GAME_SETUP.md)
 
 2026-10-04 최신 main부터 저장은 활성 세션이 있는 Main·추가 Gameplay 씬에서 가능하다. Boot·Title·AppRoot 전환 중에는 차단한다. v1.0.0의 AppRoot 저장 진입점은 Main에서만 허용했다. Continue는 계속 Main으로 진입하며 실제 스테이지 재진입은 게임 코드가 payload를 읽어 결정한다. 저장 파일 형식·버전·백업·교체 확인 정책은 유지한다.
 
 현재는 단일 슬롯·단일 앱 소유권·메인 스레드 호출을 전제로 한다. 파일 읽기/쓰기는 동기이며 한 파일 최대 1 MiB, JSON 깊이 최대 32다. 동일 저장소/리포지토리 내부 작업은 잠금으로 직렬화하지만 여러 앱 프로세스가 같은 경로를 공유하는 동시 편집은 지원하지 않는다. 대규모 데이터·자동 저장·다중 슬롯·클라우드 저장은 요구가 생기면 추가한다.
 
-`ITextFileStore` 경계로 실패를 주입할 수 있고, `AppRoot.ConfigureStorage`는 Begin 전에 테스트 저장소를 전달할 때 사용한다. 테스트는 실제 사용자 저장 폴더를 사용하지 않는다.
+`ITextFileStore` 구현을 `AppRoot.ConfigureStorage`로 Begin 전에 주입할 수 있다. 파일 부재만 null로 반환하고, 검증·쓰기 실패에는 기존 주 파일을 보호하며 백업·명시적 복구 보존 계약을 지킨다. AppRoot는 저장소를 Dispose하지 않으므로 외부 자원의 수명은 주입자가 관리한다. Editor의 Main 직접 Play는 저장소를 격리된 개발 경로로 교체한다. 테스트도 실제 사용자 저장 폴더를 사용하지 않는다. 연결 시점과 대체 구현의 상세 계약은 [설계 점검](ARCHITECTURE_REVIEW.md)을 따른다.
 
 ## 코드 명명 규칙
 

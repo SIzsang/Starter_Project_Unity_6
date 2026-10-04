@@ -8,16 +8,28 @@ namespace StarterProject
     [Serializable]
     public sealed class UserSettings
     {
+        public const int MaxLanguageIdentifierLength = 64;
         [Range(0, 1)] public float masterVolume = 1;
         public bool fullscreen = true;
+        /// <summary>게임이 해석하는 언어 식별자입니다. 실제 지원 언어와 번역 콘텐츠는 게임에서 정합니다.</summary>
         public string language = "en";
         public UserSettings Copy() => new UserSettings { masterVolume = masterVolume, fullscreen = fullscreen, language = language };
+
+        /// <summary>식별자의 저장 가능한 형태만 확인하며 언어 등록 목록이나 BCP 47 규칙을 강제하지 않습니다.</summary>
+        public static bool IsValidLanguageIdentifier(string value)
+        {
+            if (string.IsNullOrEmpty(value) || value.Length > MaxLanguageIdentifierLength) return false;
+            foreach (var character in value)
+                if (char.IsWhiteSpace(character) || char.IsControl(character)) return false;
+            return true;
+        }
 
         public void Validate()
         {
             if (float.IsNaN(masterVolume) || float.IsInfinity(masterVolume) || masterVolume < 0 || masterVolume > 1)
                 throw new ArgumentException("Master volume must be between 0 and 1.");
-            if (language != "en" && language != "ko") throw new ArgumentException("Supported language codes are en and ko.");
+            if (!IsValidLanguageIdentifier(language))
+                throw new ArgumentException("Language identifier must contain 1 to 64 characters without whitespace or control characters.");
         }
     }
 
@@ -78,7 +90,7 @@ namespace StarterProject
             var languageToken = jsonObject["language"];
             if (languageToken != null)
             {
-                if (languageToken.Type == JTokenType.String && (languageToken.Value<string>() == "en" || languageToken.Value<string>() == "ko"))
+                if (languageToken.Type == JTokenType.String && UserSettings.IsValidLanguageIdentifier(languageToken.Value<string>()))
                     settings.language = languageToken.Value<string>();
                 else hasInvalidFields = true;
             }

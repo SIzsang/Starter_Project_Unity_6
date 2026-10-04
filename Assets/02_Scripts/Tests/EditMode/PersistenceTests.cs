@@ -39,7 +39,7 @@ namespace StarterProject.Tests
 
         [TestCase("{\"schemaVersion\":1}", 0.75f, true, "ko")]
         [TestCase("{\"schemaVersion\":1,\"masterVolume\":0,\"fullscreen\":false,\"language\":\"en\"}", 0f, false, "en")]
-        [TestCase("{\"schemaVersion\":1,\"masterVolume\":9,\"fullscreen\":false,\"language\":\"invalid\"}", 0.75f, false, "ko")]
+        [TestCase("{\"schemaVersion\":1,\"masterVolume\":9,\"fullscreen\":false,\"language\":\" \"}", 0.75f, false, "ko")]
         [TestCase("{\"schemaVersion\":1,\"masterVolume\":\"0\",\"fullscreen\":\"false\",\"language\":null}", 0.75f, true, "ko")]
         public void PartialSettingsPreserveDefaultsAndValidateFieldTypes(string json, float volume, bool fullscreen, string language)
         {
@@ -49,6 +49,69 @@ namespace StarterProject.Tests
             Assert.That(settings.Current.fullscreen, Is.EqualTo(fullscreen));
             Assert.That(settings.Current.language, Is.EqualTo(language));
             Assert.That(File.ReadAllText(GetTestFilePath(SettingsService.FileName)), Is.EqualTo(json));
+        }
+
+        [TestCase("ja")]
+        [TestCase("fr")]
+        [TestCase("zh-Hans")]
+        [TestCase("pt-BR")]
+        [TestCase("game:pirate")]
+        public void GameLanguageIdentifiersWorkAsDefaultsAndSurviveSaveReload(string language)
+        {
+            var defaults = CreateDefaultSettings();
+            defaults.language = language;
+            var settings = new SettingsService(defaults, fileStore);
+            Assert.That(settings.Current.language, Is.EqualTo(language));
+            Assert.That(settings.TryApplyAndSave(settings.Current), Is.True, settings.Message);
+            var restarted = new SettingsService(CreateDefaultSettings(), fileStore);
+            Assert.That(restarted.Current.language, Is.EqualTo(language));
+            Assert.That(restarted.Status, Is.EqualTo(StorageStatus.Loaded));
+        }
+
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase(" ")]
+        [TestCase("en us")]
+        [TestCase("en\u0001")]
+        public void InvalidLanguageIdentifiersAreRejectedAndLoadedFieldsFallBack(string language)
+        {
+            var settings = new SettingsService(CreateDefaultSettings(), fileStore);
+            Assert.That(settings.TryApplyAndSave(settings.Current), Is.True, settings.Message);
+            var before = File.ReadAllText(GetTestFilePath(SettingsService.FileName));
+            var candidate = settings.Current;
+            candidate.language = language;
+            Assert.That(settings.TryApplyAndSave(candidate), Is.False);
+            Assert.That(settings.Current.language, Is.EqualTo("ko"));
+            Assert.That(File.ReadAllText(GetTestFilePath(SettingsService.FileName)), Is.EqualTo(before));
+
+            var external = JObject.Parse(before);
+            external["language"] = language;
+            var invalidText = external.ToString();
+            WriteSettingsFile(invalidText);
+            settings.Reload();
+            Assert.That(settings.Current.language, Is.EqualTo("ko"));
+            Assert.That(settings.Message, Does.Contain("Invalid setting fields"));
+            Assert.That(File.ReadAllText(GetTestFilePath(SettingsService.FileName)), Is.EqualTo(invalidText));
+        }
+
+        [Test]
+        public void LanguageIdentifierLengthLimitAppliesToSaveAndReload()
+        {
+            var settings = new SettingsService(CreateDefaultSettings(), fileStore);
+            var candidate = settings.Current;
+            candidate.language = new string('x', UserSettings.MaxLanguageIdentifierLength);
+            Assert.That(settings.TryApplyAndSave(candidate), Is.True, settings.Message);
+            var restarted = new SettingsService(CreateDefaultSettings(), fileStore);
+            Assert.That(restarted.Current.language, Is.EqualTo(candidate.language));
+            var before = File.ReadAllText(GetTestFilePath(SettingsService.FileName));
+            candidate.language += "x";
+            Assert.That(settings.TryApplyAndSave(candidate), Is.False);
+            Assert.That(File.ReadAllText(GetTestFilePath(SettingsService.FileName)), Is.EqualTo(before));
+            var external = JObject.Parse(before);
+            external["language"] = candidate.language;
+            WriteSettingsFile(external.ToString());
+            settings.Reload();
+            Assert.That(settings.Current.language, Is.EqualTo("ko"));
         }
 
         [Test]
@@ -276,6 +339,42 @@ namespace StarterProject.Tests
             Assert.That(game.TrySave("{\"large\":\"" + new string('x', JsonFileStore.MaxFileSizeBytes) + "\"}"), Is.False);
             Assert.That(File.ReadAllText(GetTestFilePath(GameSessionService.FileName)), Is.EqualTo(before));
             Assert.That(Directory.GetFiles(testDirectoryPath, "*.tmp"), Is.Empty);
+        }
+
+        [TestCase("not-a-number")]
+        [TestCase("2147483648")]
+        public void PayloadConversionFailuresReturnFalseAndPreserveSessionAndFile(string invalidValue)
+        {
+            var game = new GameSessionService(fileStore, payloadValidator: text =>
+            {
+                var value = JObject.Parse(text)["value"];
+                if (value != null) int.Parse(value.Value<string>(), System.Globalization.CultureInfo.InvariantCulture);
+            });
+            game.StartNew();
+            Assert.That(game.TrySave(), Is.True, game.Message);
+            var current = game.Current;
+            var before = File.ReadAllText(GetTestFilePath(GameSessionService.FileName));
+            var invalidPayload = new JObject { ["value"] = invalidValue }.ToString();
+            Assert.That(game.TrySave(invalidPayload), Is.False);
+            Assert.That(game.Current, Is.SameAs(current));
+            Assert.That(File.ReadAllText(GetTestFilePath(GameSessionService.FileName)), Is.EqualTo(before));
+            Assert.That(Directory.GetFiles(testDirectoryPath, "*.tmp"), Is.Empty);
+        }
+
+        [Test]
+        public void PayloadValidatorProgrammingErrorsAreNotHiddenAsDataFailures()
+        {
+            var game = new GameSessionService(fileStore, payloadValidator: text =>
+            {
+                if (JObject.Parse(text)["value"] != null) throw new InvalidOperationException("Policy implementation failed.");
+            });
+            game.StartNew();
+            Assert.That(game.TrySave(), Is.True, game.Message);
+            var current = game.Current;
+            var before = File.ReadAllText(GetTestFilePath(GameSessionService.FileName));
+            Assert.Throws<InvalidOperationException>(() => game.TrySave("{\"value\":1}"));
+            Assert.That(game.Current, Is.SameAs(current));
+            Assert.That(File.ReadAllText(GetTestFilePath(GameSessionService.FileName)), Is.EqualTo(before));
         }
 
         [Test]

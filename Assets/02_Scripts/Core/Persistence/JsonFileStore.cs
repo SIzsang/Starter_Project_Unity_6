@@ -23,10 +23,24 @@ namespace StarterProject
         public UnsupportedDataVersionException(string message) : base(message) { }
     }
 
-    /// <summary>작은 파일 경계입니다. 쓰기 실패 시 기존 주 파일을 보존하는 구현만 대체할 수 있습니다.</summary>
+    /// <summary>작은 동기 텍스트 저장 경계입니다. AppRoot와 Repository는 구현을 Dispose하지 않습니다.</summary>
+    /// <remarks>해제할 자원이 있는 대체 구현은 주입자가 수명을 관리합니다. 다중 프로세스의 동시 쓰기는 계약에 포함하지 않습니다.</remarks>
     public interface ITextFileStore
     {
+        /// <summary>주어진 파일명 또는 백업 파일명을 읽습니다. 파일이 없을 때만 null을 반환합니다.</summary>
+        /// <exception cref="IOException">잠금·저장 위치 등 접근 실패입니다. 파일 부재로 숨기지 않습니다.</exception>
+        /// <exception cref="UnauthorizedAccessException">접근 권한이 없습니다.</exception>
+        /// <exception cref="InvalidDataException">파일이 구현의 데이터 크기 제한 등을 위반합니다.</exception>
         string ReadAllText(string fileName);
+
+        /// <summary>기록할 내용을 검증한 뒤 교체합니다. 검증이 false를 반환하거나 예외가 나면 기존 주 파일을 보존합니다.</summary>
+        /// <param name="fileName">디렉터리 부분이 없는 파일명입니다.</param>
+        /// <param name="contents">새로 기록할 전체 텍스트입니다.</param>
+        /// <param name="validateContents">교체 전 저장 내용을 확인합니다. 반복 호출해도 안전하고 부작용이 없어야 합니다.</param>
+        /// <param name="preserveOriginal">false이면 기존 주 파일을 .bak으로 보관합니다. true이면 기존 .bak을 유지하고 원본을 별도 preserved 사본으로 보관합니다.</param>
+        /// <exception cref="IOException">쓰기·교체 실패입니다. 기존 주 파일을 먼저 삭제하는 우회를 하지 않습니다.</exception>
+        /// <exception cref="UnauthorizedAccessException">쓰기 권한이 없습니다.</exception>
+        /// <exception cref="InvalidDataException">크기 제한 또는 저장 내용 검증에 실패했습니다. 검증기가 던진 예외도 호출자에게 전달합니다.</exception>
         void WriteAllText(string fileName, string contents, Func<string, bool> validateContents, bool preserveOriginal);
     }
 
@@ -212,7 +226,8 @@ namespace StarterProject
                 return true;
             }
             catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is JsonException
-                || exception is InvalidDataException || exception is UnsupportedDataVersionException || exception is ArgumentException || exception is NotSupportedException)
+                || exception is InvalidDataException || exception is UnsupportedDataVersionException || exception is ArgumentException || exception is NotSupportedException
+                || exception is FormatException || exception is OverflowException)
             { errorMessage = "Save failed. " + exception.Message; return false; }
         }
     }

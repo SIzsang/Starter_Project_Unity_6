@@ -15,6 +15,11 @@ namespace StarterProject
         public virtual string CreateInitialPayload() => "{}";
 
         /// <summary>저장 또는 불러오려는 JSON 객체의 게임별 필드를 검사합니다.</summary>
+        /// <remarks>
+        /// 읽기와 저장 검증에서 여러 번 호출되므로 상태 변경이나 파일 쓰기 없이 반복 실행 가능해야 합니다.
+        /// 잘못된 데이터는 JsonException, InvalidDataException, FormatException 또는 OverflowException으로 알립니다.
+        /// 프로그래밍 오류 등 그 밖의 예외를 일반적인 데이터 거부로 취급하지 않습니다.
+        /// </remarks>
         public virtual void ValidatePayload(string payloadJson) { }
     }
 }

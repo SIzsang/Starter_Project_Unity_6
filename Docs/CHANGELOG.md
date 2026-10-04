@@ -2,6 +2,8 @@
 
 ## 미배포 보완 — 2026-10-04
 
+코드 구조 재검토에서 Core의 언어 en/ko 제한을 제거하고 게임별 식별자의 저장·복원을 허용했다. 저장 검증의 FormatException·OverflowException을 읽기와 같은 데이터 오류로 처리해 기존 저장·세션을 보호한다. 저장소·payload의 수명·반복 검증 계약과 Summary의 SOLID·적용 패턴·확장 경계를 보강했다. 기존 설정 형식과 예제 언어 토글은 유지한다. [설계 검토](ARCHITECTURE_REVIEW.md)
+
 후속 범용성·사용성 검토에서는 예제 UI 교체가 Main 직접 Play·미리보기 빌드를 막던 결합을 해소했다. 공통 `Validate Setup`과 `Validate Example UI`를 분리하고 저장 결과·이어하기 실패의 상태 알림, 사용자 로딩 Image의 진행률, 전체 화면 조작 Panel의 안전 영역을 보완했다. [재검토 결과](REUSABILITY_REVIEW.md)
 
 - 활성 게임 세션의 저장을 Main 이외의 Gameplay 씬에서도 허용했다. Boot·Title·전환 중 저장 차단과 기존 저장 보호는 유지한다.
