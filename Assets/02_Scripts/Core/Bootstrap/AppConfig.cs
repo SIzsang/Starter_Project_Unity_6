@@ -16,6 +16,8 @@ namespace StarterProject
         [SerializeField] private string titleScene = "Assets/01_Scenes/Main/01_Title.unity";
         [SerializeField] private string mainScene = "Assets/01_Scenes/Main/02_MainScene.unity";
         [SerializeField] private UserSettings defaultSettings = new UserSettings();
+        [SerializeField] private DataCatalog dataCatalog;
+        public DataCatalog DataCatalog => dataCatalog;
 
         /// <summary>공유 SO를 변경하지 않도록 기본 설정의 독립 복사본을 반환합니다.</summary>
         public UserSettings CreateDefaultSettings() => defaultSettings.Copy();
@@ -38,6 +40,7 @@ namespace StarterProject
         {
             if (defaultSettings == null) throw new InvalidOperationException("Default settings are missing.");
             defaultSettings.Validate();
+            DataValidation.Validate(dataCatalog);
             ValidateScene(bootScene, "Boot");
             ValidateScene(titleScene, "Title");
             ValidateScene(mainScene, "Main");

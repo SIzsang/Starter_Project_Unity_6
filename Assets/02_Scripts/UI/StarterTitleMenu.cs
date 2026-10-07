@@ -114,7 +114,11 @@ namespace StarterProject.UI
             if (ReferenceEquals(root, subscribedRoot)) return;
             if (subscribedRoot != null) subscribedRoot.StateChanged -= RefreshFromRoot;
             subscribedRoot = root;
-            if (subscribedRoot != null) subscribedRoot.StateChanged += RefreshFromRoot;
+            if (subscribedRoot != null)
+            {
+                StarterInputContext.EnsureCreated(subscribedRoot);
+                subscribedRoot.StateChanged += RefreshFromRoot;
+            }
             RefreshFromRoot();
         }
 

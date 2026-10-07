@@ -1,5 +1,7 @@
 {
   "name": "StarterProject.PlayModeTests",
   "references": ["StarterProject.Core", "StarterProject.UI", "UnityEngine.UI", "Unity.InputSystem"],
+  "overrideReferences": true,
+  "precompiledReferences": ["Newtonsoft.Json.dll", "nunit.framework.dll"],
   "optionalUnityReferences": ["TestAssemblies"]
 }

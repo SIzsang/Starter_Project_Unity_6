@@ -93,6 +93,8 @@ namespace StarterProject.UI
             subscribedRoot = appRoot;
             if (subscribedRoot == null) return;
             StarterLoadingOverlay.EnsureCreated(subscribedRoot, loadingOverlayPrefab);
+            StarterInputContext.EnsureCreated(subscribedRoot);
+            StarterPauseOverlay.EnsureCreated(subscribedRoot);
             subscribedRoot.StateChanged += OnStateChanged;
         }
 

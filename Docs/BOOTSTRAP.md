@@ -33,9 +33,13 @@
 - 공통 루트를 파괴하면 정적 참조를 해제하고 초기화 대기를 취소한다. Unity의 이미 시작된 씬 로드는 취소할 수 없어 완료까지 전환 잠금을 유지한다.
 - 현 단계의 실패 복구는 설정 수정 후 Play/앱 재시작이다. 인앱 재시도는 구현하지 않았다.
 
+## Phase 2 실행 상태
+
+초기화용 AppState와 실행용 GameState를 구분한다. 상태 조회·전환·알림 및 시간·입력·Audio·UI와 연결된 Pause 계약은 [GameState 가이드](GAME_STATE.md)를 따른다.
+
 ## 확장 위치
 
-추가 필수 서비스는 `AppRoot.Initialize`에서 Ready 직전까지 순서대로 준비한다. 서비스가 자원을 소유하게 되면 실패·종료 시 초기화 역순으로 해제하는 코드도 함께 추가한다.
+추가 필수 서비스는 `AppBootstrapper`에서 순서대로 준비하고 `AppServices`에 타입별로 둔다. 서비스가 소유하는 자원은 실패·종료 시 역순으로 해제한다. SceneRoot의 진입·종료, Runtime Data, Input/Pause/Audio 계약은 [Phase 2 가이드](PHASE_2_RUNTIME.md)를 따른다.
 게임별 규칙은 `02_Scripts/Gameplay`에 두고 AppRoot에 전투·인벤토리·진행 저장 필드를 넣지 않는다.
 
 ## 검증

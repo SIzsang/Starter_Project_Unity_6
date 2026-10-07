@@ -68,7 +68,7 @@ namespace StarterProject.UI
             if (messageText == null || progressTrack == null || progressFill == null || progressText == null)
             {
                 if (usesPrefab)
-                    Debug.LogWarning("[Starter Project] Loading prefab needs Message, Progress Track, Progress Fill and Percentage references. Using default visuals.", this);
+                    StarterLog.Warning(LogCategory.UI, "Loading prefab needs Message, Progress Track, Progress Fill and Percentage references. Using default visuals.", this);
                 CreateDefaultVisuals();
             }
             else if (usesPrefab)

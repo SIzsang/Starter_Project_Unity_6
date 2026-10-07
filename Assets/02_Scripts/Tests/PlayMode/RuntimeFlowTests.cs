@@ -133,7 +133,7 @@ namespace StarterProject.Tests
             var settingsPath = Path.Combine(testDirectory, SettingsService.FileName);
             var previousFile = File.ReadAllText(settingsPath);
             runtime.FailApply = true;
-            LogAssert.Expect(LogType.Error, "[Starter Project] Injected runtime apply failure.");
+            LogAssert.Expect(LogType.Error, "[Starter Project][App][Error] Injected runtime apply failure.");
 
             Assert.That(root.TrySaveSettings(new UserSettings { masterVolume = 0.25f, fullscreen = false, language = "ko" }), Is.False);
             Assert.That(root.State, Is.EqualTo(AppState.Failed));
@@ -179,8 +179,8 @@ namespace StarterProject.Tests
             runtime.FailApply = true;
             runtime.FailDispose = true;
             var root = CreateRoot();
-            LogAssert.Expect(LogType.Warning, "[Starter Project] Could not restore runtime settings: Injected dispose failure.");
-            LogAssert.Expect(LogType.Error, "[Starter Project] Injected runtime apply failure.");
+            LogAssert.Expect(LogType.Warning, "[Starter Project][Bootstrap][Warning] Startup cleanup failed: Injected dispose failure.");
+            LogAssert.Expect(LogType.Error, "[Starter Project][App][Error] Injected runtime apply failure.");
             yield return SceneManager.LoadSceneAsync(Boot);
             var deadline = Time.realtimeSinceStartup + 20f;
             while (root.State != AppState.Failed)

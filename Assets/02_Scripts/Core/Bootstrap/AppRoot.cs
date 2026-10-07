@@ -1,6 +1,5 @@
 using System;
 using System.Threading;
-using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -23,6 +22,16 @@ namespace StarterProject
         /// <summary>현재 앱 초기화 상태입니다.</summary>
         public AppState State { get; private set; }
 
+        /// <summary>AppState와 독립적인 현재 실행 상태입니다. 씬 상태는 AppRoot가 전환합니다.</summary>
+        public GameState CurrentGameState => gameState.Current;
+
+        /// <summary>성공한 실행 상태 전환의 이전·현재 값을 알립니다. 씬 소비자는 해제 시 구독을 정리합니다.</summary>
+        public event Action<GameState, GameState> GameStateChanged;
+
+        private readonly GameStateController gameState = new GameStateController();
+        private SceneFlow sceneFlow;
+        public SceneRoot CurrentSceneRoot => sceneFlow?.Current;
+
         /// <summary>씬 비동기 로드가 진행 중이어서 추가 전환을 받을 수 없는지 나타냅니다.</summary>
         public bool IsTransitioning { get; private set; }
 
@@ -39,11 +48,19 @@ namespace StarterProject
         public string Failure { get; private set; } = string.Empty;
 
         private CancellationToken lifetimeToken;
+        private AsyncLifetime appLifetime;
+        public CancellationToken LifetimeToken => lifetimeToken;
         private string bootScenePath;
         private string titleScenePath;
         private string mainScenePath;
-        public SettingsService Settings { get; private set; }
-        public GameSessionService Game { get; private set; }
+        private AppServices services;
+        public AppServices Services => services;
+        public DataService Data => services?.Data;
+        public InputContextService Input => services?.Input;
+        public PauseService Pause => services?.Pause;
+        public AudioService Audio => services?.Audio;
+        public SettingsService Settings => services?.Settings;
+        public GameSessionService Game => services?.Game;
         public string StorageMessage { get; private set; } = "";
         private ITextFileStore fileStore;
         private GamePayloadPolicy gamePayloadPolicy;
@@ -107,7 +124,10 @@ namespace StarterProject
                 return;
             }
             Instance = this;
-            lifetimeToken = destroyCancellationToken;
+            appLifetime = new AsyncLifetime(destroyCancellationToken);
+            lifetimeToken = appLifetime.Token;
+            gameState.StateChanged += OnGameStateChanged;
+            sceneFlow = new SceneFlow(this);
             DontDestroyOnLoad(gameObject);
         }
 
@@ -143,41 +163,47 @@ namespace StarterProject
                 CurrentStep = "Checking startup configuration";
                 StateChanged?.Invoke();
                 await Awaitable.NextFrameAsync(lifetimeToken);
-                if (config == null)
-                    throw new InvalidOperationException("AppBootstrap requires an AppConfig asset.");
-                config.Validate();
-                // 검증과 복사 사이에 프레임을 넘기지 않아, 검증한 값만 실행에 사용합니다.
-                bootScenePath = config.BootScene;
-                titleScenePath = config.TitleScene;
-                mainScenePath = config.MainScene;
-                var defaultSettings = config.CreateDefaultSettings();
-
-                CurrentStep = "Loading user settings and save information";
-                fileStore = fileStore ?? new JsonFileStore(Path.Combine(Application.persistentDataPath, "StarterData"));
-                Settings = new SettingsService(defaultSettings, fileStore);
-                Game = new GameSessionService(fileStore, gamePayloadPolicy != null ? gamePayloadPolicy.PayloadVersion : 1,
-                    gamePayloadPolicy != null ? (Action<string>)gamePayloadPolicy.ValidatePayload : null);
+                var ownedRuntimeSettings = runtimeSettings;
+                runtimeSettings = null;
+                services = AppBootstrapper.Initialize(config, fileStore, gamePayloadPolicy, ownedRuntimeSettings, step =>
+                {
+                    CurrentStep = step;
+                    StateChanged?.Invoke();
+                }, lifetimeToken, transform);
+                bootScenePath = services.Config.BootScene;
+                titleScenePath = services.Config.TitleScene;
+                mainScenePath = services.Config.MainScene;
                 StorageMessage = string.Join("\n", new[] { Settings.Message, Game.Message }).Trim();
-
-                CurrentStep = "Applying audio and display settings";
-                runtimeSettings = runtimeSettings ?? new UnityRuntimeSettings();
-                runtimeSettings.Apply(Settings.Current);
                 Settings.Changed += OnSettingsChanged;
-
                 CurrentStep = "Preparing scene navigation";
                 StateChanged?.Invoke();
                 await Awaitable.NextFrameAsync(lifetimeToken);
 
+                if (startupDestination == AppStartupDestination.NewGameInMain)
+                {
+                    Game.StartNew(CreateInitialPayload()); Data.BeginSession(Game.Current);
+                    StorageMessage = Game.Message;
+                }
+                await sceneFlow.InitializeActiveSceneAsync(lifetimeToken);
+                lifetimeToken.ThrowIfCancellationRequested();
                 State = AppState.Ready;
                 CurrentStep = "Ready";
                 if (startupDestination == AppStartupDestination.NewGameInMain)
                 {
-                    Game.StartNew(CreateInitialPayload());
-                    StorageMessage = Game.Message;
                     if (!TryNavigate(mainScenePath))
-                        throw new InvalidOperationException("Could not enter the configured Main scene after startup.");
+                    {
+                        if (SceneManager.GetActiveScene().path != mainScenePath)
+                            throw new InvalidOperationException("Could not enter the configured Main scene after startup.");
+                        gameState.TryTransitionTo(GameState.Gameplay);
+                        StateChanged?.Invoke();
+                    }
                 }
-                else if (!TryReturnToTitle()) StateChanged?.Invoke();
+                else if (!TryReturnToTitle())
+                {
+                    // Title 자체에서 초기화한 경우에도 실행 상태를 공개합니다.
+                    gameState.TryTransitionTo(GameState.Menu);
+                    StateChanged?.Invoke();
+                }
             }
             catch (OperationCanceledException) when (lifetimeToken.IsCancellationRequested) { }
             catch (Exception exception) { Fail(exception); }
@@ -190,7 +216,7 @@ namespace StarterProject
         public bool TryStartNewGame()
         {
             if (!CanStartGame()) return false;
-            try { Game.StartNew(CreateInitialPayload()); }
+            try { Game.StartNew(CreateInitialPayload()); Data.BeginSession(Game.Current); }
             catch (Exception exception) { Fail(exception); return false; }
             StorageMessage = Game.Message;
             return TryNavigate(mainScenePath);
@@ -203,7 +229,7 @@ namespace StarterProject
             Game.RefreshSave();
             if (!Game.GetSlot(slotId).IsEmpty)
                 return RejectSlotRequest("Choose an empty slot or delete an existing save in Slot Management.");
-            try { Game.StartNew(slotId, CreateInitialPayload()); }
+            try { Game.StartNew(slotId, CreateInitialPayload()); Data.BeginSession(Game.Current); }
             catch (Exception exception) { Fail(exception); return false; }
             StorageMessage = Game.Message;
             return TryNavigate(mainScenePath);
@@ -262,24 +288,49 @@ namespace StarterProject
             if (!CanStartGame() || !CheckSlotId(slotId)) return false;
             var isLoaded = Game.TryContinue(slotId);
             StorageMessage = Game.Message;
-            if (isLoaded) return TryNavigate(mainScenePath);
+            if (isLoaded)
+            {
+                Data.BeginSession(Game.Current);
+                return TryNavigate(mainScenePath);
+            }
             StateChanged?.Invoke();
             return false;
         }
 
         private bool CanStartGame() => Instance == this && State == AppState.Ready && !IsTransitioning
-            && !lifetimeToken.IsCancellationRequested && SceneManager.GetActiveScene().path == titleScenePath;
+            && !gameState.IsNotifying && !lifetimeToken.IsCancellationRequested
+            && SceneManager.GetActiveScene().path == titleScenePath;
+
+        /// <summary>
+        /// 활성 Gameplay에서 Pause ↔ Gameplay 상태만 요청할 수 있습니다.
+        /// 시간·입력·UI는 변경하지 않습니다. Boot/Menu/Loading/Failed는 기존 앱 흐름이 소유합니다.
+        /// </summary>
+        public bool TryChangeGameState(GameState next)
+        {
+            if (Instance != this || State != AppState.Ready || IsTransitioning || gameState.IsNotifying
+                || lifetimeToken.IsCancellationRequested || Game?.Current == null)
+                return false;
+            if (next != GameState.Gameplay && next != GameState.Pause) return false;
+            if (CurrentGameState != GameState.Gameplay && CurrentGameState != GameState.Pause) return false;
+            if (!gameState.TryTransitionTo(next)) return false;
+            if (!lifetimeToken.IsCancellationRequested) StateChanged?.Invoke();
+            return true;
+        }
 
         public bool TrySaveGame(bool replaceExisting = false) => TrySaveGame(null, replaceExisting);
 
         /// <summary>활성 게임 세션의 JSON 객체를 저장합니다. 추가 Gameplay 씬에서도 사용할 수 있으며 null이면 현재 payload를 다시 저장합니다.</summary>
         public bool TrySaveGame(string payloadJson, bool replaceExisting = false)
         {
-            if (Instance != this || State != AppState.Ready || IsTransitioning
+            if (Instance != this || State != AppState.Ready || IsTransitioning || gameState.IsNotifying
                 || lifetimeToken.IsCancellationRequested || Game?.Current == null) return false;
             var activeScenePath = SceneManager.GetActiveScene().path;
             if (activeScenePath == bootScenePath || activeScenePath == titleScenePath) return false;
-            var isSaved = Game.TrySave(payloadJson, replaceExisting);
+            var capturedPayload = payloadJson ?? (Data.Runtime?.SessionId == Game.Current.SessionId
+                ? Data.Runtime.SnapshotPayload() : Game.Current.PayloadJson);
+            var isSaved = Game.TrySave(capturedPayload, replaceExisting);
+            StarterLog.Info(LogCategory.Storage, $"Save completed: {isSaved}; slot: {Game.CurrentSlotId}", this);
+            if (isSaved) Data.AcceptSavedSnapshot(Game.Current, replacePayload: payloadJson != null);
             StorageMessage = Game.Message;
             StateChanged?.Invoke();
             return isSaved;
@@ -287,7 +338,7 @@ namespace StarterProject
 
         public bool TrySaveSettings(UserSettings settings)
         {
-            if (Instance != this || State != AppState.Ready || IsTransitioning) return false;
+            if (Instance != this || State != AppState.Ready || IsTransitioning || gameState.IsNotifying) return false;
             if (settings == null || !Settings.CanSave)
             {
                 var accepted = Settings.TryApplyAndSave(settings);
@@ -306,7 +357,7 @@ namespace StarterProject
 
             var previous = Settings.Current;
             // 플랫폼 적용 실패가 디스크에 새 값을 남기지 않도록 먼저 적용한다.
-            try { runtimeSettings.Apply(settings); }
+            try { services.RuntimeSettings.Apply(settings); }
             catch (Exception exception) { Fail(exception); return false; }
 
             bool isSaved;
@@ -317,7 +368,7 @@ namespace StarterProject
             StorageMessage = Settings.Message;
             if (!isSaved)
             {
-                try { runtimeSettings.Apply(previous); }
+                try { services.RuntimeSettings.Apply(previous); }
                 catch (Exception exception) { Fail(exception); return false; }
             }
             StateChanged?.Invoke();
@@ -326,7 +377,7 @@ namespace StarterProject
 
         public bool TryRecoverBackup(bool recoverSettings)
         {
-            if (Instance != this || State != AppState.Ready || IsTransitioning) return false;
+            if (Instance != this || State != AppState.Ready || IsTransitioning || gameState.IsNotifying) return false;
             var isRecovered = recoverSettings ? Settings.TryRecoverBackup() : Game.TryRecoverBackup();
             StorageMessage = recoverSettings ? Settings.Message : Game.Message;
             StateChanged?.Invoke();
@@ -337,20 +388,14 @@ namespace StarterProject
         {
             if (isCommittingSettings) return;
             StorageMessage = Settings.Message;
-            try { runtimeSettings.Apply(Settings.Current); }
+            try { services.RuntimeSettings.Apply(Settings.Current); }
             catch (Exception exception) { Fail(exception); }
             StateChanged?.Invoke();
         }
 
         /// <summary>Ready 상태일 때 Title 씬 전환을 요청합니다.</summary>
         /// <returns>전환을 시작했으면 <see langword="true"/>입니다.</returns>
-        public bool TryReturnToTitle()
-        {
-            if (!TryNavigate(titleScenePath)) return false;
-            Game?.EndSession();
-            Game?.RefreshSave();
-            return true;
-        }
+        public bool TryReturnToTitle() => TryNavigate(titleScenePath);
 
         /// <summary>
         /// 앱 상태, 중복 요청, 수명과 현재 씬을 확인하고 비동기 로드 전에 전환 잠금을 획득합니다.
@@ -359,17 +404,23 @@ namespace StarterProject
         /// <returns>씬 로드 요청을 새로 시작했으면 <see langword="true"/>입니다.</returns>
         private bool TryNavigate(string scenePath)
         {
-            if (Instance != this || State != AppState.Ready || IsTransitioning
+            if (Instance != this || State != AppState.Ready || IsTransitioning || gameState.IsNotifying
                 || lifetimeToken.IsCancellationRequested)
                 return false;
-            if (SceneManager.GetActiveScene().path == scenePath)
+            if (SceneManager.GetActiveScene().path == scenePath || !gameState.CanTransitionTo(GameState.Loading))
                 return false;
 
             // Acquire before starting async work so repeated button presses cannot overlap.
             IsTransitioning = true;
             LoadingProgress = 0;
             CurrentStep = "Loading";
+            gameState.TryTransitionTo(GameState.Loading);
             StateChanged?.Invoke();
+            if (State != AppState.Ready || lifetimeToken.IsCancellationRequested)
+            {
+                IsTransitioning = false;
+                return false;
+            }
             Navigate(scenePath);
             return true;
         }
@@ -381,32 +432,40 @@ namespace StarterProject
         /// <param name="scenePath">빌드 씬 목록에 포함된 대상 씬 경로입니다.</param>
         private async void Navigate(string scenePath)
         {
+            var sceneLoaded = false;
             try
             {
                 CurrentStep = "Loading";
-                if (string.IsNullOrEmpty(scenePath) || SceneUtility.GetBuildIndexByScenePath(scenePath) < 0)
-                    throw new InvalidOperationException($"Cannot load a scene outside the build scene list: {scenePath}");
-                var loadOperation = SceneManager.LoadSceneAsync(scenePath, LoadSceneMode.Single);
-                if (loadOperation == null)
-                    throw new InvalidOperationException($"Scene loading could not start: {scenePath}");
-
-                // Unity scene loads cannot be cancelled. Hold the gate until the load completes.
-                while (!loadOperation.isDone)
+                await sceneFlow.NavigateAsync(scenePath, lifetimeToken, progress =>
                 {
-                    LoadingProgress = Mathf.Clamp01(loadOperation.progress);
-                    if (!lifetimeToken.IsCancellationRequested) StateChanged?.Invoke();
-                    await Awaitable.NextFrameAsync();
-                }
+                    LoadingProgress = progress;
+                    StateChanged?.Invoke();
+                }, () =>
+                {
+                    if (scenePath != titleScenePath) return;
+                    Game.EndSession();
+                    Data.EndSession();
+                    Game.RefreshSave();
+                });
                 lifetimeToken.ThrowIfCancellationRequested();
-                LoadingProgress = 1;
-                CurrentStep = "Ready";
+                sceneLoaded = true;
+                if (State == AppState.Ready)
+                {
+                    LoadingProgress = 1;
+                    CurrentStep = "Ready";
+                }
             }
             catch (OperationCanceledException) when (lifetimeToken.IsCancellationRequested) { }
             catch (Exception exception) { Fail(exception); }
             finally
             {
                 IsTransitioning = false;
-                if (!lifetimeToken.IsCancellationRequested) StateChanged?.Invoke();
+                if (!lifetimeToken.IsCancellationRequested)
+                {
+                    if (sceneLoaded && State == AppState.Ready)
+                        gameState.TryTransitionTo(scenePath == titleScenePath ? GameState.Menu : GameState.Gameplay);
+                    StateChanged?.Invoke();
+                }
             }
         }
 
@@ -417,20 +476,52 @@ namespace StarterProject
             State = AppState.Failed;
             Failure = exception.Message;
             CurrentStep = "Startup failed";
+            gameState.TryTransitionTo(GameState.Failed);
+            appLifetime?.Cancel();
+            sceneFlow?.Dispose();
             ReleaseRuntimeSettings();
             StateChanged?.Invoke();
-            Debug.LogError($"[Starter Project] {Failure}", this);
+            StarterLog.Error(LogCategory.App, Failure, this);
+        }
+
+        private void OnGameStateChanged(GameState previous, GameState current)
+        {
+            StarterLog.Info(LogCategory.App, $"GameState: {previous} -> {current}", this);
+            if (services != null && !services.IsDisposed)
+            {
+                Pause.Apply(current == GameState.Pause);
+                Audio.SetPaused(current == GameState.Pause);
+                if (current == GameState.Loading) Audio.OnSceneExit();
+                var context = current == GameState.Menu ? InputContext.UI : CurrentSceneRoot?.InitialInputContext ?? InputContext.Gameplay;
+                Input.SetState(context, current == GameState.Boot || current == GameState.Loading || current == GameState.Failed
+                    ? InputContext.None : current == GameState.Pause ? InputContext.UI : (InputContext?)null);
+            }
+            var subscribers = GameStateChanged;
+            if (subscribers == null) return;
+            foreach (Action<GameState, GameState> subscriber in subscribers.GetInvocationList())
+            {
+                if (this == null || (lifetimeToken.IsCancellationRequested && current != GameState.Failed) || gameState.Current != current) break;
+                try { subscriber(previous, current); }
+                catch (Exception exception)
+                {
+                    // 표시용 소비자의 오류가 씬 전환이나 나머지 알림을 중단하지 않게 합니다.
+                    StarterLog.Warning(LogCategory.App, $"GameState observer failed: {exception.Message}", this);
+                }
+            }
         }
 
         private void ReleaseRuntimeSettings()
         {
             if (Settings != null) Settings.Changed -= OnSettingsChanged;
+            var ownedServices = services;
             var ownedSettings = runtimeSettings;
             runtimeSettings = null;
+            try { ownedServices?.Dispose(); }
+            catch (Exception error) { StarterLog.Warning(LogCategory.App, $"Service cleanup failed: {error.Message}", this); }
             try { ownedSettings?.Dispose(); }
             catch (Exception exception)
             {
-                Debug.LogWarning($"[Starter Project] Could not restore runtime settings: {exception.Message}", this);
+                StarterLog.Warning(LogCategory.App, $"Could not restore runtime settings: {exception.Message}", this);
             }
         }
 
@@ -440,14 +531,20 @@ namespace StarterProject
         /// </summary>
         private void OnDestroy()
         {
+            appLifetime?.Cancel();
+            sceneFlow?.Dispose();
             ReleaseRuntimeSettings();
             if (Instance != this)
                 return;
+            gameState.StateChanged -= OnGameStateChanged;
+            GameStateChanged = null;
             StateChanged = null;
             Instance = null;
-            Game = null;
-            Settings = null;
+
+
             fileStore = null;
+            services = null;
+            appLifetime?.Dispose();
         }
     }
 }

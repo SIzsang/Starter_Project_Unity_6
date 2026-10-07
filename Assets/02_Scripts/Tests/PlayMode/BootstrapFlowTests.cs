@@ -56,6 +56,7 @@ namespace StarterProject.Tests
             yield return WaitForScene(Title);
             var root = AppRoot.Instance;
             Assert.That(root.State, Is.EqualTo(AppState.Ready));
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Menu));
             Assert.That(Object.FindObjectsByType<AppRoot>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
             var button = FindActionButton();
             Assert.That(button.interactable, Is.True);
@@ -66,15 +67,18 @@ namespace StarterProject.Tests
             Assert.That(Object.FindFirstObjectByType<StarterTitleMenu>().CurrentPage, Is.EqualTo(StarterTitlePage.NewGame));
             GameObject.Find("Slot 1").GetComponent<Button>().onClick.Invoke();
             Assert.That(root.IsTransitioning, Is.True);
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Loading));
             Assert.That(root.TryEnterMain(), Is.False);
             Assert.That(root.TryReturnToTitle(), Is.False);
             yield return WaitForScene(Main);
             Assert.That(AppRoot.Instance, Is.SameAs(root));
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Gameplay));
             Assert.That(Object.FindObjectsByType<StarterScreen>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
             Assert.That(Object.FindObjectsByType<EventSystem>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
             FindActionButton().onClick.Invoke();
             yield return WaitForScene(Title);
             Assert.That(AppRoot.Instance, Is.SameAs(root));
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Menu));
         }
 
         [UnityTest]
@@ -92,6 +96,7 @@ namespace StarterProject.Tests
                 Assert.That(visitedTitle, Is.False);
                 Assert.That(AppRoot.Instance, Is.SameAs(root));
                 Assert.That(root.State, Is.EqualTo(AppState.Ready));
+                Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Gameplay));
                 Assert.That(root.Game.Current, Is.Not.Null);
                 Assert.That(root.Game.CanContinue, Is.False);
                 Assert.That(File.Exists(Path.Combine(testDirectory, GameSessionService.FileName)), Is.False);
@@ -137,6 +142,7 @@ namespace StarterProject.Tests
             yield return LoadBoot();
             yield return WaitForScene(Title);
             Assert.That(AppRoot.Instance, Is.SameAs(root));
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Menu));
             Assert.That(Object.FindObjectsByType<AppRoot>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
         }
 
@@ -146,12 +152,14 @@ namespace StarterProject.Tests
         {
             var originalScene = SceneManager.GetActiveScene();
             var root = CreateRoot("MissingConfigRoot");
-            LogAssert.Expect(LogType.Error, "[Starter Project] AppBootstrap requires an AppConfig asset.");
+            LogAssert.Expect(LogType.Error, "[Starter Project][App][Error] AppBootstrap requires an AppConfig asset.");
             Assert.That(root.Begin(null), Is.True);
             Assert.That(root.State, Is.EqualTo(AppState.Initializing));
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Boot));
             Assert.That(root.TryEnterMain(), Is.False);
             Assert.That(root.Begin(null), Is.False);
             yield return WaitFor(() => root.State == AppState.Failed);
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Failed));
             Assert.That(root.Failure, Does.Contain("AppConfig"));
             Assert.That(root.TryEnterMain(), Is.False);
             Assert.That(root.Begin(null), Is.False);
@@ -166,9 +174,10 @@ namespace StarterProject.Tests
             var config = ScriptableObject.CreateInstance<AppConfig>();
             JsonUtility.FromJsonOverwrite("{\"mainScene\":\"Assets/Missing.unity\"}", config);
             var root = CreateRoot("InvalidConfigRoot");
-            LogAssert.Expect(LogType.Error, "[Starter Project] Main scene is missing or disabled in the build scene list: Assets/Missing.unity");
+            LogAssert.Expect(LogType.Error, "[Starter Project][App][Error] Main scene is missing or disabled in the build scene list: Assets/Missing.unity");
             root.Begin(config);
             yield return WaitFor(() => root.State == AppState.Failed);
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Failed));
             Assert.That(root.TryEnterMain(), Is.False);
             Assert.That(SceneManager.GetActiveScene(), Is.EqualTo(originalScene));
             Object.Destroy(config);
@@ -207,13 +216,15 @@ namespace StarterProject.Tests
         public IEnumerator BootDisplaysFailureAndStaysOnBoot()
         {
             var root = CreateRoot("FailedRoot");
-            LogAssert.Expect(LogType.Error, "[Starter Project] AppBootstrap requires an AppConfig asset.");
+            LogAssert.Expect(LogType.Error, "[Starter Project][App][Error] AppBootstrap requires an AppConfig asset.");
             root.Begin(null);
             yield return WaitFor(() => root.State == AppState.Failed);
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Failed));
             yield return LoadBoot();
             yield return null;
             Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(Boot));
             Assert.That(AppRoot.Instance, Is.SameAs(root));
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Failed));
             Assert.That(Object.FindObjectsByType<Text>(FindObjectsSortMode.None)
                 .Any(t => t.text.Contains("Could not start") && t.text.Contains("AppConfig")), Is.True);
         }
@@ -233,6 +244,7 @@ namespace StarterProject.Tests
                 Assert.That(root.TryEnterMain(), Is.True);
                 yield return WaitForScene(Main);
                 Assert.That(root.State, Is.EqualTo(AppState.Ready));
+                Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Gameplay));
             }
             finally { Object.DestroyImmediate(config); }
         }
@@ -244,9 +256,10 @@ namespace StarterProject.Tests
             var view = Object.FindFirstObjectByType<StarterScreen>();
             var button = FindActionButton();
             var root = CreateRoot("ScreenTestRoot");
-            LogAssert.Expect(LogType.Error, "[Starter Project] AppBootstrap requires an AppConfig asset.");
+            LogAssert.Expect(LogType.Error, "[Starter Project][App][Error] AppBootstrap requires an AppConfig asset.");
             root.Begin(null);
             yield return WaitFor(() => root.State == AppState.Failed);
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Failed));
             yield return null;
             Assert.That(view.GetComponentsInChildren<Text>().Any(t => t.text.Contains("Could not start")), Is.True);
             view.enabled = false;
@@ -341,6 +354,7 @@ namespace StarterProject.Tests
             yield return WaitForScene(Title);
             var root = AppRoot.Instance;
             Assert.That(root.State, Is.EqualTo(AppState.Ready));
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Menu));
             Assert.That(root.Settings.Status, Is.EqualTo(StorageStatus.Invalid));
             Assert.That(root.Game.Status, Is.EqualTo(StorageStatus.UnsupportedVersion));
             Assert.That(GameObject.Find("Continue").GetComponent<Button>().interactable, Is.False);
@@ -364,6 +378,118 @@ namespace StarterProject.Tests
             var restart = new SettingsService(new UserSettings(), new JsonFileStore(testDirectory));
             Assert.That(restart.Current.masterVolume, Is.Zero);
             Assert.That(restart.Current.fullscreen, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator GameplayStateRequestsRejectSceneStatesAndReentry()
+        {
+            yield return LoadBoot();
+            yield return WaitForScene(Title);
+            var root = AppRoot.Instance;
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Menu));
+            Assert.That(root.TryChangeGameState(GameState.Pause), Is.False);
+            Assert.That(root.TryChangeGameState(GameState.Gameplay), Is.False);
+            Assert.That(root.TryStartNewGame(), Is.True);
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Loading));
+            Assert.That(root.TryChangeGameState(GameState.Gameplay), Is.False);
+            yield return WaitForScene(Main);
+
+            var notifications = 0;
+            var previousTimeScale = Time.timeScale;
+            var stateWasPublished = false;
+            var navigationReentered = false;
+            var stateReentered = false;
+            void Observe(GameState previous, GameState current)
+            {
+                notifications++;
+                stateWasPublished = root.CurrentGameState == current;
+                navigationReentered = root.TryReturnToTitle();
+                stateReentered = root.TryChangeGameState(GameState.Gameplay);
+            }
+            root.GameStateChanged += Observe;
+            Assert.That(root.TryChangeGameState(GameState.Pause), Is.True);
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Pause));
+            Assert.That(Time.timeScale, Is.Zero, "Pause stops gameplay time before observers run.");
+            Assert.That(root.TryChangeGameState(GameState.Pause), Is.False);
+            Assert.That(root.TryChangeGameState(GameState.Menu), Is.False);
+            Assert.That(root.TryChangeGameState(GameState.Loading), Is.False);
+            Assert.That(root.TryChangeGameState(GameState.Failed), Is.False);
+            Assert.That(root.TryChangeGameState((GameState)999), Is.False);
+            Assert.That(notifications, Is.EqualTo(1));
+            Assert.That(stateWasPublished, Is.True);
+            Assert.That(navigationReentered, Is.False, "State observers cannot reenter navigation.");
+            Assert.That(stateReentered, Is.False);
+            root.GameStateChanged -= Observe;
+            Assert.That(root.TryChangeGameState(GameState.Gameplay), Is.True);
+            Assert.That(Time.timeScale, Is.EqualTo(previousTimeScale));
+            Assert.That(root.TryChangeGameState(GameState.Pause), Is.True);
+            Assert.That(root.TryReturnToTitle(), Is.True, "Returning to Title from Pause remains available.");
+            yield return WaitForScene(Title);
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Menu));
+            Assert.That(root.Game.Current, Is.Null);
+        }
+
+        [UnityTest]
+        public IEnumerator GameStateObserverFailureDoesNotStopSceneNavigationOrOtherObservers()
+        {
+            yield return LoadBoot();
+            yield return WaitForScene(Title);
+            var root = AppRoot.Instance;
+            void ThrowOnLoading(GameState previous, GameState current)
+            {
+                if (current == GameState.Loading) throw new InvalidOperationException("observer test");
+            }
+            root.GameStateChanged += ThrowOnLoading;
+            var reachedGameplay = false;
+            root.GameStateChanged += (_, current) => reachedGameplay |= current == GameState.Gameplay;
+            LogAssert.Expect(LogType.Warning, "[Starter Project][App][Warning] GameState observer failed: observer test");
+            Assert.That(root.TryStartNewGame(), Is.True);
+            yield return WaitForScene(Main);
+            Assert.That(reachedGameplay, Is.True);
+            Assert.That(root.State, Is.EqualTo(AppState.Ready));
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Gameplay));
+            root.GameStateChanged -= ThrowOnLoading;
+        }
+
+        [UnityTest]
+        public IEnumerator MissingNavigationScenePublishesFailedAndUnlocksTransition()
+        {
+            yield return LoadBoot();
+            yield return WaitForScene(Title);
+            var root = AppRoot.Instance;
+            typeof(AppRoot).GetField("mainScenePath", System.Reflection.BindingFlags.Instance
+                | System.Reflection.BindingFlags.NonPublic).SetValue(root, "Assets/Missing.unity");
+            LogAssert.Expect(LogType.Error, "[Starter Project][App][Error] Cannot load a scene outside the build scene list: Assets/Missing.unity");
+            root.TryStartNewGame();
+            yield return null;
+            Assert.That(root.State, Is.EqualTo(AppState.Failed));
+            Assert.That(root.CurrentGameState, Is.EqualTo(GameState.Failed));
+            Assert.That(root.IsTransitioning, Is.False);
+            Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(Title));
+            Assert.That(root.TryReturnToTitle(), Is.False);
+            Assert.That(root.TryChangeGameState(GameState.Gameplay), Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator StartupAlreadyInTitleOrMainPublishesDestinationWithoutNavigation()
+        {
+            var config = ScriptableObject.CreateInstance<AppConfig>();
+            try
+            {
+                foreach (var destination in new[] { Title, Main })
+                {
+                    yield return SceneManager.LoadSceneAsync(destination);
+                    var root = CreateRoot("SameSceneRoot");
+                    if (destination == Main) root.ConfigureStartupDestination(AppStartupDestination.NewGameInMain);
+                    Assert.That(root.Begin(config), Is.True);
+                    yield return WaitFor(() => root.State == AppState.Ready && !root.IsTransitioning);
+                    Assert.That(root.CurrentGameState, Is.EqualTo(destination == Title ? GameState.Menu : GameState.Gameplay));
+                    Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(destination));
+                    Object.Destroy(root.gameObject);
+                    yield return null;
+                }
+            }
+            finally { Object.Destroy(config); }
         }
 
         private AppRoot CreateRoot(string name)
