@@ -2,6 +2,16 @@
 
 앱 초기화는 AppState, 실행 상태는 GameState로 구분한다. AppRoot는 앱 소유권과 요청 검사를 담당하고, AppBootstrapper는 초기화 순서, SceneFlow는 씬 생명주기, AppServices는 타입별 공통 서비스의 소유권을 담당한다. Core는 UI와 Game Layer를 참조하지 않는다.
 
+## 이 문서의 순서
+
+- [초기화와 소유권](#초기화와-소유권)
+- [SceneRoot](#sceneroot)
+- [비동기 수명](#비동기-수명)
+- [Definition / Runtime / 저장 경계](#definition--runtime--저장-경계)
+- [입력](#입력)
+- [Pause와 Audio](#pause와-audio)
+- [검증과 다음 작업](#검증과-다음-작업)
+
 ## 초기화와 소유권
 
 1. AppConfig와 선택형 DataCatalog의 ID·참조·게임별 규칙 검증
@@ -90,4 +100,4 @@ BGM은 교체/Stop/앱 종료까지 유지된다. SFX는 OneShot으로 중첩 �
 
 ## 검증과 다음 작업
 
-Phase Gate의 실제 결과는 [통합 검증 기록](INTEGRATION_VALIDATION.md)에 기록한다. 현재 Phase 완료 후 다음 Work는 Notion 00/11을 읽고 Phase 3의 첫 Logging 작업부터 시작한다.
+Phase Gate의 실제 결과는 [통합 검증 기록](INTEGRATION_VALIDATION.md)에 기록한다. Phase 2·3와 선정 Phase 4 Pool 범위는 완료했다. 다음 작업은 [후속 계획](NEXT_STEPS.md)을 따르며 이 문서는 실행 API 계약을 유지한다.

@@ -1,6 +1,27 @@
 # 공통 기능 사용 가이드
 
-Phase 2의 타입별 서비스·입력 맵·Pause·Audio API와 소유권은 [실행 기반 가이드](PHASE_2_RUNTIME.md)를 따른다. 아래 설정·예제 UI 계약도 계속 사용한다.
+기본 설정·화면·로딩·입력의 연결 지점과 기능별 사용 문서를 안내합니다. 씬·Runtime·입력·Pause·Audio API는 [실행 기반](PHASE_2_RUNTIME.md)에 둡니다.
+
+## 이 문서의 순서
+
+- [기능 찾기](#기능-찾기)
+- [실행과 적용 범위](#실행과-적용-범위)
+- [수명과 실패 처리](#수명과-실패-처리)
+- [로딩과 입력](#로딩과-입력)
+- [진단 로그](#진단-로그)
+- [선택형 프리팹 Pool](#선택형-프리팹-pool)
+- [API 참고](#api-참고)
+- [검증 문서](#검증-문서)
+
+## 기능 찾기
+
+| 목적 | 상세 가이드 |
+| --- | --- |
+| 저장·슬롯·복구 | [설정과 저장](SETTINGS_AND_SAVE.md) |
+| 실행 상태·수명·입력·Audio | [Phase 2](PHASE_2_RUNTIME.md) |
+| 화면·이미지·로딩 프리팹 | [반응형 UI](RESPONSIVE_UI.md) |
+| 로그·Debug·빌드 | [Phase 3](PHASE_3_DEVELOPMENT.md) |
+| 프리팹 대여·반납 | [Pool](PHASE_4_MODULES.md) |
 
 ## 실행과 적용 범위
 
@@ -30,32 +51,6 @@ Phase 2의 타입별 서비스·입력 맵·Pause·Audio API와 소유권은 [�
 
 Boot/Main의 `StarterScreen`과 Title의 `StarterTitleMenu`는 활성화 시 구독하고 비활성화 시 해제한다. 첫 진입 또는 선택 항목 소실 시 유효한 버튼을 선택해 마우스 없이도 사용할 수 있게 한다. 런타임 Canvas는 루트와 함께 제거되며 씬·프리팹에 별도로 복제할 필요가 없다.
 
-## 검증
-
-2026-10-05 기본 3슬롯·좌측 Title 메뉴: **구현·관련 필수 자동 검증 완료**. 화면 흐름·삭제·저장 계약은 [설정·저장 가이드](SETTINGS_AND_SAVE.md)를 따른다. 아래 결과는 각 날짜의 이전 구현 검증이다.
-
-2026-09-22, Unity 6000.3.16f1: **EditMode 44개 + PlayMode 25개 통과, 실패·건너뜀 0개**. 기존 설정·저장·Bootstrap 테스트를 포함한다. 열려 있는 원본 Editor를 유지하기 위해 최신 소스를 반영한 `Logs/Stage34Validation` 복제 프로젝트에서 실행했다. 결과는 `Logs/Stage5EditMode.xml`, `Logs/Stage5PlayModeFinal.xml`이다.
-
-- 음량·화면 매핑, 잘못된 설정 보호, 비동기 화면 전환의 중복 요청 방지, 적용 실패 복구·Dispose
-- 저장 설정의 Ready 이전 적용, 저장 성공·실패, 직접 Reload·백업 복구, 구독 해제
-- 플랫폼 적용과 정리 동시 실패 시 원래 오류 유지·게임 진입 차단
-- 전환 시작 즉시 버튼 잠금, 로딩 화면 단일성·진행률 범위, 이미 Title인 초기화와 중복 루트 정리
-- 실제 Input System 이벤트를 통한 키보드 Enter·게임패드 South 입력, Escape 덮어쓰기 취소·UI 선택 복원
-
-자동 테스트는 임시 저장 폴더와 대체 시스템 설정 구현을 사용해 실제 사용자 저장·창 설정과 분리한다. 음량·화면 매핑과 전역 상태 복구는 설정 적용 경계의 단위 테스트로 검증한다.
-
-최초 PlayMode 실행에서 포커스가 없는 batchmode의 키보드 이벤트가 Editor 쪽으로 전달되어 2개 테스트가 실패했다. 설치된 Input System의 자체 테스트 방식에 맞춰 테스트 동안만 입력 라우팅·백그라운드 처리를 조정하고 종료 시 원복했다. 버튼 함수를 직접 호출하는 우회 없이 입력 이벤트 경로를 유지한 최종 실행에서 전부 통과했다. 프로젝트의 일반 입력 설정은 변경하지 않았다.
-
-Windows 플레이어의 전체화면 전환, 실제 오디오 장치 청취, 물리 게임패드 조작과 앱 프로세스 재실행은 로드맵 7단계의 실제 실행 검증에 남긴다.
-
-2026-09-23 설계 점검 후 설정 저장의 플랫폼 적용 순서를 보완했다. 격리 복제본에서 EditMode 46개·PlayMode 27개 통과, Windows 개발 빌드와 별도 프로세스 저장·재실행 이어하기 통과. 상세 책임 경계와 미검증 범위는 [SOLID·패턴 점검](ARCHITECTURE_REVIEW.md)과 [통합 검증 기록](INTEGRATION_VALIDATION.md)을 따른다.
-
-## API 참고
-
-- [Unity AudioListener.volume](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/AudioListener-volume.html)
-- [Unity Screen.fullScreenMode](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/Screen-fullScreenMode.html)
-- [Unity AsyncOperation.progress](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/AsyncOperation-progress.html)
-
 ## 진단 로그
 
 Core의 StarterLog.Info/Warning/Error에 LogCategory와 메시지를 전달한다. Level/Category 필터, 빌드별 기본값과 Editor 조작은 [Phase 3 개발 지원](PHASE_3_DEVELOPMENT.md)을 따른다. 게임 코드의 payload·비밀값은 메시지에 넣지 않는다.
@@ -63,3 +58,13 @@ Core의 StarterLog.Info/Warning/Error에 LogCategory와 메시지를 전달한�
 ## 선택형 프리팹 Pool
 
 씬/게임 객체가 소유하는 PrefabPool과 대여별 PoolLease로 재사용·반납을 관리한다. Core/AppServices에 등록하지 않는다. 게임별 reset·스폰·용량 정책과 연결 방법은 [선택형 모듈 사용법](PHASE_4_MODULES.md)을 따른다.
+
+## API 참고
+
+- [Unity AudioListener.volume](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/AudioListener-volume.html)
+- [Unity Screen.fullScreenMode](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/Screen-fullScreenMode.html)
+- [Unity AsyncOperation.progress](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/AsyncOperation-progress.html)
+
+## 검증 문서
+
+현재 결과는 [검증 현황](INTEGRATION_VALIDATION.md), 당시의 상세 실행 과정은 [이전 공통 기능 검증](Archive/COMMON_SERVICES_VALIDATION.md)을 따릅니다.

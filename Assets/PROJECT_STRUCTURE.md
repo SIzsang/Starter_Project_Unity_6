@@ -1,9 +1,9 @@
-# Starter Project Asset Structure
+# 에셋 폴더와 어셈블리 구조
 
 `Starter Project`는 여러 게임에서 재사용할 수 있도록 에셋 종류 중심의 단순한 폴더 구조를 사용합니다.
 존재하지 않는 기능을 빈 폴더로 미리 세분화하지 않고, 실제 파일이 생길 때 필요한 하위 폴더를 추가합니다.
 
-## Current structure
+## 현재 폴더 구조
 
 ```text
 Assets
@@ -14,10 +14,17 @@ Assets
 ├─ 02_Scripts
 │  ├─ Core
 │  │  ├─ Bootstrap
+│  │  ├─ Data
+│  │  ├─ Diagnostics
+│  │  ├─ Input
+│  │  ├─ Scenes
 │  │  ├─ Persistence
 │  │  ├─ Settings
 │  │  ├─ Save
 │  │  └─ Manager
+│  ├─ Modules
+│  │  └─ Pooling
+│  │     └─ Tests
 │  ├─ Gameplay
 │  ├─ UI
 │  ├─ Editor
@@ -43,10 +50,14 @@ Assets
 └─ 99_Development
 ```
 
-## Folder responsibilities
+## 폴더별 책임
 
 - `01_Scenes`: 실행 씬과 테스트 씬
-- `02_Scripts/Core`: 게임 콘텐츠에 종속되지 않는 초기화, 저장, 이벤트 등의 기반 코드
+- `02_Scripts/Core`: 앱·씬 수명, 초기화·저장·데이터·입력 상황·Pause/Audio와 진단 기반
+- `02_Scripts/Core/Data`: 읽기 전용 Definition·조회 목록과 변경 가능한 Runtime
+- `02_Scripts/Core/Scenes`: SceneFlow·SceneRoot의 전환·생명주기
+- `02_Scripts/Core/Diagnostics`: 로그 필터와 컴파일 환경
+- `02_Scripts/Modules/Pooling`: 선택형 프리팹 Pool과 내부 테스트
 - `02_Scripts/Core/Settings`: 사용자 설정 파일 정책과 실제 음량·화면 적용 경계
 - `02_Scripts/Gameplay`: 캐릭터, 전투, 퍼즐, 스테이지 등 개별 게임의 실제 규칙
 - `02_Scripts/UI`: 화면·입력 동작과 AppRoot 수명에 연결된 로딩 화면 코드
@@ -64,11 +75,11 @@ Assets
 - `12_Fonts`: 폰트와 TextMesh Pro 폰트 에셋
 - `13_Input`: Input System 액션 에셋
 - `14_Settings`: 렌더링 및 프로젝트용 Unity 설정 에셋
-- `15_Localization`: 문자열 테이블과 현지화 에셋
+- `15_Localization`: 게임별 현지화 에셋의 확장 위치. 현재 공통 문자열 테이블 모듈은 구현하지 않음
 - `90_ThirdParty`: 외부 제작 에셋 원본
 - `99_Development`: 프로토타입과 개발 전용 임시 에셋
 
-## Growth rules
+## 확장 기준
 
 - 하위 폴더는 해당 기능의 실제 파일이 생길 때 추가합니다.
 - `Gameplay` 아래 도메인 구조는 구현 과정에서 결정합니다.
@@ -76,12 +87,12 @@ Assets
 - `Scripts`에는 데이터 타입 정의를, `04_Data`에는 실제 ScriptableObject 인스턴스를 둡니다.
 - 외부 에셋은 `90_ThirdParty`에 원본 상태로 보관하고 직접 수정하지 않습니다.
 - Addressables를 도입하더라도 에셋을 별도 보관소로 옮기지 않고 기존 위치에서 Group과 Label로 관리합니다.
-- 실제 자동 테스트와 의존성 분리를 위해 Core / UI / Editor / PlayModeTests / EditModeTests에 최소 Assembly Definition(`asmdef`)을 사용합니다. Core는 UI·Editor 패키지에 의존하지 않습니다.
+- 실제 자동 테스트와 의존성 분리를 위해 Core / UI / Editor / Pooling / Pooling.Tests / PlayModeTests / EditModeTests에 최소 Assembly Definition(`asmdef`)을 사용합니다. Core는 UI·Editor 패키지에 의존하지 않습니다.
 - `Core/Manager`는 현재 존재하는 폴더입니다. 모든 기능을 Manager로 만들거나 전역 Singleton으로 두어야 한다는 의미는 아닙니다.
 - `Sprites` 등의 하위 폴더는 실제 에셋이 생길 때 추가합니다.
-- 초기화와 데이터 관리의 제안 기준은 [초기 세팅 설계](../Docs/INITIAL_SETTING.md)를 참고합니다.
+- 현재 초기화와 데이터 관리 기준은 [초기 세팅 설계](../Docs/INITIAL_SETTING.md)를 참고합니다.
 
-## Naming guideline
+## 명명 기준
 
 - C# 타입과 파일: `PascalCase`
 - Scene: 현재 `00_StartScene`, `01_Title`, `02_MainScene`을 유지합니다. 숫자는 이름 정렬용이며 실행 순서는 코드와 빌드 씬 목록으로 정합니다.
