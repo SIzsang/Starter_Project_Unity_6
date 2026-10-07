@@ -4,7 +4,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using StarterProject.UI;
 using UnityEditor;
-using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -481,17 +480,7 @@ namespace StarterProject.Editor
         /// <summary>게임 UI 구현과 독립적인 설정·씬·Boot 진입점만 검사합니다.</summary>
         internal static void ValidateConfiguration() => ValidateConfiguration(LoadConfiguration());
 
-        internal static void ValidateConfiguration(AppConfig config)
-        {
-            if (config == null) throw new ArgumentNullException(nameof(config));
-            config.Validate();
-            foreach (var path in new[] { config.BootScene, config.TitleScene, config.MainScene })
-                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(path) == null)
-                    throw new InvalidOperationException($"Scene asset is missing: {path}");
-            var preview = EditorSceneManager.OpenPreviewScene(config.BootScene);
-            try { ValidateSceneBootstrap(preview, config); }
-            finally { EditorSceneManager.ClosePreviewScene(preview); }
-        }
+        internal static void ValidateConfiguration(AppConfig config) => StarterProjectValidator.ValidateConfiguration(config);
 
         /// <summary>기본 StarterScreen을 사용하는 경우에만 예제 Canvas·입력 계약을 검사합니다.</summary>
         internal static void ValidateExampleConfiguration()
@@ -607,7 +596,7 @@ namespace StarterProject.Editor
         public static void ValidateSetup()
         {
             ValidateConfiguration();
-            Debug.Log("[Starter Project] Setup validation passed: AppConfig, build scenes and active Boot entry point.");
+            StarterLog.Info(LogCategory.Validation, "Project validation passed: Config/Data, enabled scenes, SceneRoot, default Input, service ownership, save policy and build defines.");
         }
 
         [MenuItem("Tools/Starter Project/Validate Example UI")]
@@ -680,22 +669,7 @@ namespace StarterProject.Editor
         /// 빌드 전 AppConfig를 검증하며 결과는 Builds/Windows/{Product Name}.exe에 저장합니다.
         /// </summary>
         [MenuItem("Tools/Starter Project/Build Windows Preview")]
-        public static void BuildWindowsPreview()
-        {
-            ValidateConfiguration();
-            var outputDirectory = Path.Combine("Builds", "Windows");
-            Directory.CreateDirectory(outputDirectory);
-            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
-            {
-                scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(),
-                locationPathName = Path.Combine(outputDirectory, GetWindowsPreviewExecutableName(PlayerSettings.productName)),
-                target = BuildTarget.StandaloneWindows64,
-                options = BuildOptions.Development
-            });
-            if (report.summary.result != BuildResult.Succeeded)
-                throw new InvalidOperationException($"Build failed: {report.summary.result}");
-            Debug.Log($"[Starter Project] Windows build succeeded ({report.summary.totalSize} bytes).");
-        }
+        public static void BuildWindowsPreview() => StarterBuildConfiguration.Build(AppBuildKind.Development);
 
         /// <summary>복제한 게임의 Product Name을 Windows 실행 파일명으로 안전하게 변환합니다.</summary>
         internal static string GetWindowsPreviewExecutableName(string productName)
