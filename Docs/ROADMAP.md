@@ -1,8 +1,12 @@
 # Starter Project 개발 로드맵
 
-비율은 단계 완료 시의 예상 누적 작업 범위이며 시간 비율이 아니다.
+현재 개발 기준: **Phase 4의 사용자 지정 Pool 범위와 Phase Gate 완료. 다른 후보는 현재 필수 요구가 없어 보류했다. 다음 Work는 실제 게임 요구/후속 작업을 선정한다. 로드맵에 Phase 5는 정의되지 않았다.** 최신 순서·완료 기준은 [Notion 00. 전체 로드맵·현재 방향](https://app.notion.com/p/3d4bbcd9852981deb2b8d77e2f27932b)을 따른다. [실행 기반](PHASE_2_RUNTIME.md) · [개발 지원](PHASE_3_DEVELOPMENT.md) · [선택형 Pool](PHASE_4_MODULES.md) · [Gate 결과](INTEGRATION_VALIDATION.md)
 
-현재: **v1.0.0 프리셋 제작·필수 기능 검증·버전·GitHub Template 배포 완료(100%)**. 2026-10-02 사용자 요청에 따라 일반적인 새 게임 제작 문제를 막는 검증과 게임별 기기 출시 품질 검증을 구분했다. [v1.0.0 기준](RELEASE.md)
+후속 1번 소스·문서 기준 정리와 작업별 커밋을 완료했다. 현재 프리셋으로 게임 제작을 시작할 수 있으며 다음 권장 Work는 작은 Game Layer 적용 사례다. 후속 순서·완료 기준은 [후속 작업 계획](NEXT_STEPS.md), 사용 가능 범위는 [Summary](PRESET_SUMMARY.md#현재-제작-준비-단계--2026-10-07)를 따른다. 새 Phase 이름은 미정이다.
+
+아래 1~8단계·비율은 **Phase 1의 과거 구현·배포 기록**이며 새 Phase의 완료율이 아니다. 비율은 당시 단계 완료 시의 예상 누적 작업 범위이며 시간 비율이 아니다.
+
+Phase 1 배포 기준: **v1.0.0 프리셋 제작·필수 기능 검증·버전·GitHub Template 배포 완료(100%)**. 2026-10-02 사용자 요청에 따라 일반적인 새 게임 제작 문제를 막는 검증과 게임별 기기 출시 품질 검증을 구분했다. [v1.0.0 기준](RELEASE.md)
 
 배포 후 마무리: 공개 Release의 ZIP·SHA-256·manifest를 검증하고 인계 Summary를 최신 상태로 정리했다. Codex 재시작 후 추가 Player를 실행해 실제 960×540 Title·Main 표시, 음량 적용·창/전체화면 전환·단일 AppRoot를 확인했다. Computer Use의 창 캡처 시간 초과와 Enter 전달 미확인으로 직접 클릭·키보드 조작은 별도 미확인이다. 아래 날짜별 대기 상태는 당시 기록이며 현재 완료 판정과 구분한다.
 

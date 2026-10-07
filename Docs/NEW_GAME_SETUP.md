@@ -4,6 +4,8 @@
 
 2026-10-05 후속 소스는 좌측 New Game / Continue 메뉴와 기본 독립 슬롯 3개·삭제를 제공한다. **구현·관련 필수 자동 검증 완료**이며 기존 v1.0.0 ZIP에는 포함되지 않는다. [현재 저장·메뉴 사용법](SETTINGS_AND_SAVE.md)
 
+현재 Phase 2·3와 Phase 4의 선정 Pool 범위/Gate까지 포함하는 소스 기준은 로컬 커밋 `a24ff7d`다. 이 커밋이 포함된 소스로 새 프로젝트를 시작한다. 이번 커밋은 원격 Push 전이므로 GitHub Template과 이전 Release의 범위를 구분한다. 현재 준비 단계는 [Summary](PRESET_SUMMARY.md#현재-제작-준비-단계--2026-10-07)를 따른다.
+
 ## 첫 Play 전에
 
 1. `Assets`, 각 `.meta`, `Packages`, `ProjectSettings`가 포함된 새 저장소를 Unity Hub에 추가하고 지정된 Editor 버전으로 연다. `Library`, `Temp`, `Logs`, `Builds`, `UserSettings`는 복사하지 않는다.
@@ -69,3 +71,18 @@ public sealed class MyGamePayloadPolicy : GamePayloadPolicy
 - Windows 미리보기는 `Tools > Starter Project > Build Windows Preview`에서 만들고 `Builds/Windows/<Product Name>.exe`로 저장된다. Windows 파일명에 쓸 수 없는 문자는 `_`로 바뀐다.
 
 첫 게임 데이터 저장·앱 재실행 후 이어하기, 실패·백업 복구, 대상 플랫폼 빌드, 실제 화면·입력을 게임별로 검증하고 기준 커밋을 남긴다. 템플릿의 이후 수정은 이미 복제한 게임에 자동 적용되지 않는다.
+
+## Phase 2 게임 실행 연결
+
+Gameplay 씬에 활성 SceneRoot 파생 컴포넌트 하나를 두고 Initialize/Enter/Exit/Dispose 훅에 게임 조립·실행·정리를 연결한다. 씬별 비동기는 LifetimeToken을 사용하고 await 이후 취소를 확인한다. Definition SO와 변경 가능한 Runtime을 분리하고, 선택형 DataCatalog를 AppConfig에 지정하면 기존 Validate Setup에서 ID·참조를 검사한다.
+
+저장은 root.Data.Runtime.Payload를 변경한 뒤 root.TrySaveGame()으로 명시적 스냅샷을 만든다. 기본 UI를 교체할 때는 입력 어댑터를 생성하고 그 RuntimeActions를 게임 입력에도 사용한다. 게임별 Pause UI는 root.TryChangeGameState와 GameStateChanged를 사용한다. BGM/SFX/UI는 root.Audio에 요청한다. [전체 계약·예제](PHASE_2_RUNTIME.md)
+
+게임 코드가 StarterInputContext 등 기본 UI 타입을 직접 사용하면 게임 asmdef에 StarterProject.UI 참조도 추가한다. Pool을 사용하면 StarterProject.Pooling을 선택적으로 참조한다. Core는 해당 선택 의존성을 가지지 않는다.
+## 개발 지원 연결
+
+[Phase 3 사용법](PHASE_3_DEVELOPMENT.md)에서 Debug Menu, 로그 필터, 빌드 환경과 강화된 Validate Setup을 확인한다. 예약 빌드 심볼은 전역 Player Settings에 넣지 않고 전용 빌드 명령을 사용한다. 기본 StarterSmoke의 씬 경로·payload 표식을 새 게임의 계약에 맞춰 갱신한 뒤 격리 저장으로 실행→저장→새 앱→불러오기 흐름을 확인한다. 실제 플랫폼/장치 출시는 게임별로 검증한다.
+
+## 선택형 Pool 연결
+
+반복 생성하는 게임 프리팹에는 [Prefab Pool 사용법](PHASE_4_MODULES.md)을 적용한다. Pooling 모듈과 테스트는 독립 폴더/어셈블리에 있어 필요할 때만 게임에서 참조한다. 프리팹 reset·스폰·재고 상한은 게임이 결정한다. SceneRoot.Exit에서 ReturnAll로 대여를 종료하고 비동기 결과 적용 전에는 씬 토큰과 PoolLease.IsValid를 확인한다. 다른 선택형 후보는 게임의 필수 요구가 확인될 때 선정한다.

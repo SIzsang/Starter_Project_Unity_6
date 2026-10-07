@@ -1,8 +1,8 @@
 # Starter Project — Unity 6
 
 새 게임을 시작할 때 복제해서 사용하는 Unity 공통 기반 프로젝트입니다.
-Bootstrap·설정·저장·공통 기능·Editor 개발 경로와 UI 에셋 교체 경로를 구현했습니다.
-필수 Unity 회귀 테스트와 Windows Player의 시작·저장·이어하기 흐름, 1920×1080 화면 표시를 확인하고 **v1.0.0**으로 배포했습니다. 검증 범위와 새 게임 인계 절차는 [v1.0.0 배포 가이드](Docs/RELEASE.md)에 있습니다.
+Boot·3슬롯 저장·설정·씬 수명·입력/Pause/Audio, 개발 도구와 선택형 Pool을 구현했습니다. **Phase 2·3와 Phase 4의 선정 Pool 범위/Gate를 완료했으며 Windows·URP 2D 게임 제작을 시작할 수 있습니다.** 현재 사용 기준과 확인 범위는 [프리셋 Summary](Docs/PRESET_SUMMARY.md#현재-제작-준비-단계--2026-10-07)를 따릅니다.
+기존 **v1.0.0**은 Windows Player 시작·저장·이어하기와 화면 표시를 확인해 배포한 이전 단일 슬롯 버전입니다. 현재 Phase 2~4의 소스 기준은 로컬 커밋 `a24ff7d`이며 이번 커밋의 원격 Push·새 Release는 수행하지 않았습니다. 이 커밋이 포함된 소스로 새 게임을 시작합니다. [기존 배포 기록](Docs/RELEASE.md) · [새 게임 연결](Docs/NEW_GAME_SETUP.md)
 
 ## 방향
 
@@ -48,7 +48,10 @@ Main 씬을 열고 Play하면 개발용 저장 공간에서 Boot 초기화 후 M
 
 - [Bootstrap 사용 가이드](Docs/BOOTSTRAP.md): 실행·확장 위치와 검증 결과
 - [설정·게임 저장 사용 가이드](Docs/SETTINGS_AND_SAVE.md): 3·4단계 사용법·버전·복구·게임별 확장
-- [공통 기능 사용 가이드](Docs/COMMON_SERVICES.md): 5단계 음량·화면 적용, 입력·로딩과 검증 범위
+- [공통 기능 사용 가이드](Docs/COMMON_SERVICES.md): 설정 적용·입력·로딩과 선택형 기능 진입점
+- [Phase 2 실행 기반](Docs/PHASE_2_RUNTIME.md): SceneRoot·서비스·Runtime·입력·Pause/Audio 연결
+- [Phase 3 개발 지원](Docs/PHASE_3_DEVELOPMENT.md): 로그·Debug·빌드 환경·Validator·Smoke
+- [Phase 4 선택형 Pool](Docs/PHASE_4_MODULES.md): 대여·반납·씬 수명과 게임별 reset 책임
 - [가로형 PC·모바일 UI](Docs/RESPONSIVE_UI.md): Render Mode·Canvas Scaler·안전 영역과 검증 한계
 - [Editor 작업 가이드](Docs/EDITOR_WORKFLOW.md): 6단계 Main 직접 Play·설정 검사·테스트 데이터 백업과 검증 상태
 - [통합·Windows 빌드 검증](Docs/INTEGRATION_VALIDATION.md): 7단계 빌드·프로세스 재실행·오류 보호 결과와 남은 GUI 확인
@@ -59,7 +62,8 @@ Main 씬을 열고 Play하면 개발용 저장 공간에서 Boot 초기화 후 M
 - [변경 이력](Docs/CHANGELOG.md): 템플릿의 주요 변경과 버전 상태
 - [제작 가능 범위 브리핑](Docs/GAME_CAPABILITY_BRIEF.md): 현재 프리셋으로 시작할 수 있는 게임과 추가 구현 영역, 캐릭터 에셋 애니메이션 인계 조건
 - [로그라이크·로그라이트 사전 조사](Docs/ROGUELIKE_PLAY_FLOW_RESEARCH.md): 실제 게임의 런·영구 성장·중단 저장 비교와 6단계 개발 진입 제안
-- [개발 로드맵](Docs/ROADMAP.md): 8단계 작업 순서와 완료 기준
+- [개발 로드맵](Docs/ROADMAP.md): Phase 1~4 현재 상태와 과거 8단계 기록
+- [후속 작업 계획](Docs/NEXT_STEPS.md): 소스 정리 완료와 실제 Game Layer 적용·Player 확인·인계 순서
 - [초기화·데이터 관리 설계](Docs/INITIAL_SETTING.md): 구현 기준, 데이터 분담과 오류 처리
 - [템플릿 완성·복제 체크리스트](Docs/TEMPLATE_CHECKLIST.md): 완료 조건과 새 프로젝트에서 바꿀 항목
 - [에셋 폴더 구조](Assets/PROJECT_STRUCTURE.md): 폴더별 책임과 이름 규칙

@@ -1,6 +1,6 @@
 # Starter Project 상세 Summary — 새 게임 제작용 인계 기록
 
-최종 인계 갱신: 2026-10-05 · 상태: **3슬롯·좌측 메인 메뉴 구현·필수 자동 검증 완료**. 기존 v1.0.0 배포 기준은 유지한다.
+최종 인계 갱신: 2026-10-07 · 상태: **Phase 2·3 및 Phase 4의 선정 Pool 범위/Gate 완료 / 작업별 소스 커밋·인계 정리 / 게임 제작 착수 가능**. 기존 v1.0.0 배포 기준은 해당 버전의 기록으로 유지한다.
 
 이 문서는 향후 새 프로젝트에서 이 프리셋을 사용할 때 다시 확인할 기준 기록이다. 대화나 모델의 임시 기억에 의존하지 않도록 프로젝트와 함께 버전 관리한다. 변경 후에는 검증 결과와 한계를 함께 갱신한다.
 
@@ -11,6 +11,51 @@
 - **공통과 게임별 경계:** Boot, 설정, 파일 저장, 기본 씬 전환, 개발용 진입은 공통이다. 전투·인벤토리·캐릭터 성장·스테이지 규칙·사망·자동 저장 시점은 새 게임의 `Gameplay`가 정의한다.
 - **현재 완료 판정:** 기존 프리셋의 필수 회귀와 Windows Player 시작·저장·이어하기·1920×1080 표시 확인은 날짜별 기록으로 보존한다. 2026-10-05 추가한 3슬롯·메인 메뉴도 관련 필수 자동 검증을 완료했다. 기존 v1.0.0 태그·소스 ZIP은 단일 슬롯 소스로 유지한다. 게임별 기기 품질·물리 입력은 별도 확인 범위다. [배포 기준](RELEASE.md)
 - **예제 UI 범위:** PC와 가로형 모바일을 대상으로 Screen Space Overlay·1920×1080 Canvas Scaler와 안전 영역 맞춤을 사용한다. 기존 1280×720 예제 배치는 비례 환산한다. 배경·버튼 `Image`에 게임 스프라이트를 지정하고 Boot의 로딩 프리팹 슬롯으로 로딩 화면을 교체할 수 있다. 모바일 실제 기기 검증과 게임별 HUD는 별개다. [반응형 UI 기준](RESPONSIVE_UI.md)
+
+## 현재 제작 준비 단계 — 2026-10-07
+
+**판정: 현재 소스를 프리셋으로 사용해 게임 제작을 시작할 수 있다.** 공통 기반 구현과 선정 범위 Gate를 마친 상태이며, 다음 단계는 실제 게임의 Game Layer 연결이다. 전체 완성도를 하나의 퍼센트로 표시하지 않는다.
+
+| 범위 | 현재 단계 |
+| --- | --- |
+| Phase 1 실행 기본 골격 | 구현·v1.0.0 배포 완료. 후속 3슬롯·메뉴 보완 포함 |
+| Phase 2 실행 기반 | 10개 작업과 Gate 완료 |
+| Phase 3 개발 지원 | 5개 작업과 Gate 완료 |
+| Phase 4 선택형 모듈 | 선정 Pool 범위와 Gate 완료. 나머지 후보 보류 |
+| 실제 게임 제작 | 착수 가능. 게임 규칙·콘텐츠·payload·Gameplay 입력/HUD를 새 게임에서 연결 |
+| 출시 준비 | 게임별 첫 Player 빌드·실제 입력/오디오·대상 장치 품질 확인이 필요 |
+
+현재 출발점은 Unity 6000.3.16f1 / URP 2D / uGUI / Windows PC다. 작은 오프라인 2D 게임은 필요한 공통 기능만 골라 사용할 수 있다. 다른 렌더링·모바일·스토어/온라인 요구는 해당 게임의 범위에서 정한다.
+
+새 프로젝트에서는 식별자 변경 → Validate Setup → 게임별 SceneRoot/Definition/Runtime/payload와 입력 연결 → 필요한 Player 확인 순서로 진행한다. 전투·인벤토리·성장·자동 저장 시점은 Game Layer가 소유한다. 예제 Main은 게임 콘텐츠가 완성된 씬이 아니라 버튼으로 공통 흐름을 사용하는 시작점이다.
+
+현재 런타임/도구/Pool 소스 기준은 `a24ff7df1e968c049fa80926b98bb68ed3b81685`다. 작업별 로컬 커밋으로 인계 파일을 추적하며 개인 Cloud 연결 값은 제외했다. 이번 소스는 원격 Push·새 태그·Release를 수행하지 않았으므로 이 커밋이 포함된 소스를 사용한다. 기존 v1.0.0 ZIP은 해당 버전의 단일 슬롯 소스로 유지한다.
+
+이번 정리는 현재 C#/asmdef 60개가 최종 Gate 검증 소스와 같음을 SHA-256으로 확인했다. 스크립트 파일/폴더 메타 누락과 중복 GUID도 없었다. 코드와 테스트를 새로 실행한 결과가 아니며 기존 Phase 2/3/4 검증 기록을 근거로 판단한다. 최신 소스의 새 Windows Player 빌드·물리 입력·오디오 청취·모바일 실기기·게임 부하 결과는 아직 없다. [실제 검증 범위](INTEGRATION_VALIDATION.md)
+
+다음 권장 Work는 [작은 Game Layer 적용 사례](NEXT_STEPS.md)다. 게임이 정해졌다면 실제 콘텐츠의 가장 작은 흐름을 연결하고, 미정이면 작은 사용 예제로 책임 경계를 확인한다.
+
+## Phase 2 실행 기반 — 2026-10-07
+
+GameState, SceneRoot/SceneFlow, AppServices/AppBootstrapper, AsyncLifetime, Runtime Data/Data Validation, Input Context, Pause, Audio Service를 완료했다. 앱·씬·객체 소유권과 취소 경계를 연결하며 게임 규칙은 Game Layer에 둔다. 저장 파일 형식과 기존 설정·슬롯 API를 유지한다.
+
+SceneRoot 훅에서 씬을 조립·실행·정리하고, Data.Runtime의 작업 JSON은 명시적 저장 시 스냅샷으로 만든다. 비동기 Exit 완료까지 Runtime을 유지한 뒤 Title 진입 전에 세션을 해제한다. 입력 어댑터는 액션 Asset을 앱 전용으로 복제하며 Pause는 이전 시간·입력·Audio·UI를 복구한다. [사용법·소유권](PHASE_2_RUNTIME.md) · [상태 API](GAME_STATE.md)
+
+Architecture / Integration Review와 위험 기반 검증을 완료했다. EditMode 20/20 통과. PlayMode는 고유 34개 항목을 실행·재검사로 확인했으며 34/34 단일 실행으로 기록하지 않는다. 미해결 실패 없음. 임시 캐시 복사본·일회성 컴파일 산출물 삭제 완료. 이번 변경은 main 작업 트리 기준이며 기존 v1.0.0 태그 소스와 구분한다. [상세 근거·한계](INTEGRATION_VALIDATION.md)
+
+## Phase 3 개발 지원 — 2026-10-07
+
+Category/Level Logging, Editor Debug Menu, Development/QA/Release 빌드 옵션, Preview Scene 기반 강화된 Validator, 격리 저장 Smoke를 완료했다. 개발 명령은 기존 AppRoot 계약을 사용하며 빌드 환경은 Player 전용 심볼로 구분한다. 전역 Editor 설정과 사용자 저장 형식을 유지한다. [사용법](PHASE_3_DEVELOPMENT.md)
+
+Architecture / Integration Review와 위험 기반 최소 검증 완료. EditMode 20/20, PlayMode 4/4, 빌드 심볼 3종의 환경·로그 기본값 확인. 임시 프로젝트/컴파일 폴더 삭제 완료. 새 Windows 빌드·GUI 확인은 수행하지 않았다. [실제 근거·한계](INTEGRATION_VALIDATION.md)
+
+## Phase 4 선택형 Pool — 2026-10-07
+
+사용자 우선 요구인 Prefab Pool을 독립 모듈로 완료했다. 대여별 PoolLease, 준비 후 활성화, 반납 재고 상한·Prewarm, 오류 회수와 소유자/씬 종료 정리를 제공한다. 모듈의 테스트도 내부 어셈블리에 두어 기존 Core/UI/Editor/테스트 참조를 보존했다. 게임별 reset·스폰·용량 결정은 Game Layer가 맡는다. [후보 판단·사용법](PHASE_4_MODULES.md)
+
+선정 범위와 Architecture / Integration Gate 완료. 관련 PlayMode 11/11 및 테스트 어셈블리 격리 후 대표 1/1 통과. 1개 재검사는 고유 항목 수에 더하지 않는다. 임시 검증 프로젝트 두 개는 모두 삭제했다. 실제 성능·새 Windows 빌드·GUI/실기기 결과는 없다. [근거](INTEGRATION_VALIDATION.md)
+
+다른 Phase 4 후보는 현재 필수 요구가 없어 보류한다. 다음 Work는 00 → 11 → 실제 Git/코드에서 새 게임 요구/후속 작업을 선정한다. 로드맵에 다음 Phase가 정의되지 않았으므로 임의의 Phase 5를 시작하지 않는다.
 
 ## 독립 슬롯 3개와 좌측 메인 메뉴 — 2026-10-05
 
@@ -82,7 +127,7 @@ SOL 6.1 작업의 기준 커밋 `8da41b6`을 검토해 사용자 UI 교체와 �
 | --- | --- |
 | `00_StartScene` / `AppBootstrap` | 빌드의 첫 씬. 유일한 `AppRoot`를 확보하고 `SO_AppConfig`로 초기화를 시작한다. |
 | `SO_AppConfig` | Boot·Title·Main 경로와 사용자 설정 기본값. 세 씬의 활성화·순서·중복을 검증한 뒤 실행용 사본을 만든다. |
-| `AppRoot` | `NotStarted → Initializing → Ready/Failed` 상태, 설정·저장 서비스의 수명, Title/Main 이동과 중복 전환 차단을 조정한다. |
+| `AppRoot` | `NotStarted → Initializing → Ready/Failed` 초기화 상태와 별도 GameState, 설정·저장 서비스의 수명, Title/Main 이동과 중복 전환 차단을 조정한다. |
 | Boot `StarterScreen` | 준비 단계와 오류를 표시한다. `EventSystem`의 Input System UI 모듈을 사용한다. |
 | Title `StarterTitleMenu` | 좌측 메뉴와 목적별 슬롯 선택·관리·설정·제작진·삭제 확인을 표시하고 Core API를 호출한다. |
 

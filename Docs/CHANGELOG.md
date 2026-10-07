@@ -1,5 +1,47 @@
 # 변경 이력
 
+## 2026-10-07 — 소스 커밋 분리·현재 인계 기준 정리
+
+- 완료 기반을 실행·진단 / Editor 개발 도구 / 선택형 Pool / 문서·인계로 분리해 로컬 커밋했다. 커밋 제목은 영어, 본문은 한국어를 사용했다.
+- 개인 Unity Cloud 설정은 원본에 보존하고 커밋에서 제외했다. 신규 스크립트/폴더 메타 누락·중복 GUID와 최종 Gate 소스 60개 일치를 확인했다.
+- README·Summary·새 게임 가이드에서 현재 사용 시작점을 명시했다. Phase 2·3와 선정 Phase 4 완료, Windows·URP 2D 게임 제작 착수 가능으로 정리했다.
+- 후속 소스·문서 정리는 완료했다. 다음 권장 작업은 작은 Game Layer 적용 사례다. 새 Player 빌드·Unity 테스트·원격 Push·태그·Release는 수행하지 않았다.
+- 현재 기능 소스 기준: 실행·진단 52688c0 / 개발 도구 91f413a / Pool a24ff7d. 기존 v1.0.0 태그·ZIP은 유지한다.
+
+## 2026-10-07 — Phase 4 선택형 Pool 및 Gate
+
+- 사용자 우선 요구인 프리팹 Pool 선정. 다른 선택형 후보는 현재 필수 요구가 없어 보류.
+- Unity ObjectPool 기반 PrefabPool, 대여 세대별 PoolLease, 비활성 준비/오류 회수·Prewarm·반납 재고 상한·소유자 종료 정리.
+- Pool 코드/테스트를 독립 모듈 폴더·어셈블리에 격리. 기존 스크립트/메타·Core/UI/Editor/테스트 참조 보존.
+- 관련 수명 검증과 최종 어셈블리 대표 검사 통과. 임시 검증 환경 모두 정리.
+- 선정 범위/Gate 완료. 후속 Phase는 실제 게임 요구를 확인해 선정한다. [사용법](PHASE_4_MODULES.md) · [검증](INTEGRATION_VALIDATION.md)
+
+
+## 2026-10-07 — Phase 3 개발 지원 및 Gate
+
+- Category/Level Console Logging과 환경 기본값·Play 시작 필터 복구.
+- Editor Debug Menu의 상태/서비스 조회·기존 앱 명령·수명에 연결한 Debug 입력.
+- Development/QA/Release의 Windows 옵션·출력 경로·Player 전용 심볼. 전역 Editor 설정 보존.
+- 기존 Validate Setup의 전체 활성 씬/SceneRoot/입력/저장 정책/빌드 검사와 pre-build hook.
+- 격리 실제 파일로 저장·새 앱 복원을 확인하는 최소 Smoke. 관련 위험 기반 Gate 검증과 임시 환경 정리 완료.
+- Phase 3 완료. 다음 Work는 Phase 4 실제 반복 요구 평가/첫 모듈 선정. [사용법](PHASE_3_DEVELOPMENT.md) · [검증](INTEGRATION_VALIDATION.md)
+
+
+## 2026-10-07 — Phase 2 실행 기반 및 Gate
+
+- SceneRoot/SceneFlow 생명주기와 AppServices/AppBootstrapper의 공통 서비스 조립·수명 분리.
+- AsyncLifetime 앱/씬/객체 취소, Definition/Runtime/저장 스냅샷 분리와 기존 설정 검사 경로의 ID·참조 검증.
+- Input Context와 앱 전용 InputActionAsset 복제 어댑터, Pause 시간/입력/UI 복구, BGM/SFX/UI Audio Service 연결.
+- 비동기 Exit 완료 뒤 세션을 해제하는 순서 보완. 저장 형식·기존 설정/슬롯 API 유지.
+- Architecture / Integration Review 및 관련 최소 검증 완료, 임시 캐시 복사본·컴파일 산출물 삭제. [검증 근거](INTEGRATION_VALIDATION.md)
+- Phase 2 완료 / Phase 3 Logging 대기. [사용법·게임 연결](PHASE_2_RUNTIME.md)
+
+## 미배포 보완 — 2026-10-07
+
+- Phase 2 GameState의 Boot/Menu/Loading/Gameplay/Pause/Failed 상태·전환 규칙·조회·변경 알림을 추가하고 기존 AppRoot 초기화·씬 전환·실패에 연결했다.
+- 초기화용 AppState와 저장 형식은 유지한다. AppRoot는 실행 상태를 소유하며 외부에는 활성 세션의 Gameplay ↔ Pause 요청만 허용한다. 현재 Pause는 상태 계약이며 시간·입력·UI 조정은 후속 단계다.
+- 관련 EditMode 11/11 통과. PlayMode 20개 중 테스트 기대값 오류 1개를 수정하고 해당 1개 재검사 통과를 확인했다. [검증 근거](INTEGRATION_VALIDATION.md) · [사용법](GAME_STATE.md). 다음 작업은 SceneRoot다.
+
 ## 미배포 보완 — 2026-10-05
 
 - 기본 저장을 독립 슬롯 3개와 하나의 활성 세션으로 확장했다. 현재 슬롯으로만 저장하며 기존 슬롯 1 파일·JSON 형식과 공통 settings.json은 유지한다.

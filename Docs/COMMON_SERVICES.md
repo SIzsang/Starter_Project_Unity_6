@@ -1,4 +1,6 @@
-# 공통 기능 사용 가이드 — 5단계
+# 공통 기능 사용 가이드
+
+Phase 2의 타입별 서비스·입력 맵·Pause·Audio API와 소유권은 [실행 기반 가이드](PHASE_2_RUNTIME.md)를 따른다. 아래 설정·예제 UI 계약도 계속 사용한다.
 
 ## 실행과 적용 범위
 
@@ -10,7 +12,7 @@
 - Title의 좌측 New Game / Continue는 각각 빈 슬롯과 저장 슬롯 선택 화면을 연다. 슬롯 관리에서 삭제·백업 복구를 수행하며 삭제 확인의 기본 포커스는 Cancel이다. Options / Credits는 별도 화면이고 Quit는 PC에 표시한다.
 - 방향키/WASD·게임패드로 버튼을 선택하고 Enter/A로 실행한다. Escape/B는 확인창을 취소하거나 이전 화면으로 돌아간다. 씬 전환·실패·삭제 확인 뒤쪽에는 버튼 입력을 차단한다.
 
-기존 Input System 액션 에셋의 `UI` 맵과 `InputSystemUIInputModule`을 사용한다. 조작키 재설정·게임별 Player 맵 활성화·입력 감도는 이번 최소 UI 입력 범위에 포함하지 않는다.
+기존 Input System 액션 에셋의 `UI` 맵과 `InputSystemUIInputModule`을 사용한다. Phase 2의 StarterInputContext는 실행용 Asset 복제본의 Player/UI 맵을 컨텍스트에 따라 전환한다. 게임 입력은 RuntimeActions를 사용한다. 조작키 재설정·입력 감도는 후속 모듈 또는 Game Layer에서 연결한다.
 
 ## 수명과 실패 처리
 
@@ -53,3 +55,11 @@ Windows 플레이어의 전체화면 전환, 실제 오디오 장치 청취, 물
 - [Unity AudioListener.volume](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/AudioListener-volume.html)
 - [Unity Screen.fullScreenMode](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/Screen-fullScreenMode.html)
 - [Unity AsyncOperation.progress](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/AsyncOperation-progress.html)
+
+## 진단 로그
+
+Core의 StarterLog.Info/Warning/Error에 LogCategory와 메시지를 전달한다. Level/Category 필터, 빌드별 기본값과 Editor 조작은 [Phase 3 개발 지원](PHASE_3_DEVELOPMENT.md)을 따른다. 게임 코드의 payload·비밀값은 메시지에 넣지 않는다.
+
+## 선택형 프리팹 Pool
+
+씬/게임 객체가 소유하는 PrefabPool과 대여별 PoolLease로 재사용·반납을 관리한다. Core/AppServices에 등록하지 않는다. 게임별 reset·스폰·용량 정책과 연결 방법은 [선택형 모듈 사용법](PHASE_4_MODULES.md)을 따른다.
