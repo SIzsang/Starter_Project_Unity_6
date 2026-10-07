@@ -1,0 +1,7 @@
+{
+  "name": "StarterProject.Pooling.Tests",
+  "references": ["StarterProject.Pooling"],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "optionalUnityReferences": ["TestAssemblies"]
+}
